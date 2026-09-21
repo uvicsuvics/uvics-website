@@ -2,6 +2,8 @@
 
 Dokumentasi design system resmi untuk website ini. Semua komponen, warna, tipografi, dan spacing harus mengacu pada panduan ini untuk menjaga konsistensi visual di seluruh halaman.
 
+> Keputusan 22 September 2026: shadcn/ui digunakan sebagai pilihan komponen UI, dengan adaptasi ke identitas visual UVICS dan integrasi bertahap dengan komponen yang ada. Lihat [documents/TECH_STACK.md](documents/TECH_STACK.md). Pemilihan shadcn tidak menetapkan perubahan font atau mengganti palet desain ini.
+
 ---
 
 ## 📌 Table of Contents

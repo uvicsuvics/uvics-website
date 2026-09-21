@@ -8,6 +8,8 @@
 **Primary Users:** Public Visitor, Applicant, Admin  
 **Prepared For:** UVICS Development Team  
 
+**Keputusan teknis:** Stack implementasi telah disepakati pada 22 September 2026 dalam [TECH_STACK.md](TECH_STACK.md), termasuk full-stack Next.js, Supabase, Cloudinary, dan shadcn/ui. Status draft serta open questions bisnis dalam PRD ini tetap berlaku.
+
 ---
 
 ## 1. Executive Summary

@@ -12,7 +12,13 @@ This block is written and re-added by `next dev` - verify at `node_modules/next/
 
 # UVICS Agent Rules & Project Guide
 
-> WAJIB DIBACA SEBELUM MEMULAI SESI. Dokumen ini adalah satu-satunya sumber kebenaran tentang cara kerja, standar kode, dan desain proyek ini. Mengabaikan panduan ini akan menghasilkan kode yang tidak konsisten.
+> Panduan kerja repo ini digunakan bersama PRD, spesifikasi halaman publik, design system, dan keputusan teknis dalam `documents/TECH_STACK.md`.
+
+## Keputusan Tech Stack — 22 September 2026
+
+Stack yang disepakati pengguna tercatat di [documents/TECH_STACK.md](documents/TECH_STACK.md): full-stack Next.js, Supabase PostgreSQL/Auth/SDK/SQL migrations, Cloudinary, shadcn/ui, Zod + React Hook Form, Tiptap, Vitest + Playwright, GitHub Actions, Vercel, serta Upstash rate limiting. Dokumen tersebut menetapkan pilihan teknis; `package.json` dan lockfile menunjukkan dependency yang sudah ditambahkan.
+
+shadcn/ui diizinkan untuk komponen baru dengan token desain UVICS. Integrasikan dengan komponen yang ada secara bertahap, pertahankan kontrak pemanggil atau migrasikan secara teruji, dan hindari duplikasi file yang hanya berbeda kapitalisasi. Konvensi sumber komponen shadcn dapat dipertahankan; contoh penamaan dan sintaks komponen di bawah tidak mewajibkan rewrite komponen tersebut. Persetujuan ini tidak memerintahkan penggantian massal UI atau font.
 
 ---
 
@@ -60,10 +66,10 @@ Contoh SALAH:
   style={{ backgroundColor: '#0230a7' }}
   className="bg-[#0230a7]"
 
-### Komponen UI yang Sudah Ada - Wajib Digunakan
+### Komponen UI yang Sudah Ada - Periksa Sebelum Menambah
 
 Sebelum membuat komponen baru, selalu periksa komponen di components/ui/:
-- Button           : components/ui/Button.tsx          (SEMUA tombol di seluruh website)
+- Button           : components/ui/Button.tsx          (komponen bersama saat ini; integrasi shadcn mengikuti TECH_STACK.md)
 - Navbar           : components/ui/Navbar.tsx           (navigasi, sudah terintegrasi di SiteHeader)
 - SphereImageGrid  : components/ui/SphereImageGrid.tsx  (galeri 3D sphere interaktif)
 - ImageStreamHero  : components/sections/ImageStreamHero.tsx (koridor foto 3D di Hero)
