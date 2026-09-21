@@ -30,7 +30,7 @@ Dokumen ini menetapkan teknologi yang digunakan untuk pengembangan berikutnya. K
 | Quality gates | ESLint + TypeScript + Next.js build | Pemeriksaan sesuai dampak perubahan |
 | CI | GitHub Actions | Lint, typecheck, tes relevan, dan build |
 | Hosting aplikasi | Vercel | Deployment Next.js; konfigurasi environment dan rilis ditentukan saat persiapan deployment |
-| Rate limiting | Upstash Redis + `@upstash/ratelimit` | Batas permintaan bersama untuk endpoint publik seperti registration dan upload |
+| Rate limiting | PostgreSQL Supabase + fungsi/RPC atomik; proteksi bawaan Supabase Auth | Counter bersama untuk aturan aplikasi pada login, registration, dan upload; tanpa layanan Redis terpisah |
 | Dependency management | npm + `package-lock.json` | Instalasi dan versi dependency yang dapat direproduksi |
 
 ## Batas arsitektur
@@ -43,7 +43,17 @@ Dokumen ini menetapkan teknologi yang digunakan untuk pengembangan berikutnya. K
 - Terapkan RLS pada tabel yang terekspos dan batasi field respons publik secara eksplisit. RLS membatasi baris, sehingga tidak menggantikan pembatasan kolom/data privat.
 - Kredensial berprivilege yang melewati RLS hanya digunakan pada operasi server yang memerlukannya, dengan otorisasi eksplisit; tidak dikirim ke browser atau dijadikan jalur default semua query.
 - Alur multi-record kritis, terutama konversi applicant menjadi member beserta histori dan auditnya, menggunakan transaksi melalui fungsi PostgreSQL/RPC dan constraint pencegah duplikasi. Hak eksekusi fungsi dan caller harus dibatasi sesuai operasi.
-- Perubahan database dilakukan melalui migration yang direview. Tes database memakai lingkungan terisolasi dan menguji constraint, RLS, serta transaksi yang relevan.
+- Perubahan database dilakukan melalui migration yang direview. Tes menguji constraint, RLS, serta transaksi yang relevan dengan fixture/sesi terisolasi. Pada layanan bersama sebelum go-live, catat ID data uji dan lakukan cleanup terarah; tes reset total memakai database sementara lokal/CI bila tersedia, bukan mereset layanan bersama.
+
+### Rate limiting
+
+- Gunakan proteksi bawaan Supabase Auth untuk endpoint autentikasi, dilengkapi limiter PostgreSQL untuk aturan aplikasi. Proteksi Auth tidak otomatis mencakup form registration UVICS atau signature upload Cloudinary.
+- Next.js memanggil RPC limiter sebelum operasi yang dibatasi. Simpan counter dalam tabel privat dengan identitas pembatas yang dibentuk server dari konteks tepercaya; jangan memberi browser akses tulis counter atau kendali atas limit/key yang menentukan izin.
+- Pemeriksaan dan konsumsi kuota harus atomik agar request bersamaan tidak melewati batas. Jangan menggunakan pola SELECT lalu UPDATE tanpa kontrol konkurensi. Pemakaian kuota untuk percobaan login yang gagal tetap tercatat; jangan ikut membatalkannya dalam rollback operasi bisnis berikutnya.
+- Gunakan waktu database, namespace operasi/test, serta key tanpa PII mentah. Tambahkan index, masa kedaluwarsa, dan cleanup berkala yang terukur; PostgreSQL tidak otomatis menghapus row hanya karena waktu kedaluwarsa terlewati.
+- Kuota terlampaui menghasilkan 429 dengan Retry-After; kegagalan pemeriksaan limiter menghasilkan 503, bukan mengizinkan request diam-diam. Nilai limit/window tetap berupa konfigurasi yang ditetapkan saat implementasi.
+- Batasi privilege tabel/fungsi dan uji akses langsung, konkurensi, window expiry, serta kegagalan. RPC pra-login hanya dapat dipanggil melalui jalur server berprivilege yang dibatasi; jangan menjadikannya fungsi anon untuk memodifikasi counter sembarang.
+- Limiter menambah query pada database utama, sehingga latensi, pertumbuhan tabel, dan contention harus diperiksa. Counter memory Next.js tidak menjadi pembatas utama. Tidak menambah dependency, kredensial, atau layanan Redis untuk MVP.
 
 ### Media
 
@@ -66,7 +76,9 @@ Dokumen ini menetapkan teknologi yang digunakan untuk pengembangan berikutnya. K
 Pada saat keputusan dicatat, manifest repo memuat Next.js 16.3.3, React 19.2.8, TypeScript 5, Tailwind CSS 4, Motion, ikon, utility class, dan ESLint. Integrasi Supabase, Cloudinary, shadcn/ui, form/editor, testing, CI, dan layanan deployment/rate limiting belum ditambahkan oleh keputusan dokumentasi ini.
 
 - Tambahkan dependency saat implementasi modul membutuhkannya, dengan versi yang kompatibel dan tercatat di lockfile.
-- Paket layanan, region, domain, environment, kebijakan backup/retensi, serta batas upload/rate limit belum dipilih. Persetujuan stack tidak memprovisikan layanan atau mengizinkan pembelian/deployment produksi dengan sendirinya.
+- Satu project Supabase dan satu product environment Cloudinary yang sama dipakai selama pengembangan hingga production. Counter rate limit berada di PostgreSQL Supabase yang sama. Tidak mewajibkan layanan hosted staging kedua. Sebelum go-live, bersihkan data/akun/aset uji berdasarkan daftar ID dan namespace test, sambil mempertahankan schema, RLS, konfigurasi, admin yang dipakai, serta konten final. Cleanup tidak berarti reset database atau menghapus seluruh aset/counter.
+- Setelah go-live, tes mutasi rutin tidak menyentuh data live. Gunakan mock atau lingkungan sementara untuk tes tersebut; pengujian layanan nyata dilakukan terkontrol sesuai kebutuhan.
+- Paket layanan, region, domain, konfigurasi runtime, kebijakan backup/retensi, serta batas upload/rate limit belum dipilih. Persetujuan stack tidak memprovisikan layanan atau mengizinkan pembelian/deployment produksi dengan sendirinya.
 - Email autentikasi dan Custom SMTP dikeluarkan dari kebutuhan saat ini. Login admin tetap menggunakan email/password Supabase Auth; pengiriman undangan, verifikasi, dan reset password melalui email belum termasuk cakupan. Provisioning akun admin dilakukan secara terkontrol tanpa bergantung pada pengiriman email.
 - Notifikasi email applicant tetap future enhancement sesuai PRD.
 - Keputusan bisnis terbuka di PRD tetap berlaku. Pemilihan teknologi tidak menyelesaikan field registration, kebijakan direktori, atau aturan penempatan anggota.
@@ -79,4 +91,4 @@ Pada saat keputusan dicatat, manifest repo memuat Next.js 16.3.3, React 19.2.8, 
 - [shadcn/ui untuk Next.js](https://ui.shadcn.com/docs/installation/next) dan [Tailwind CSS 4](https://ui.shadcn.com/docs/tailwind-v4)
 - [React Hook Form resolvers](https://github.com/react-hook-form/resolvers), [Zod](https://zod.dev/), [Tiptap](https://tiptap.dev/docs/editor/getting-started/overview)
 - [Vitest dengan Next.js](https://nextjs.org/docs/app/guides/testing/vitest), [Playwright dengan Next.js](https://nextjs.org/docs/app/guides/testing/playwright), [GitHub Actions untuk Node.js](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs)
-- [Next.js di Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs), [Upstash rate limiting](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview)
+- [Next.js di Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs), [Supabase Auth rate limits](https://supabase.com/docs/guides/auth/rate-limits), [Supabase API security dan rate limiting](https://supabase.com/docs/guides/api/securing-your-api)

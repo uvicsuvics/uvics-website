@@ -16,7 +16,7 @@ This block is written and re-added by `next dev` - verify at `node_modules/next/
 
 ## Keputusan Tech Stack — 22 September 2026
 
-Stack yang disepakati pengguna tercatat di [documents/TECH_STACK.md](documents/TECH_STACK.md): full-stack Next.js, Supabase PostgreSQL/Auth/SDK/SQL migrations, Cloudinary, shadcn/ui, Zod + React Hook Form, Tiptap, Vitest + Playwright, GitHub Actions, Vercel, serta Upstash rate limiting. Dokumen tersebut menetapkan pilihan teknis; `package.json` dan lockfile menunjukkan dependency yang sudah ditambahkan.
+Stack yang disepakati pengguna tercatat di [documents/TECH_STACK.md](documents/TECH_STACK.md): full-stack Next.js, Supabase PostgreSQL/Auth/SDK/SQL migrations, Cloudinary, shadcn/ui, Zod + React Hook Form, Tiptap, Vitest + Playwright, GitHub Actions, Vercel, serta rate limiting melalui PostgreSQL Supabase dan proteksi bawaan Supabase Auth. Dokumen tersebut menetapkan pilihan teknis; `package.json` dan lockfile menunjukkan dependency yang sudah ditambahkan. Limiter aplikasi menggunakan tabel privat dan RPC atomik; tidak memerlukan layanan Redis terpisah.
 
 shadcn/ui diizinkan untuk komponen baru dengan token desain UVICS. Integrasikan dengan komponen yang ada secara bertahap, pertahankan kontrak pemanggil atau migrasikan secara teruji, dan hindari duplikasi file yang hanya berbeda kapitalisasi. Konvensi sumber komponen shadcn dapat dipertahankan; contoh penamaan dan sintaks komponen di bawah tidak mewajibkan rewrite komponen tersebut. Persetujuan ini tidak memerintahkan penggantian massal UI atau font.
 
