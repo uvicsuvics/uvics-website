@@ -32,7 +32,6 @@ Dokumen ini menetapkan teknologi yang digunakan untuk pengembangan berikutnya. K
 | Hosting aplikasi | Vercel | Deployment Next.js; konfigurasi environment dan rilis ditentukan saat persiapan deployment |
 | Rate limiting | Upstash Redis + `@upstash/ratelimit` | Batas permintaan bersama untuk endpoint publik seperti registration dan upload |
 | Dependency management | npm + `package-lock.json` | Instalasi dan versi dependency yang dapat direproduksi |
-| Email autentikasi | Custom SMTP pada Supabase Auth | Untuk undangan/reset password bila digunakan; provider SMTP belum dipilih |
 
 ## Batas arsitektur
 
@@ -67,8 +66,9 @@ Dokumen ini menetapkan teknologi yang digunakan untuk pengembangan berikutnya. K
 Pada saat keputusan dicatat, manifest repo memuat Next.js 16.3.3, React 19.2.8, TypeScript 5, Tailwind CSS 4, Motion, ikon, utility class, dan ESLint. Integrasi Supabase, Cloudinary, shadcn/ui, form/editor, testing, CI, dan layanan deployment/rate limiting belum ditambahkan oleh keputusan dokumentasi ini.
 
 - Tambahkan dependency saat implementasi modul membutuhkannya, dengan versi yang kompatibel dan tercatat di lockfile.
-- Paket layanan, region, domain, environment, kebijakan backup/retensi, provider SMTP, serta batas upload/rate limit belum dipilih. Persetujuan stack tidak memprovisikan layanan atau mengizinkan pembelian/deployment produksi dengan sendirinya.
-- Notifikasi email applicant tetap future enhancement sesuai PRD; email autentikasi admin merupakan kebutuhan terpisah.
+- Paket layanan, region, domain, environment, kebijakan backup/retensi, serta batas upload/rate limit belum dipilih. Persetujuan stack tidak memprovisikan layanan atau mengizinkan pembelian/deployment produksi dengan sendirinya.
+- Email autentikasi dan Custom SMTP dikeluarkan dari kebutuhan saat ini. Login admin tetap menggunakan email/password Supabase Auth; pengiriman undangan, verifikasi, dan reset password melalui email belum termasuk cakupan. Provisioning akun admin dilakukan secara terkontrol tanpa bergantung pada pengiriman email.
+- Notifikasi email applicant tetap future enhancement sesuai PRD.
 - Keputusan bisnis terbuka di PRD tetap berlaku. Pemilihan teknologi tidak menyelesaikan field registration, kebijakan direktori, atau aturan penempatan anggota.
 
 ## Referensi implementasi
@@ -79,4 +79,4 @@ Pada saat keputusan dicatat, manifest repo memuat Next.js 16.3.3, React 19.2.8, 
 - [shadcn/ui untuk Next.js](https://ui.shadcn.com/docs/installation/next) dan [Tailwind CSS 4](https://ui.shadcn.com/docs/tailwind-v4)
 - [React Hook Form resolvers](https://github.com/react-hook-form/resolvers), [Zod](https://zod.dev/), [Tiptap](https://tiptap.dev/docs/editor/getting-started/overview)
 - [Vitest dengan Next.js](https://nextjs.org/docs/app/guides/testing/vitest), [Playwright dengan Next.js](https://nextjs.org/docs/app/guides/testing/playwright), [GitHub Actions untuk Node.js](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs)
-- [Next.js di Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs), [Upstash rate limiting](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview), [Supabase custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp)
+- [Next.js di Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs), [Upstash rate limiting](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview)
