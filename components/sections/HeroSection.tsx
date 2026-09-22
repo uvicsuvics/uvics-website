@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
-import { ImageStreamHero, StreamImage } from "@/components/sections/ImageStreamHero";
+import {
+  ImageStreamHero,
+  StreamImage,
+} from "@/components/sections/ImageStreamHero";
 
 interface HeroProps {
   eyebrow?: string;
@@ -39,7 +42,6 @@ const ROTATING_PHRASES = [
 ];
 
 export function Hero({
-  subtitle = "Wadah kolaborasi talenta terbaik Ilmu Komputer menuju panggung kompetisi nasional dan internasional.",
   ctaLabel = "Jelajahi Profil Kami",
   ctaHref = "#about",
 }: HeroProps) {

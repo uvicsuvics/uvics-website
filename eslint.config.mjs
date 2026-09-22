@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Artefak lokal dan output browser, bukan source aplikasi atau source tes.
+    ".runtime/**",
+    "test-results/**",
+    "playwright-report/**",
   ]),
 ]);
 

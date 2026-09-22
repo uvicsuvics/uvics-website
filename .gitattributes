@@ -1,0 +1,2 @@
+# Keep applied SQL checksums stable across Windows and Linux checkouts.
+*.sql text eol=lf
