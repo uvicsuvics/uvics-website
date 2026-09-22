@@ -1,0 +1,46 @@
+name: Application checks
+on:
+  pull_request:
+  push:
+    branches: [main, feature/backend-foundation]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: uvics_test
+        ports: ["55437:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d uvics_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      APP_ORIGIN: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_disposable_ci_placeholder
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22.14.0"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:db
+        env:
+          TEST_DATABASE_URL: postgres://postgres:disposable-ci-only@127.0.0.1:55437/uvics_test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -- tests/e2e/auth.spec.ts tests/e2e/public.spec.ts --grep 'guest routes|origin/method|public navigation'
+      # Real Auth/Cloudinary tests are operator-run pre-go-live, never PR secrets.
