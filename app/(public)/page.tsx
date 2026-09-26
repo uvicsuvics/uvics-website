@@ -10,6 +10,7 @@ import { AchievementsSection } from "@/components/sections/AchievementsSection";
 import { NewsSection } from "@/components/sections/NewsSection";
 import { OrganizationPreviewSection } from "@/components/sections/OrganizationPreviewSection";
 import { PartnersSection } from "@/components/sections/PartnersSection";
+import { GallerySection } from "@/components/sections/GallerySection";
 import { JoinCTASection } from "@/components/sections/JoinCTASection";
 
 export default function Home() {
@@ -50,6 +51,9 @@ export default function Home() {
 
       {/* Seksi 12: Partners & Collaborator Network */}
       <PartnersSection />
+
+      {/* Galeri Interaktif Organisasi */}
+      <GallerySection />
 
       {/* Seksi 13: Join UVICS Final CTA */}
       <JoinCTASection />

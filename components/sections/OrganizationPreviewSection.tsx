@@ -93,7 +93,7 @@ export function OrganizationPreviewSection({
               {/* Kutipan Visi / Filosofi */}
               <div className="p-5 space-y-3">
                 <p className="text-xs text-gray-600 italic leading-relaxed line-clamp-3">
-                  "{officer.quote}"
+                  &ldquo;{officer.quote}&rdquo;
                 </p>
               </div>
             </div>

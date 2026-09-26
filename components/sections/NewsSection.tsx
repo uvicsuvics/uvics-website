@@ -6,7 +6,6 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import {
   Newspaper,
-  Calendar,
   Clock,
   ArrowRight,
   ChevronRight,
