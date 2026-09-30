@@ -10,9 +10,9 @@ begin
   insert into public.departments (name, slug) values ('UI/UX', 'ui-ux') returning id into d;
   insert into public.positions (name, level) values ('Member', 'Staff') returning id into p;
   insert into public.organization_periods (name, start_date, end_date, status) values ('2024/2025', '2024-08-01', '2025-07-31', 'ACTIVE') returning id into o;
-  insert into public.members (name) values ('Test Member') returning id into m;
+  insert into public.members (full_name, nim, email, phone, faculty, study_program, batch, status) values ('Test Member', '105000000001', 'testmember@student.unklab.ac.id', '08100000001', 'FIK', 'Informatika', 2023, 'ACTIVE') returning id into m;
   
-  insert into public.membership_histories (member_id, period_id, department_id, position_id)
+  insert into public.membership_histories (member_id, organization_period_id, department_id, position_id)
   values (m, o, d, p);
   
   -- Attempt to delete department
