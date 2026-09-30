@@ -32,25 +32,8 @@ export const organizationPeriodSchema = z.object({
   updated_at: z.string().datetime(),
 });
 
-export const memberSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1).max(120),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
-});
 
-export const membershipHistorySchema = z.object({
-  id: z.string().uuid(),
-  member_id: z.string().uuid(),
-  period_id: z.string().uuid(),
-  department_id: z.string().uuid(),
-  position_id: z.string().uuid(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
-});
 
 export type Department = z.infer<typeof departmentSchema>;
 export type Position = z.infer<typeof positionSchema>;
 export type OrganizationPeriod = z.infer<typeof organizationPeriodSchema>;
-export type Member = z.infer<typeof memberSchema>;
-export type MembershipHistory = z.infer<typeof membershipHistorySchema>;

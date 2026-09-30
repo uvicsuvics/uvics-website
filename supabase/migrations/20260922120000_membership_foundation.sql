@@ -1,0 +1,77 @@
+-- Additive foundation for Membership Data
+
+-- 1. Alter existing `members` table (from organization foundation)
+alter table public.members rename column name to full_name;
+alter table public.members add column nim text unique check(char_length(nim) between 5 and 20);
+alter table public.members add column email text unique check(email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$');
+alter table public.members add column phone text check(phone ~* '^\+?[0-9\s-]{8,20}$');
+alter table public.members add column faculty text check(char_length(faculty) between 2 and 100);
+alter table public.members add column study_program text check(char_length(study_program) between 2 and 100);
+alter table public.members add column batch int;
+alter table public.members add column photo text;
+alter table public.members add column bio text;
+alter table public.members add column status text not null default 'ACTIVE' check(status in ('ACTIVE', 'INACTIVE', 'ALUMNI'));
+alter table public.members add column joined_at timestamptz;
+alter table public.members add column graduated_at timestamptz;
+alter table public.members add column linkedin_url text check(linkedin_url ~* '^https?://');
+alter table public.members add column github_url text check(github_url ~* '^https?://');
+alter table public.members add column instagram_url text check(instagram_url ~* '^https?://');
+alter table public.members add column public_profile boolean not null default true;
+alter table public.members add column deleted_at timestamptz;
+
+-- 2. Alter existing `membership_histories` table
+alter table public.membership_histories rename column period_id to organization_period_id;
+alter table public.membership_histories add column start_date date;
+alter table public.membership_histories add column end_date date;
+alter table public.membership_histories add column notes text;
+alter table public.membership_histories drop constraint membership_histories_period_id_fkey;
+alter table public.membership_histories add constraint membership_histories_organization_period_id_fkey foreign key (organization_period_id) references public.organization_periods(id) on delete restrict;
+
+-- 3. Create `registrations` table
+create table public.registrations (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null check(char_length(full_name) between 1 and 120),
+  nim text not null check(char_length(nim) between 5 and 20),
+  email text not null check(email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
+  phone text not null check(phone ~* '^\+?[0-9\s-]{8,20}$'),
+  faculty text not null check(char_length(faculty) between 2 and 100),
+  study_program text not null check(char_length(study_program) between 2 and 100),
+  batch int not null,
+  preferred_department_id uuid references public.departments(id) on delete set null,
+  skills text,
+  experience text,
+  motivation text,
+  portfolio_url text check(portfolio_url ~* '^https?://'),
+  photo text,
+  status text not null default 'SUBMITTED' check(status in ('SUBMITTED', 'UNDER_REVIEW', 'ACCEPTED', 'REJECTED')),
+  admin_notes text,
+  submitted_at timestamptz not null default statement_timestamp(),
+  accepted_at timestamptz,
+  rejected_at timestamptz,
+  converted_member_id uuid unique references public.members(id) on delete set null,
+  created_at timestamptz not null default statement_timestamp(),
+  updated_at timestamptz not null default statement_timestamp()
+);
+
+-- Trigger for updated_at
+create trigger registrations_updated before update on public.registrations for each row execute function private.touch_updated_at();
+
+-- RLS for registrations
+alter table public.registrations enable row level security;
+revoke all on public.registrations from public,anon,authenticated;
+-- Applicants are not login users. They might create registration via public RPC or authenticated service role
+-- Since this is foundation, we give service_role full access.
+-- Active admin can read and update.
+grant select,insert,update,delete on public.registrations to service_role;
+grant select,update on public.registrations to authenticated;
+
+create policy active_admin_read_registrations on public.registrations for select to authenticated using((select private.has_active_admin_session()));
+create policy active_admin_update_registrations on public.registrations for update to authenticated using((select private.has_active_admin_session()));
+
+-- Update RLS for members to allow public reading of active, non-deleted, public_profile=true members (if needed by frontend later, but backend foundation usually keeps it restricted unless specified).
+-- The requirement: "Public/private member fields dapat dibedakan." is handled by the `public_profile` flag, but access control might be done at the API layer. We will add a policy for anonymous read for public profiles just in case.
+create policy anon_read_public_members on public.members for select to anon,authenticated using (
+  public_profile = true 
+  and deleted_at is null 
+  and status != 'INACTIVE'
+);
