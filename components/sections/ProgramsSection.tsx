@@ -11,7 +11,6 @@ import {
   Users,
   ArrowRight,
   Clock,
-  Target,
   CheckCircle2,
 } from "lucide-react";
 import { ProgramItem, UVICS_PROGRAMS } from "@/data/mock/programs";
@@ -65,17 +64,6 @@ export function ProgramsSection({
       {/* Header Seksi */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
         <div className="max-w-2xl space-y-3">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-primary-50 text-primary text-xs font-semibold tracking-wide uppercase"
-          >
-            <Target className="w-3.5 h-3.5" />
-            <span>Siklus Pembinaan Mahasiswa</span>
-          </motion.div>
-
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -253,52 +241,6 @@ export function ProgramsSection({
           </div>
         </motion.div>
       </AnimatePresence>
-
-      {/* Grid Kompak untuk Seluruh 6 Program di Bagian Bawah */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {programs.map((item, idx) => {
-          const IconComp = PROGRAM_ICONS[item.iconName] || Trophy;
-          const isSelected = activeStep === idx;
-
-          return (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: idx * 0.06 }}
-              onClick={() => setActiveStep(idx)}
-              className={`p-6 rounded-2xl border cursor-pointer transition-all duration-300 flex flex-col justify-between ${
-                isSelected
-                  ? "bg-primary-50/40 border-primary shadow-xs ring-1 ring-primary/30"
-                  : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
-                    <IconComp className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-mono font-bold text-gray-400">
-                    #{item.stepNumber}
-                  </span>
-                </div>
-                <h4 className="text-base font-bold text-gray-900 mb-2 font-heading">
-                  {item.title}
-                </h4>
-                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                  {item.description}
-                </p>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs">
-                <span className="font-semibold text-primary">{item.category}</span>
-                <span className="text-gray-400">{item.frequency}</span>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
     </section>
   );
 }

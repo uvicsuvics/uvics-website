@@ -5,12 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  Trophy,
   Users,
   ArrowRight,
   ExternalLink,
   Award,
-  Globe,
   Clock,
 } from "lucide-react";
 import { CompetitionItem, UVICS_COMPETITIONS } from "@/data/mock/competitions";
@@ -50,17 +48,6 @@ export function CompetitionsSection({
       {/* Header Seksi */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
         <div className="max-w-2xl space-y-3">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-primary-50 text-primary text-xs font-semibold tracking-wide uppercase"
-          >
-            <Trophy className="w-3.5 h-3.5" />
-            <span>Peluang Prestasi Bergengsi</span>
-          </motion.div>
-
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -100,8 +87,6 @@ export function CompetitionsSection({
       {/* Grid 3 Kartu Turnamen */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {displayCompetitions.map((comp, index) => {
-          const isOpen = comp.status === "OPEN";
-
           return (
             <motion.div
               key={comp.id}
@@ -126,24 +111,6 @@ export function CompetitionsSection({
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-950/70 via-transparent to-transparent" />
-
-                  {/* Top Badges */}
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-white/95 backdrop-blur-md text-gray-900 shadow-xs flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-primary" />
-                      <span>{comp.level}</span>
-                    </span>
-
-                    <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-md shadow-xs ${
-                        isOpen
-                          ? "bg-emerald-500 text-white"
-                          : "bg-gray-800 text-gray-200"
-                      }`}
-                    >
-                      {isOpen ? "PENDAFTARAN BUKA" : comp.status}
-                    </span>
-                  </div>
 
                   {/* Bottom Image Overlay: Prize Pool & Countdown */}
                   {comp.prizePool && (

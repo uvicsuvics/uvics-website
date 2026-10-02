@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  Code2,
   ExternalLink,
   ArrowRight,
 } from "lucide-react";
@@ -43,10 +42,6 @@ export function ProjectsSection({
       {/* Header Seksi */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-20">
         <div className="max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-secondary/30 text-gray-900 text-xs font-bold uppercase tracking-wider">
-            <Code2 className="w-3.5 h-3.5 text-primary" />
-            <span>Portofolio Unggulan</span>
-          </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 font-heading">
             Karya Teknologi yang Berdampak
           </h2>

@@ -58,15 +58,6 @@ export function DepartmentsSection({
     <section className="py-24 px-6 md:px-8 max-w-7xl mx-auto w-full">
       {/* Header Seksi Terpusat & Rapi */}
       <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-          className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold tracking-widest uppercase"
-        >
-          <span>Struktur Divisi UVICS</span>
-        </motion.div>
 
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
