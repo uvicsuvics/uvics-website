@@ -99,4 +99,3 @@ begin
  update public.programs set status = 'PUBLISHED' where id = p_id;
 end;$$;
 grant execute on function public.publish_program(uuid) to authenticated;
-
