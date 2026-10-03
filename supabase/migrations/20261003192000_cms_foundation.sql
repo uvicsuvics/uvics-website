@@ -85,18 +85,18 @@ create trigger website_settings_updated before update on public.website_settings
 
 -- RPCs for Publish Logic
 create function public.publish_page(p_id uuid)
-returns void language plpgsql security definer set search_path='' as $$$
+returns void language plpgsql security definer set search_path='' as $$
 begin
  if not private.has_active_admin_session() then raise insufficient_privilege; end if;
  update public.pages set status = 'PUBLISHED', published_at = coalesce(published_at, statement_timestamp()) where id = p_id;
-end;$$$;
+end;$$;
 grant execute on function public.publish_page(uuid) to authenticated;
 
 create function public.publish_program(p_id uuid)
-returns void language plpgsql security definer set search_path='' as $$$
+returns void language plpgsql security definer set search_path='' as $$
 begin
  if not private.has_active_admin_session() then raise insufficient_privilege; end if;
  update public.programs set status = 'PUBLISHED' where id = p_id;
-end;$$$;
+end;$$;
 grant execute on function public.publish_program(uuid) to authenticated;
 
