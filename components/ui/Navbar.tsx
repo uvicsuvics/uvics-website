@@ -136,6 +136,69 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const pathname = usePathname();
 
+  const renderSubItem = (
+    sub: PublicNavSubItem,
+    sIdx: number,
+    onItemClickCb?: () => void,
+    closeDropdownCb?: () => void,
+  ) => {
+    const cleanHref = sub.href.split("#")[0];
+    const isSubActive =
+      cleanHref && cleanHref !== "/"
+        ? pathname === cleanHref || pathname.startsWith(`${cleanHref}/`)
+        : pathname === sub.href;
+
+    return (
+      <Link
+        key={sIdx}
+        href={sub.href}
+        onClick={() => {
+          closeDropdownCb?.();
+          onItemClickCb?.();
+        }}
+        className={cn(
+          "group flex items-start justify-between p-2 rounded-xl transition-all",
+          isSubActive
+            ? "bg-primary-50 text-primary"
+            : "hover:bg-primary-50/70 text-gray-700",
+        )}
+      >
+        <div className="flex-1 pr-2">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "text-xs font-bold transition-colors",
+                isSubActive
+                  ? "text-primary"
+                  : "text-gray-900 group-hover:text-primary",
+              )}
+            >
+              {sub.title}
+            </span>
+            {sub.badge && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200/60">
+                {sub.badge}
+              </span>
+            )}
+          </div>
+          {sub.desc && (
+            <p className="text-[11px] text-gray-500 mt-0.5 leading-snug line-clamp-1">
+              {sub.desc}
+            </p>
+          )}
+        </div>
+        <IconChevronRight
+          size={14}
+          className={cn(
+            "shrink-0 mt-0.5 transition-transform duration-200 text-gray-300 group-hover:text-primary group-hover:translate-x-0.5",
+            isSubActive && "text-primary translate-x-0.5",
+          )}
+          aria-hidden="true"
+        />
+      </Link>
+    );
+  };
+
   return (
     <nav
       onMouseLeave={() => {
@@ -152,6 +215,17 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
         const hasDropdown = Boolean(item.subItems && item.subItems.length > 0);
         const isDropdownOpen = activeDropdown === idx;
         const isActive = isPublicNavItemActive(pathname, item);
+        const isTwoColumn = item.layout === "two-column";
+
+        // Group items if two-column layout
+        const col1Items = isTwoColumn
+          ? item.subItems?.filter(
+              (s) => s.group === "Profil Organisasi" || !s.group
+            ) || []
+          : [];
+        const col2Items = isTwoColumn
+          ? item.subItems?.filter((s) => s.group === "Aktivitas & Media") || []
+          : [];
 
         return (
           <div
@@ -203,7 +277,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
               )}
             </Link>
 
-            {/* Generic Animated Dropdown Menu */}
+            {/* Dropdown Menu */}
             <AnimatePresence>
               {hasDropdown && isDropdownOpen && (
                 <motion.div
@@ -211,79 +285,77 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.96 }}
                   transition={{ duration: 0.16, ease: "easeOut" }}
-                  className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-72 xl:w-80 z-50"
+                  className={cn(
+                    "absolute top-full left-1/2 -translate-x-1/2 pt-2 z-50",
+                    isTwoColumn
+                      ? "w-[500px] xl:w-[540px]"
+                      : "w-72 xl:w-80",
+                  )}
                 >
-                  <div className="bg-white/98 backdrop-blur-xl rounded-2xl p-2.5 shadow-2xl shadow-primary/15 border border-gray-200/90 ring-1 ring-black/5">
-                    {/* Category Header */}
-                    <div className="px-3 py-1.5 mb-1 border-b border-gray-100 flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                        {item.name}
-                      </span>
-                      <span className="text-[10px] font-mono text-primary font-semibold bg-primary-50 px-1.5 py-0.5 rounded">
-                        UVICS
-                      </span>
-                    </div>
+                  <div className="bg-white/98 backdrop-blur-xl rounded-2xl p-3 shadow-2xl shadow-primary/15 border border-gray-200/90 ring-1 ring-black/5">
+                    {isTwoColumn ? (
+                      /* Side-by-side 2-column layout */
+                      <div className="grid grid-cols-2 gap-3 divide-x divide-gray-100">
+                        {/* Column 1: Profil Organisasi */}
+                        <div className="space-y-0.5 pr-1">
+                          <div className="px-2.5 py-1 mb-1 border-b border-gray-100/80 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                              Profil Organisasi
+                            </span>
+                          </div>
+                          {col1Items.map((sub, sIdx) =>
+                            renderSubItem(
+                              sub,
+                              sIdx,
+                              onItemClick,
+                              () => setActiveDropdown(null),
+                            )
+                          )}
+                        </div>
 
-                    {/* Sub-items List */}
-                    <div className="space-y-0.5">
-                      {item.subItems?.map((sub, sIdx) => {
-                        const cleanHref = sub.href.split("#")[0];
-                        const isSubActive =
-                          cleanHref && cleanHref !== "/"
-                            ? pathname === cleanHref || pathname.startsWith(`${cleanHref}/`)
-                            : pathname === sub.href;
-
-                        return (
-                          <Link
-                            key={sIdx}
-                            href={sub.href}
-                            onClick={() => {
-                              setActiveDropdown(null);
-                              onItemClick?.();
-                            }}
-                            className={cn(
-                              "group flex items-start justify-between p-2.5 rounded-xl transition-all",
-                              isSubActive
-                                ? "bg-primary-50 text-primary"
-                                : "hover:bg-primary-50/70 text-gray-700",
-                            )}
-                          >
-                            <div className="flex-1 pr-2">
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={cn(
-                                    "text-xs font-bold transition-colors",
-                                    isSubActive
-                                      ? "text-primary"
-                                      : "text-gray-900 group-hover:text-primary",
-                                  )}
-                                >
-                                  {sub.title}
-                                </span>
-                                {sub.badge && (
-                                  <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200/60">
-                                    {sub.badge}
-                                  </span>
-                                )}
-                              </div>
-                              {sub.desc && (
-                                <p className="text-[11px] text-gray-500 mt-0.5 leading-snug line-clamp-1">
-                                  {sub.desc}
-                                </p>
-                              )}
-                            </div>
-                            <IconChevronRight
-                              size={14}
-                              className={cn(
-                                "shrink-0 mt-0.5 transition-transform duration-200 text-gray-300 group-hover:text-primary group-hover:translate-x-0.5",
-                                isSubActive && "text-primary translate-x-0.5",
-                              )}
-                              aria-hidden="true"
-                            />
-                          </Link>
-                        );
-                      })}
-                    </div>
+                        {/* Column 2: Aktivitas & Media */}
+                        <div className="space-y-0.5 pl-3">
+                          <div className="px-2.5 py-1 mb-1 border-b border-gray-100/80 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                              Aktivitas & Media
+                            </span>
+                            <span className="text-[10px] font-mono text-primary font-semibold bg-primary-50 px-1.5 py-0.5 rounded">
+                              UVICS
+                            </span>
+                          </div>
+                          {col2Items.map((sub, sIdx) =>
+                            renderSubItem(
+                              sub,
+                              sIdx,
+                              onItemClick,
+                              () => setActiveDropdown(null),
+                            )
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Single column layout */
+                      <div>
+                        <div className="px-3 py-1.5 mb-1 border-b border-gray-100 flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            {item.name}
+                          </span>
+                          <span className="text-[10px] font-mono text-primary font-semibold bg-primary-50 px-1.5 py-0.5 rounded">
+                            UVICS
+                          </span>
+                        </div>
+                        <div className="space-y-0.5">
+                          {item.subItems?.map((sub, sIdx) =>
+                            renderSubItem(
+                              sub,
+                              sIdx,
+                              onItemClick,
+                              () => setActiveDropdown(null),
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

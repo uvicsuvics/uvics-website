@@ -5,7 +5,7 @@ import {
 } from "@/config/public-navigation";
 
 describe("public navigation configuration and active link helpers", () => {
-  it("contains all required navigation items matching PRD Bab 2", () => {
+  it("contains all required navigation items without standalone Informasi", () => {
     const itemNames = PUBLIC_NAVIGATION.map((item) => item.name);
     expect(itemNames).toEqual([
       "Beranda",
@@ -15,30 +15,39 @@ describe("public navigation configuration and active link helpers", () => {
       "Kompetisi",
       "Prestasi",
       "Project",
-      "Informasi",
     ]);
   });
 
-  it("configures the 3 PRD dropdown groups with correct sub-items", () => {
+  it("configures Tentang with two-column layout containing Profil and Aktivitas & Media", () => {
     const tentang = PUBLIC_NAVIGATION.find((item) => item.name === "Tentang");
-    expect(tentang?.subItems?.map((s) => s.title)).toEqual([
+    expect(tentang?.layout).toBe("two-column");
+
+    const profilItems = tentang?.subItems?.filter(
+      (s) => s.group === "Profil Organisasi"
+    );
+    expect(profilItems?.map((s) => s.title)).toEqual([
       "Tentang UVICS",
       "Visi & Misi",
       "Departemen",
     ]);
 
+    const aktivitasItems = tentang?.subItems?.filter(
+      (s) => s.group === "Aktivitas & Media"
+    );
+    expect(aktivitasItems?.map((s) => s.title)).toEqual([
+      "Event",
+      "Berita",
+      "Galeri",
+    ]);
+  });
+
+  it("configures Organisasi with single-column layout and correct sub-items", () => {
     const organisasi = PUBLIC_NAVIGATION.find((item) => item.name === "Organisasi");
+    expect(organisasi?.layout).toBe("single-column");
     expect(organisasi?.subItems?.map((s) => s.title)).toEqual([
       "Struktur Organisasi",
       "Member",
       "Alumni",
-    ]);
-
-    const informasi = PUBLIC_NAVIGATION.find((item) => item.name === "Informasi");
-    expect(informasi?.subItems?.map((s) => s.title)).toEqual([
-      "Event",
-      "Berita",
-      "Galeri",
     ]);
   });
 
@@ -46,9 +55,8 @@ describe("public navigation configuration and active link helpers", () => {
     const berandaItem = PUBLIC_NAVIGATION.find((i) => i.name === "Beranda")!;
     const tentangItem = PUBLIC_NAVIGATION.find((i) => i.name === "Tentang")!;
     const kompetisiItem = PUBLIC_NAVIGATION.find((i) => i.name === "Kompetisi")!;
-    const informasiItem = PUBLIC_NAVIGATION.find((i) => i.name === "Informasi")!;
 
-    it("activates Beranda only when exact root path", () => {
+    it("activates Beranda only on exact root path", () => {
       expect(isPublicNavItemActive("/", berandaItem)).toBe(true);
       expect(isPublicNavItemActive("/about", berandaItem)).toBe(false);
       expect(isPublicNavItemActive("/competitions", berandaItem)).toBe(false);
@@ -60,16 +68,21 @@ describe("public navigation configuration and active link helpers", () => {
       expect(isPublicNavItemActive("/events", kompetisiItem)).toBe(false);
     });
 
-    it("activates dropdown parent when any subItem matches", () => {
+    it("activates Tentang for both Profil and merged Aktivitas routes", () => {
+      // Profil routes
       expect(isPublicNavItemActive("/about", tentangItem)).toBe(true);
       expect(isPublicNavItemActive("/departments", tentangItem)).toBe(true);
       expect(isPublicNavItemActive("/departments/web-development", tentangItem)).toBe(true);
-      expect(isPublicNavItemActive("/organization", tentangItem)).toBe(false);
 
-      expect(isPublicNavItemActive("/events", informasiItem)).toBe(true);
-      expect(isPublicNavItemActive("/news", informasiItem)).toBe(true);
-      expect(isPublicNavItemActive("/gallery", informasiItem)).toBe(true);
-      expect(isPublicNavItemActive("/competitions", informasiItem)).toBe(false);
+      // Merged Aktivitas/Media routes
+      expect(isPublicNavItemActive("/events", tentangItem)).toBe(true);
+      expect(isPublicNavItemActive("/events/workshop-ai", tentangItem)).toBe(true);
+      expect(isPublicNavItemActive("/news", tentangItem)).toBe(true);
+      expect(isPublicNavItemActive("/news/artikel-terbaru", tentangItem)).toBe(true);
+      expect(isPublicNavItemActive("/gallery", tentangItem)).toBe(true);
+
+      // Unrelated route
+      expect(isPublicNavItemActive("/programs", tentangItem)).toBe(false);
     });
   });
 });

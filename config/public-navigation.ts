@@ -3,16 +3,19 @@ export interface PublicNavSubItem {
   href: string;
   desc?: string;
   badge?: string;
+  group?: string;
 }
 
 export interface PublicNavItem {
   name: string;
   link: string;
+  layout?: "single-column" | "two-column";
   subItems?: PublicNavSubItem[];
 }
 
 /**
- * Public navigation structure defined in Bab 2 of UVICS Public Website Page Specification.
+ * Public navigation structure for UVICS Platform.
+ * Top-level items: Beranda, Tentang (2-column: Profil & Aktivitas/Media), Organisasi, Program, Kompetisi, Prestasi, Project.
  */
 export const PUBLIC_NAVIGATION: PublicNavItem[] = [
   {
@@ -22,27 +25,52 @@ export const PUBLIC_NAVIGATION: PublicNavItem[] = [
   {
     name: "Tentang",
     link: "/about",
+    layout: "two-column",
     subItems: [
+      // Column 1: Profil Organisasi
       {
         title: "Tentang UVICS",
         href: "/about",
         desc: "Mengenal profil, sejarah, dan identitas UVICS",
+        group: "Profil Organisasi",
       },
       {
         title: "Visi & Misi",
         href: "/about#visi-misi",
         desc: "Nilai luhur dan komitmen pengembangan talenta",
+        group: "Profil Organisasi",
       },
       {
         title: "Departemen",
         href: "/departments",
         desc: "Divisi kerja, bidang fokus, dan unit operasional",
+        group: "Profil Organisasi",
+      },
+      // Column 2: Aktivitas & Media
+      {
+        title: "Event",
+        href: "/events",
+        desc: "Agenda seminar, workshop, dan kegiatan teknologi",
+        group: "Aktivitas & Media",
+      },
+      {
+        title: "Berita",
+        href: "/news",
+        desc: "Kabar terbaru, siaran pers, dan pengumuman",
+        group: "Aktivitas & Media",
+      },
+      {
+        title: "Galeri",
+        href: "/gallery",
+        desc: "Dokumentasi visual kegiatan dan momen komunitas",
+        group: "Aktivitas & Media",
       },
     ],
   },
   {
     name: "Organisasi",
     link: "/organization",
+    layout: "single-column",
     subItems: [
       {
         title: "Struktur Organisasi",
@@ -76,27 +104,6 @@ export const PUBLIC_NAVIGATION: PublicNavItem[] = [
   {
     name: "Project",
     link: "/projects",
-  },
-  {
-    name: "Informasi",
-    link: "/events",
-    subItems: [
-      {
-        title: "Event",
-        href: "/events",
-        desc: "Agenda seminar, workshop, dan bootcamp teknologi",
-      },
-      {
-        title: "Berita",
-        href: "/news",
-        desc: "Kabar terbaru, siaran pers, dan pengumuman",
-      },
-      {
-        title: "Galeri",
-        href: "/gallery",
-        desc: "Dokumentasi visual kegiatan dan momen komunitas",
-      },
-    ],
   },
 ];
 

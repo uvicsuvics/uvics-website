@@ -18,6 +18,7 @@ import {
 import {
   PUBLIC_NAVIGATION,
   isPublicNavItemActive,
+  type PublicNavSubItem,
 } from "@/config/public-navigation";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,35 @@ export function SiteHeader() {
 
   const toggleSection = (name: string) => {
     setExpandedSection((prev) => (prev === name ? null : name));
+  };
+
+  const renderMobileSubItem = (sub: PublicNavSubItem, sIdx: number) => {
+    const cleanHref = sub.href.split("#")[0];
+    const isSubActive =
+      cleanHref && cleanHref !== "/"
+        ? pathname === cleanHref || pathname.startsWith(`${cleanHref}/`)
+        : pathname === sub.href;
+
+    return (
+      <Link
+        key={sIdx}
+        href={sub.href}
+        onClick={() => setIsOpen(false)}
+        className={cn(
+          "flex flex-col py-1.5 px-2.5 rounded-lg transition-colors",
+          isSubActive
+            ? "bg-primary-50 text-primary font-semibold"
+            : "text-gray-600 hover:bg-gray-50 hover:text-primary",
+        )}
+      >
+        <span className="text-xs font-semibold">{sub.title}</span>
+        {sub.desc && (
+          <span className="text-[11px] text-gray-400 line-clamp-1">
+            {sub.desc}
+          </span>
+        )}
+      </Link>
+    );
   };
 
   return (
@@ -104,37 +134,41 @@ export function SiteHeader() {
 
                   {/* Sub-items List (Expandable) */}
                   {isExpanded && (
-                    <div className="my-1 ml-4 pl-3 space-y-1 border-l-2 border-primary/25">
-                      {item.subItems?.map((sub, sIdx) => {
-                        const cleanHref = sub.href.split("#")[0];
-                        const isSubActive =
-                          cleanHref && cleanHref !== "/"
-                            ? pathname === cleanHref || pathname.startsWith(`${cleanHref}/`)
-                            : pathname === sub.href;
-
-                        return (
-                          <Link
-                            key={sIdx}
-                            href={sub.href}
-                            onClick={() => setIsOpen(false)}
-                            className={cn(
-                              "flex flex-col py-1.5 px-2.5 rounded-lg transition-colors",
-                              isSubActive
-                                ? "bg-primary-50 text-primary font-semibold"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-primary",
-                            )}
-                          >
-                            <span className="text-xs font-semibold">
-                              {sub.title}
+                    <div className="my-1 ml-4 pl-3 space-y-2 border-l-2 border-primary/25">
+                      {item.layout === "two-column" ? (
+                        <>
+                          {/* Group 1: Profil Organisasi */}
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-2.5">
+                              Profil Organisasi
                             </span>
-                            {sub.desc && (
-                              <span className="text-[11px] text-gray-400 line-clamp-1">
-                                {sub.desc}
-                              </span>
-                            )}
-                          </Link>
-                        );
-                      })}
+                            {item.subItems
+                              ?.filter(
+                                (s) =>
+                                  s.group === "Profil Organisasi" || !s.group,
+                              )
+                              .map((sub, sIdx) =>
+                                renderMobileSubItem(sub, sIdx),
+                              )}
+                          </div>
+
+                          {/* Group 2: Aktivitas & Media */}
+                          <div className="space-y-1 pt-1.5 border-t border-gray-100">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-2.5">
+                              Aktivitas & Media
+                            </span>
+                            {item.subItems
+                              ?.filter((s) => s.group === "Aktivitas & Media")
+                              .map((sub, sIdx) =>
+                                renderMobileSubItem(sub, sIdx),
+                              )}
+                          </div>
+                        </>
+                      ) : (
+                        item.subItems?.map((sub, sIdx) =>
+                          renderMobileSubItem(sub, sIdx),
+                        )
+                      )}
                     </div>
                   )}
                 </div>
