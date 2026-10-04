@@ -418,7 +418,7 @@ export type Database = {
       };
     };
     Views: {
-      [key: string]: any;
+      [key: string]: never;
     };
     Functions: {
       begin_media_publication: {
@@ -506,7 +506,7 @@ export type Database = {
       project_status: "PLANNED" | "ONGOING" | "COMPLETED" | "ARCHIVED";
     };
     CompositeTypes: {
-      [key: string]: any;
+      [key: string]: never;
     };
   };
 };

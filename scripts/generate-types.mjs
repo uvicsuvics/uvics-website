@@ -38,7 +38,7 @@ if (result.status !== 0 || !result.stdout.includes("export type Database")) {
   mkdirSync("types", { recursive: true });
   const patchedStdout = result.stdout.replace(
     /\[_ in never\]: never/g,
-    "[key: string]: any"
+    "[key: string]: never"
   );
   writeFileSync("types/database.ts", patchedStdout);
   console.log("Database types generated from verified target public schema.");

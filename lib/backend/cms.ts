@@ -87,7 +87,7 @@ export async function getPublicCompetitions(query: ContentQuery) {
     dbQuery = dbQuery.ilike("title", `%${q.search}%`);
   }
   if (q.status) {
-    dbQuery = dbQuery.eq("status", q.status);
+    dbQuery = dbQuery.eq("status", q.status as z.infer<typeof competitionStatusSchema>);
   }
   if (q.category) {
     dbQuery = dbQuery.eq("category", q.category);
@@ -146,7 +146,7 @@ export async function getPublicProjects(query: ContentQuery) {
     dbQuery = dbQuery.ilike("title", `%${q.search}%`);
   }
   if (q.status) {
-    dbQuery = dbQuery.eq("status", q.status);
+    dbQuery = dbQuery.eq("status", q.status as z.infer<typeof projectStatusSchema>);
   }
 
   const { data, error, count } = await dbQuery
