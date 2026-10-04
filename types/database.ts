@@ -80,6 +80,213 @@ export type Database = {
           },
         ];
       };
+      competitions: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          organizer: string;
+          description: string;
+          category: string | null;
+          level: string | null;
+          registration_deadline: string | null;
+          competition_date: string | null;
+          registration_url: string | null;
+          guidebook_url: string | null;
+          poster_url: string | null;
+          team_size: string | null;
+          eligibility: string | null;
+          status: string;
+          featured: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          organizer: string;
+          description?: string;
+          category?: string | null;
+          level?: string | null;
+          registration_deadline?: string | null;
+          competition_date?: string | null;
+          registration_url?: string | null;
+          guidebook_url?: string | null;
+          poster_url?: string | null;
+          team_size?: string | null;
+          eligibility?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          organizer?: string;
+          description?: string;
+          category?: string | null;
+          level?: string | null;
+          registration_deadline?: string | null;
+          competition_date?: string | null;
+          registration_url?: string | null;
+          guidebook_url?: string | null;
+          poster_url?: string | null;
+          team_size?: string | null;
+          eligibility?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Relationships: [];
+      };
+      achievements: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          competition_name: string;
+          organizer: string | null;
+          level: string | null;
+          ranking: string;
+          achievement_date: string;
+          description: string;
+          cover_image: string | null;
+          certificate_file: string | null;
+          published: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          competition_name: string;
+          organizer?: string | null;
+          level?: string | null;
+          ranking: string;
+          achievement_date: string;
+          description?: string;
+          cover_image?: string | null;
+          certificate_file?: string | null;
+          published?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          competition_name?: string;
+          organizer?: string | null;
+          level?: string | null;
+          ranking?: string;
+          achievement_date?: string;
+          description?: string;
+          cover_image?: string | null;
+          certificate_file?: string | null;
+          published?: boolean;
+        };
+        Relationships: [];
+      };
+      projects: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          summary: string;
+          description: string;
+          cover_image: string | null;
+          project_url: string | null;
+          repository_url: string | null;
+          start_date: string | null;
+          end_date: string | null;
+          status: string;
+          featured: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          summary: string;
+          description?: string;
+          cover_image?: string | null;
+          project_url?: string | null;
+          repository_url?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          summary?: string;
+          description?: string;
+          cover_image?: string | null;
+          project_url?: string | null;
+          repository_url?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Relationships: [];
+      };
+      achievement_members: {
+        Row: {
+          id: string;
+          achievement_id: string;
+          member_name: string;
+          role: string;
+        };
+        Insert: {
+          id?: string;
+          achievement_id: string;
+          member_name: string;
+          role: string;
+        };
+        Update: {
+          id?: string;
+          achievement_id?: string;
+          member_name?: string;
+          role?: string;
+        };
+        Relationships: [];
+      };
+      project_members: {
+        Row: {
+          id: string;
+          project_id: string;
+          member_name: string;
+          role: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          member_name: string;
+          role: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          member_name?: string;
+          role?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -257,7 +464,7 @@ export type Enums<
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    ? DefaultSchema["Enums"][EnumName]
     : never;
 
 export type CompositeTypes<
@@ -267,14 +474,14 @@ export type CompositeTypes<
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    ? DefaultSchema["CompositeTypes"][CompositeTypeName]
     : never;
 
 export const Constants = {
