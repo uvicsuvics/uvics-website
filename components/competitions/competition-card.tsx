@@ -36,48 +36,67 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
   return (
     <div
       className={cn(
-        'flex flex-col w-full bg-card border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 ease-standard overflow-hidden',
+        'group flex flex-col h-full w-full bg-card border border-gray-200/90 rounded-2xl shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300 transition-all duration-200 ease-standard overflow-hidden',
         className
       )}
     >
-      <div className="relative w-full h-48 bg-primary-50">
+      {/* Poster Media Box with Stable Aspect Ratio */}
+      <div className="relative w-full aspect-16/10 bg-primary-50/60 overflow-hidden">
         {poster ? (
           <Image
             src={poster}
             alt={`Poster ${title}`}
             fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-103"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
-          <div className="flex items-center justify-center w-full h-full">
-            <Trophy className="w-12 h-12 text-primary-200" />
+          <div className="flex items-center justify-center w-full h-full bg-primary-50">
+            <Trophy className="w-12 h-12 text-primary-200" aria-hidden="true" />
           </div>
         )}
-        <StatusBadge status={status} className="absolute top-3 right-3 shadow-sm" />
+        <div className="absolute top-3 right-3 shadow-xs">
+          <StatusBadge status={status} />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3 p-4">
-        <div className="flex items-center gap-2">
+      {/* Card Content Body */}
+      <div className="flex flex-col flex-1 p-5 gap-3">
+        {/* Category & Level Badges */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           <Badge variant="primary">{category}</Badge>
           <Badge variant="secondary">{level}</Badge>
         </div>
 
-        <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">{title}</h3>
+        {/* Title */}
+        <h3 className="text-base sm:text-lg font-bold text-gray-900 font-heading line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+          {title}
+        </h3>
 
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Building2 className="w-4 h-4 shrink-0" />
-          <span className="line-clamp-1">{organizer}</span>
+        {/* Meta Info: Organizer & Deadline */}
+        <div className="space-y-1.5 pt-1 text-xs sm:text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-hidden="true" />
+            <span className="line-clamp-1">{organizer}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-hidden="true" />
+            <span className="truncate">Deadline: {formatDeadline(registrationDeadline)}</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Calendar className="w-4 h-4 shrink-0" />
-          <span>Deadline: {formatDeadline(registrationDeadline)}</span>
+        {/* Card CTA: Pushed to bottom for consistent height */}
+        <div className="mt-auto pt-3 border-t border-gray-100">
+          <Button
+            href={`/competitions/${slug}`}
+            variant="outline"
+            size="sm"
+            className="w-full text-xs sm:text-sm font-semibold border-primary/30 text-primary hover:bg-primary hover:text-white hover:border-primary transition-colors shadow-2xs"
+          >
+            Lihat Detail
+          </Button>
         </div>
-
-        <Button href={`/competitions/${slug}`} variant="primary" size="md" className="mt-2 w-full">
-          Lihat Detail
-        </Button>
       </div>
     </div>
   );
