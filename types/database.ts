@@ -9,6 +9,89 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      achievement_members: {
+        Row: {
+          achievement_id: string;
+          created_at: string;
+          id: string;
+          member_name: string;
+          role: string | null;
+        };
+        Insert: {
+          achievement_id: string;
+          created_at?: string;
+          id?: string;
+          member_name: string;
+          role?: string | null;
+        };
+        Update: {
+          achievement_id?: string;
+          created_at?: string;
+          id?: string;
+          member_name?: string;
+          role?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "achievement_members_achievement_id_fkey";
+            columns: ["achievement_id"];
+            isOneToOne: false;
+            referencedRelation: "achievements";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      achievements: {
+        Row: {
+          certificate_file: string | null;
+          competition_name: string;
+          cover_image: string | null;
+          created_at: string;
+          description: string;
+          id: string;
+          level: string | null;
+          organizer: string | null;
+          published: boolean;
+          ranking: string;
+          slug: string;
+          achievement_date: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          certificate_file?: string | null;
+          competition_name: string;
+          cover_image?: string | null;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          level?: string | null;
+          organizer?: string | null;
+          published?: boolean;
+          ranking: string;
+          slug: string;
+          achievement_date: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          certificate_file?: string | null;
+          competition_name?: string;
+          cover_image?: string | null;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          level?: string | null;
+          organizer?: string | null;
+          published?: boolean;
+          ranking?: string;
+          slug?: string;
+          achievement_date?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       admins: {
         Row: {
           created_at: string;
@@ -80,9 +163,262 @@ export type Database = {
           },
         ];
       };
+      competitions: {
+        Row: {
+          category: string | null;
+          competition_date: string | null;
+          created_at: string;
+          description: string;
+          eligibility: string | null;
+          featured: boolean;
+          guidebook_url: string | null;
+          id: string;
+          level: string | null;
+          organizer: string;
+          poster_url: string | null;
+          registration_deadline: string | null;
+          registration_url: string | null;
+          slug: string;
+          status: Database["public"]["Enums"]["competition_status"];
+          team_size: string | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          category?: string | null;
+          competition_date?: string | null;
+          created_at?: string;
+          description?: string;
+          eligibility?: string | null;
+          featured?: boolean;
+          guidebook_url?: string | null;
+          id?: string;
+          level?: string | null;
+          organizer: string;
+          poster_url?: string | null;
+          registration_deadline?: string | null;
+          registration_url?: string | null;
+          slug: string;
+          status?: Database["public"]["Enums"]["competition_status"];
+          team_size?: string | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string | null;
+          competition_date?: string | null;
+          created_at?: string;
+          description?: string;
+          eligibility?: string | null;
+          featured?: boolean;
+          guidebook_url?: string | null;
+          id?: string;
+          level?: string | null;
+          organizer?: string;
+          poster_url?: string | null;
+          registration_deadline?: string | null;
+          registration_url?: string | null;
+          slug?: string;
+          status?: Database["public"]["Enums"]["competition_status"];
+          team_size?: string | null;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      pages: {
+        Row: {
+          content: string;
+          created_at: string;
+          id: string;
+          meta_description: string | null;
+          meta_title: string | null;
+          published_at: string | null;
+          slug: string;
+          status: Database["public"]["Enums"]["content_status"];
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          content?: string;
+          created_at?: string;
+          id?: string;
+          meta_description?: string | null;
+          meta_title?: string | null;
+          published_at?: string | null;
+          slug: string;
+          status?: Database["public"]["Enums"]["content_status"];
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          id?: string;
+          meta_description?: string | null;
+          meta_title?: string | null;
+          published_at?: string | null;
+          slug?: string;
+          status?: Database["public"]["Enums"]["content_status"];
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      programs: {
+        Row: {
+          created_at: string;
+          description: string;
+          display_order: number;
+          id: string;
+          image: string | null;
+          name: string;
+          short_description: string | null;
+          slug: string;
+          status: Database["public"]["Enums"]["content_status"];
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string;
+          display_order?: number;
+          id?: string;
+          image?: string | null;
+          name: string;
+          short_description?: string | null;
+          slug: string;
+          status?: Database["public"]["Enums"]["content_status"];
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string;
+          display_order?: number;
+          id?: string;
+          image?: string | null;
+          name?: string;
+          short_description?: string | null;
+          slug?: string;
+          status?: Database["public"]["Enums"]["content_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      project_members: {
+        Row: {
+          created_at: string;
+          id: string;
+          member_name: string;
+          project_id: string;
+          role: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          member_name: string;
+          project_id: string;
+          role?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          member_name?: string;
+          project_id?: string;
+          role?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      projects: {
+        Row: {
+          cover_image: string | null;
+          created_at: string;
+          description: string;
+          end_date: string | null;
+          featured: boolean;
+          id: string;
+          project_url: string | null;
+          repository_url: string | null;
+          slug: string;
+          start_date: string | null;
+          status: Database["public"]["Enums"]["project_status"];
+          summary: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          cover_image?: string | null;
+          created_at?: string;
+          description?: string;
+          end_date?: string | null;
+          featured?: boolean;
+          id?: string;
+          project_url?: string | null;
+          repository_url?: string | null;
+          slug: string;
+          start_date?: string | null;
+          status?: Database["public"]["Enums"]["project_status"];
+          summary: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          cover_image?: string | null;
+          created_at?: string;
+          description?: string;
+          end_date?: string | null;
+          featured?: boolean;
+          id?: string;
+          project_url?: string | null;
+          repository_url?: string | null;
+          slug?: string;
+          start_date?: string | null;
+          status?: Database["public"]["Enums"]["project_status"];
+          summary?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      website_settings: {
+        Row: {
+          key: string;
+          updated_at: string;
+          updated_by: string | null;
+          value: Json;
+        };
+        Insert: {
+          key: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          value?: Json;
+        };
+        Update: {
+          key?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          value?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "website_settings_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "admins";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
-      [_ in never]: never;
+      [key: string]: any;
     };
     Functions: {
       begin_media_publication: {
@@ -141,6 +477,14 @@ export type Database = {
         Returns: Json;
       };
       has_active_admin_session: { Args: never; Returns: boolean };
+      publish_page: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
+      publish_program: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
       read_upload_intent: {
         Args: { p_actor: string; p_intent: string; p_session: string };
         Returns: Json;
@@ -152,10 +496,17 @@ export type Database = {
       };
     };
     Enums: {
-      [_ in never]: never;
+      competition_status:
+        | "UPCOMING"
+        | "OPEN"
+        | "CLOSED"
+        | "ONGOING"
+        | "FINISHED";
+      content_status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+      project_status: "PLANNED" | "ONGOING" | "COMPLETED" | "ARCHIVED";
     };
     CompositeTypes: {
-      [_ in never]: never;
+      [key: string]: any;
     };
   };
 };
@@ -279,6 +630,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      competition_status: [
+        "UPCOMING",
+        "OPEN",
+        "CLOSED",
+        "ONGOING",
+        "FINISHED",
+      ],
+      content_status: ["DRAFT", "PUBLISHED", "ARCHIVED"],
+      project_status: ["PLANNED", "ONGOING", "COMPLETED", "ARCHIVED"],
+    },
   },
 } as const;

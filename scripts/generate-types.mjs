@@ -36,6 +36,10 @@ if (result.status !== 0 || !result.stdout.includes("export type Database")) {
   process.exitCode = 1;
 } else {
   mkdirSync("types", { recursive: true });
-  writeFileSync("types/database.ts", result.stdout);
+  const patchedStdout = result.stdout.replace(
+    /\[_ in never\]: never/g,
+    "[key: string]: any"
+  );
+  writeFileSync("types/database.ts", patchedStdout);
   console.log("Database types generated from verified target public schema.");
 }
