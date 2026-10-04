@@ -358,12 +358,8 @@ export type Database = {
         Returns: undefined;
       };
     };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
+    Enums: Record<string, unknown>;
+    CompositeTypes: Record<string, unknown>;
   };
 };
 
@@ -453,35 +449,38 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Enums"] & Record<string, unknown>)
+    | { schema: keyof DatabaseWithoutInternals } = never,
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : keyof (DefaultSchema["Enums"] & Record<string, unknown>)) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof (DefaultSchema["Enums"] &
+      Record<string, unknown>)
+    ? (DefaultSchema["Enums"] & Record<string, unknown>)[EnumName]
     : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["CompositeTypes"] & Record<string, unknown>)
+    | { schema: keyof DatabaseWithoutInternals } = never,
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : keyof (DefaultSchema["CompositeTypes"] & Record<string, unknown>)) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof (DefaultSchema["CompositeTypes"] &
+      Record<string, unknown>)
+    ? (DefaultSchema["CompositeTypes"] & Record<string, unknown>)[CompositeTypeName]
     : never;
 
 export const Constants = {
