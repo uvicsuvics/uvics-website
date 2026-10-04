@@ -319,9 +319,6 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
                             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
                               Aktivitas & Media
                             </span>
-                            <span className="text-[10px] font-mono text-primary font-semibold bg-primary-50 px-1.5 py-0.5 rounded">
-                              UVICS
-                            </span>
                           </div>
                           {col2Items.map((sub, sIdx) =>
                             renderSubItem(
@@ -339,9 +336,6 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
                         <div className="px-3 py-1.5 mb-1 border-b border-gray-100 flex items-center justify-between">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
                             {item.name}
-                          </span>
-                          <span className="text-[10px] font-mono text-primary font-semibold bg-primary-50 px-1.5 py-0.5 rounded">
-                            UVICS
                           </span>
                         </div>
                         <div className="space-y-0.5">
