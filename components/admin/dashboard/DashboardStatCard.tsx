@@ -13,7 +13,7 @@ export interface DashboardStatCardProps {
 const ICON_VARIANTS = {
   primary: "bg-primary-50 text-primary border-primary-100/60",
   accent: "bg-accent/10 text-accent border-accent/20",
-  warning: "bg-amber-50 text-amber-700 border-amber-200/60",
+  warning: "bg-warning/10 text-warning border-warning/20",
 } as const;
 
 export function DashboardStatCard({

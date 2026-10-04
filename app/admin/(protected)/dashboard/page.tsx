@@ -68,7 +68,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       {/* 1. Page Header */}
       <AdminPageHeader
-        title="Dashboard"
+        title="Dashboard Admin"
         description={
           <span>
             Selamat datang kembali,{" "}

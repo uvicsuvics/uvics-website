@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ADMIN_NAVIGATION } from "@/config/admin-navigation";
+import { ADMIN_NAVIGATION, isAdminNavItemActive } from "@/config/admin-navigation";
 import { cn } from "@/lib/utils";
 
 export function AdminSidebar({ className }: { className?: string }) {
@@ -11,15 +12,20 @@ export function AdminSidebar({ className }: { className?: string }) {
   return (
     <aside
       className={cn(
-        "flex h-full w-64 flex-col border-r border-gray-200 bg-white select-none",
+        "sticky top-0 flex h-screen w-64 flex-col border-r border-gray-200 bg-white select-none shrink-0",
         className
       )}
     >
       {/* Brand Header */}
-      <div className="flex h-14 items-center gap-2.5 border-b border-gray-200 px-5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-white font-bold text-xs shadow-xs">
-          U
-        </div>
+      <div className="flex h-14 items-center gap-2.5 border-b border-gray-200 px-5 shrink-0">
+        <Image
+          src="/logo/logo_uvics.webp"
+          alt="UVICS Logo"
+          width={28}
+          height={28}
+          className="h-7 w-7 object-contain"
+          priority
+        />
         <div className="flex flex-col leading-none">
           <span className="font-heading text-sm font-bold tracking-tight text-gray-900">
             UVICS
@@ -41,7 +47,7 @@ export function AdminSidebar({ className }: { className?: string }) {
             )}
             <ul className="space-y-0.5">
               {section.items.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = isAdminNavItemActive(pathname, item.href);
                 const Icon = item.icon;
                 return (
                   <li key={item.href}>
@@ -72,7 +78,7 @@ export function AdminSidebar({ className }: { className?: string }) {
       </nav>
 
       {/* Footer Info */}
-      <div className="border-t border-gray-100 p-3 text-center">
+      <div className="border-t border-gray-100 p-3 text-center shrink-0">
         <p className="text-[11px] text-gray-400">UVICS Platform · v1.0</p>
       </div>
     </aside>
