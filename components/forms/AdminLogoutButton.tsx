@@ -2,15 +2,29 @@
 import { useState, useTransition } from "react";
 import { logoutAction } from "@/app/admin/actions";
 import { Button } from "@/components/ui/Button";
-export function AdminLogoutButton() {
+import { cn } from "@/lib/utils";
+
+interface AdminLogoutButtonProps {
+  size?: "sm" | "md" | "lg" | "xl";
+  className?: string;
+}
+
+export function AdminLogoutButton({
+  size = "sm",
+  className,
+}: AdminLogoutButtonProps = {}) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   return (
     <div>
       <Button
         variant="outline"
+        size={size}
         disabled={pending}
-        className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        className={cn(
+          "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary",
+          className
+        )}
         onClick={() =>
           startTransition(async () => {
             setError("");
@@ -22,7 +36,7 @@ export function AdminLogoutButton() {
         {pending ? "Keluar…" : "Keluar dari sesi ini"}
       </Button>
       {error && (
-        <p role="alert" className="mt-3 text-sm text-error">
+        <p role="alert" className="mt-2 text-xs text-error">
           {error}
         </p>
       )}
