@@ -41,7 +41,7 @@ export function AdminSidebar({ className }: { className?: string }) {
         {ADMIN_NAVIGATION.map((section, idx) => (
           <div key={idx} className="space-y-0.5">
             {section.title && (
-              <p className="px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                 {section.title}
               </p>
             )}
@@ -54,7 +54,7 @@ export function AdminSidebar({ className }: { className?: string }) {
                     <Link
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                        "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                         isActive
                           ? "bg-primary-50 text-primary font-semibold"
                           : "text-gray-600 hover:bg-gray-100/80 hover:text-gray-900"
@@ -62,7 +62,7 @@ export function AdminSidebar({ className }: { className?: string }) {
                     >
                       <Icon
                         className={cn(
-                          "h-4 w-4 shrink-0 transition-colors",
+                          "h-4.5 w-4.5 shrink-0 transition-colors",
                           isActive ? "text-primary" : "text-gray-400 group-hover:text-gray-600"
                         )}
                         aria-hidden="true"
