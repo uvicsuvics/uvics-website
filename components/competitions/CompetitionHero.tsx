@@ -7,7 +7,7 @@ export function CompetitionHero() {
       <div className="absolute inset-0 z-0">
         <Image
           src="/images/img/foto-1.webp"
-          alt="Anggota UVICS berkolaborasi di ajang kompetisi teknologi"
+          alt="Anggota UVICS berkolaborasi dalam persiapan kompetisi dan delegasi mahasiswa"
           fill
           priority
           sizes="100vw"
@@ -30,12 +30,12 @@ export function CompetitionHero() {
       <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-4xl mx-auto px-6 py-20 md:py-24 w-full">
         {/* Heading Utama */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white font-heading leading-tight sm:leading-tight drop-shadow-md">
-          Kompetisi Teknologi <span className="text-blue-400 drop-shadow-[0_2px_16px_rgba(0,102,255,0.45)]">UVICS</span>
+          Kompetisi & Kejuaraan <span className="text-blue-400 drop-shadow-[0_2px_16px_rgba(0,102,255,0.45)]">UVICS</span>
         </h1>
 
-        {/* Deskripsi Subtitle yang Lebih Profesional */}
+        {/* Deskripsi Subtitle yang Inklusif (Teknologi & Bisnis) */}
         <p className="mt-4 sm:mt-5 max-w-3xl text-sm sm:text-base md:text-lg text-slate-200 leading-relaxed font-sans drop-shadow-sm">
-          Wadah akselerasi talenta komputasi Universitas Klabat untuk menguji kapabilitas inovasi, membangun sinergi tim delegasi, dan menorehkan keunggulan kompetitif pada ajang teknologi bereputasi nasional hingga internasional.
+          Wadah akselerasi talenta Universitas Klabat untuk menguji kapabilitas inovasi, membangun sinergi tim delegasi, dan menorehkan prestasi kompetitif pada berbagai ajang bereputasi nasional hingga internasional.
         </p>
       </div>
     </section>
