@@ -2,21 +2,13 @@ import React from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { AdminMobileNav } from "./AdminMobileNav";
-import { AdminLogoutButton } from "@/components/forms/AdminLogoutButton";
+import { AdminUserDropdown } from "./AdminUserDropdown";
 
 interface AdminTopbarProps {
   adminName: string;
 }
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
 export function AdminTopbar({ adminName }: AdminTopbarProps) {
-  const initials = getInitials(adminName);
-
   return (
     <header className="sticky top-0 z-20 flex h-14 w-full items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
       {/* Left: Mobile Toggle & Breadcrumb */}
@@ -29,7 +21,7 @@ export function AdminTopbar({ adminName }: AdminTopbarProps) {
         </nav>
       </div>
 
-      {/* Right: Quick actions & Admin Profile */}
+      {/* Right: Quick actions & Admin Profile Dropdown */}
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Lihat Website */}
         <Link
@@ -44,22 +36,8 @@ export function AdminTopbar({ adminName }: AdminTopbarProps) {
 
         <div className="h-4 w-px bg-gray-200" aria-hidden="true" />
 
-        {/* User Badge & Logout */}
-        <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-50 text-[11px] font-bold text-primary border border-primary-100"
-            title={adminName}
-            aria-hidden="true"
-          >
-            {initials}
-          </div>
-          <span className="hidden text-xs font-semibold text-gray-700 sm:inline-block max-w-[120px] truncate">
-            {adminName}
-          </span>
-          <div className="shrink-0">
-            <AdminLogoutButton size="sm" />
-          </div>
-        </div>
+        {/* Profile Dropdown with embedded Logout */}
+        <AdminUserDropdown adminName={adminName} />
       </div>
     </header>
   );
