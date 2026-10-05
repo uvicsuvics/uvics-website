@@ -25,7 +25,7 @@ vi.mock("@/lib/media/cloudinary", () => ({
   protectedUrl: () => "https://provider.invalid/protected",
 }));
 vi.mock("@/lib/media/intent", () => ({ parseIntent: (data: unknown) => data }));
-import { publishMedia } from "@/lib/media/publication";
+import { publishMedia } from "@/src/lib/media/publication";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 const client = createClient<Database>(

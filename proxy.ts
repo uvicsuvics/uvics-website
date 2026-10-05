@@ -1,9 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { publicEnv } from "@/lib/env/public";
-import { appOrigin } from "@/lib/env/server";
-import { PRIVATE_HEADERS, httpFailure, AppError } from "@/lib/backend/errors";
-import { assertOrigin } from "@/lib/backend/request";
+import { publicEnv } from "@/src/lib/env/public";
+import { appOrigin } from "@/src/lib/env/server";
+import {
+  PRIVATE_HEADERS,
+  httpFailure,
+  AppError,
+} from "@/src/lib/backend/errors";
+import { assertOrigin } from "@/src/lib/backend/request";
 import type { Database } from "@/types/database";
 export async function proxy(request: NextRequest) {
   // Tolak mutasi lintas origin sebelum refresh token atau efek provider lain.

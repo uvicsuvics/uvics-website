@@ -5,7 +5,7 @@ vi.mock("@/lib/env/server", () => ({
   rateNamespace: () => "test",
   serviceKey: () => "synthetic-hmac-key",
 }));
-import { consumeLimit, limitLogin } from "@/lib/backend/rate-limit";
+import { consumeLimit, limitLogin } from "@/src/lib/backend/rate-limit";
 
 describe("limiter failure policy", () => {
   beforeEach(() => rpc.mockReset());
