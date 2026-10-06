@@ -1,14 +1,25 @@
 import pg from "pg";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import assert from "node:assert/strict";
 const directory = mkdtempSync(join(tmpdir(), "uvics-db-"));
+const defaultWinBin =
+  [
+    "C:/Program Files/PostgreSQL/18/bin",
+    "C:/Program Files/PostgreSQL/17/bin",
+  ].find((p) => {
+    try {
+      return existsSync(p);
+    } catch {
+      return false;
+    }
+  }) || "C:/Program Files/PostgreSQL/17/bin";
 const bin =
   process.env.PG_BIN ||
   (process.platform === "win32"
-    ? "C:/Program Files/PostgreSQL/17/bin"
+    ? defaultWinBin
     : "/usr/lib/postgresql/17/bin");
 const port = Number(process.env.TEST_PG_PORT || 55437);
 const external = process.env.TEST_DATABASE_URL;

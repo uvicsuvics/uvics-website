@@ -16,14 +16,16 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.positions (id, name, description, level, display_order, active)
 VALUES
   ('00000000-0000-4000-8000-000000000201', 'President', 'Head of the organization', 'Executive', 1, true),
-  ('00000000-0000-4000-8000-000000000202', 'Vice President', 'Assistant head', 'Executive', 2, true),
-  ('00000000-0000-4000-8000-000000000203', 'Coordinator', 'Department head', 'Management', 3, true),
-  ('00000000-0000-4000-8000-000000000204', 'Member', 'Regular member', 'Staff', 4, true)
+  ('00000000-0000-4000-8000-000000000202', 'Vice President', 'Assistant head of the organization', 'Executive', 2, true),
+  ('00000000-0000-4000-8000-000000000203', 'Secretary', 'General secretary and administration', 'Executive', 3, true),
+  ('00000000-0000-4000-8000-000000000204', 'Treasurer', 'Financial management and budgeting', 'Executive', 4, true),
+  ('00000000-0000-4000-8000-000000000205', 'Coordinator', 'Department head and team coordinator', 'Management', 5, true),
+  ('00000000-0000-4000-8000-000000000206', 'Member', 'Active organization member', 'Staff', 6, true)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.organization_periods (id, name, start_date, end_date, status)
 VALUES
-  ('00000000-0000-4000-8000-000000000301', '2024/2025', '2024-08-01', '2025-07-31', 'ACTIVE')
+  ('00000000-0000-4000-8000-000000000301', '2024/2025', '2024-08-01', '2025-07-31', 'ENDED')
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
