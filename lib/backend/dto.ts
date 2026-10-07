@@ -40,11 +40,18 @@ function optional<T extends z.ZodType>(schema: T) {
   return schema.optional().catch(undefined);
 }
 const text = z.string().trim().min(1).max(500);
+// Sama dengan public.read_public_settings(): path statis same-origin atau salinan
+// Cloudinary PUBLISHED; aset pending/authenticated dan protokol lain ditolak.
+const brandingAsset = z
+  .string()
+  .regex(
+    /^(\/([A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(png|jpg|jpeg|webp|svg|ico)|https:\/\/res\.cloudinary\.com\/[a-z0-9_-]+\/image\/upload\/([a-z0-9_,]+\/)?v[0-9]+\/uvics\/published\/[a-f0-9-]{36}\.(jpg|png|webp))$/,
+  );
 const publicSettingsSchema = z.object({
   organization_name: optional(text),
   website_title: optional(text),
-  logo: optional(text),
-  favicon: optional(text),
+  logo: optional(brandingAsset),
+  favicon: optional(brandingAsset),
   footer_text: optional(z.string().trim().min(1).max(2000)),
   email: optional(emailSchema),
   phone: optional(phoneSchema),

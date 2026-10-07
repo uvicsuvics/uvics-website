@@ -62,17 +62,37 @@ returns jsonb language plpgsql security definer set search_path='' as $$declare 
  return to_jsonb(r);
 end;$$;
 
--- Settings publik hanya melalui reader allowlist. Unknown key, nilai bertipe salah,
--- dan metadata operator (updated_by/updated_at) tidak keluar.
+-- Settings publik hanya melalui reader allowlist. Unknown key, nilai malformed per
+-- key, dan metadata operator (updated_by/updated_at) tidak keluar. Validasi di sini
+-- melindungi pemanggil Data API langsung; lib/backend/dto.ts menegakkan aturan sama.
+-- Logo/favicon hanya path statis same-origin atau salinan Cloudinary PUBLISHED.
 drop policy "Public can view website settings" on public.website_settings;
 revoke select on public.website_settings from anon;
 create function public.read_public_settings() returns jsonb
 language sql stable security definer set search_path='' as $$
- select coalesce(jsonb_object_agg(key,value),'{}') from public.website_settings
- where (key in('registration_open','maintenance_mode') and jsonb_typeof(value)='boolean')
- or (key in('organization_name','website_title','logo','favicon','footer_text','email','phone','address',
-  'instagram_url','linkedin_url','github_url','youtube_url','default_meta_title','default_meta_description')
-  and jsonb_typeof(value)='string');
+ select coalesce(jsonb_object_agg(s.key,s.value),'{}') from public.website_settings s
+ cross join lateral (select s.value#>>'{}' as v) t
+ where case
+  when s.key in('registration_open','maintenance_mode') then jsonb_typeof(s.value)='boolean'
+  when jsonb_typeof(s.value)<>'string' then false
+  -- Subset konservatif dari DTO: setiap nilai yang lolos di sini juga lolos Zod.
+  -- Karakter alfanumerik tidak pernah terpotong trim, jadi teks tidak kosong.
+  when s.key in('organization_name','website_title','address','default_meta_title','default_meta_description')
+   then char_length(t.v)<=500 and t.v ~ '[[:alnum:]]'
+  when s.key='footer_text' then char_length(t.v)<=2000 and t.v ~ '[[:alnum:]]'
+  -- Regex email identik dengan Zod 4 (zod/v4/core/regexes.js).
+  when s.key='email' then char_length(t.v)<=254
+   and t.v ~ '^(?:[A-Za-z0-9_''+-]+\.)*[A-Za-z0-9_''+-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$'
+  when s.key='phone' then t.v ~ '^\+[1-9][0-9]{7,14}$'
+  -- Host ASCII dengan TLD huruf, tanpa port/credential, path ASCII printable.
+  -- Label xn-- (punycode) dikecualikan: WHATWG URL menolak punycode invalid.
+  when s.key in('instagram_url','linkedin_url','github_url','youtube_url')
+   then char_length(t.v)<=2048
+   and t.v ~ '^https?://((?![Xx][Nn]--)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}([/?#][!-~]*)?$'
+  when s.key in('logo','favicon')
+   then t.v ~ '^/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.(png|jpg|jpeg|webp|svg|ico)$'
+   or t.v ~ '^https://res\.cloudinary\.com/[a-z0-9_-]+/image/upload/([a-z0-9_,]+/)?v[0-9]+/uvics/published/[a-f0-9-]{36}\.(jpg|png|webp)$'
+  else false end;
 $$;
 revoke all on function public.read_public_settings() from public;
 grant execute on function public.read_public_settings() to anon,authenticated;

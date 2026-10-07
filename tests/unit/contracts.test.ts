@@ -110,6 +110,43 @@ describe("explicit DTO projections", () => {
       phone: "+6281234567890",
     });
     expect(settings.registration_open === true).toBe(false);
+    const published =
+      "https://res.cloudinary.com/synthetic/image/upload/c_limit,w_256/v1/uvics/published/00000000-0000-4000-8000-000000000004.png";
+    expect(
+      toPublicSettings({ logo: published, favicon: "/favicon.ico" }),
+    ).toEqual({ logo: published, favicon: "/favicon.ico" });
+    for (const asset of [
+      "javascript:alert(1)",
+      "/../secret.png",
+      "https://res.cloudinary.com/synthetic/image/authenticated/v1/uvics/pending/00000000-0000-4000-8000-000000000004.png",
+      "https://res.cloudinary.com/synthetic/image/upload/v1/uvics/pending/00000000-0000-4000-8000-000000000004.png",
+      "https://evil.example/logo.png",
+    ])
+      expect(toPublicSettings({ logo: asset, favicon: asset })).toEqual({});
+    // Pasangan fixture tests/db/security.sql: SQL subset konservatif dari DTO.
+    expect(
+      toPublicSettings({
+        youtube_url: "https://example.org/path?x=1#y",
+        email: "a.b@uvics.example",
+        organization_name: "UVICS Unklab",
+      }),
+    ).toEqual({
+      youtube_url: "https://example.org/path?x=1#y",
+      email: "a.b@uvics.example",
+      organization_name: "UVICS Unklab",
+    });
+    expect(
+      toPublicSettings({
+        youtube_url: "https://example.org:99999/path",
+        email: "a..b@uvics.example",
+        organization_name: "\t",
+      }),
+    ).toEqual({});
+    expect(
+      toPublicSettings({ youtube_url: "https://ab--c.example/x" }),
+    ).toEqual({ youtube_url: "https://ab--c.example/x" });
+    for (const url of ["https://xn--a.example/x", "https://XN--0.example/x"])
+      expect(toPublicSettings({ youtube_url: url })).toEqual({});
     expect(() => toPublicSettings(null)).toThrow(AppError);
   });
 });

@@ -16,18 +16,52 @@ insert into public.website_settings(key,value,updated_by) values
  ('registration_open','true','00000000-0000-4000-8000-000000000001'),
  ('maintenance_mode','"true"','00000000-0000-4000-8000-000000000001'),
  ('email','{"private":"sentinel"}','00000000-0000-4000-8000-000000000001'),
- ('internal_note','"private-sentinel"','00000000-0000-4000-8000-000000000001');
+ ('internal_note','"private-sentinel"','00000000-0000-4000-8000-000000000001'),
+ ('phone','"+6281234567890"','00000000-0000-4000-8000-000000000001'),
+ ('logo','"/logo/uvics.png"','00000000-0000-4000-8000-000000000001'),
+ ('linkedin_url','"https://www.linkedin.com/company/uvics"','00000000-0000-4000-8000-000000000001'),
+ ('instagram_url','"javascript:alert(1)"','00000000-0000-4000-8000-000000000001'),
+ ('github_url','"https://user:pass@github.com/uvics"','00000000-0000-4000-8000-000000000001'),
+ ('favicon','"https://res.cloudinary.com/synthetic/image/authenticated/v1/uvics/pending/00000000-0000-4000-8000-000000000003.png"','00000000-0000-4000-8000-000000000001');
 
 -- Guest: hanya reader settings allowlist dan konten PUBLISHED.
 set local role anon;
 do $$begin
- if public.read_public_settings()<>'{"organization_name":"UVICS","registration_open":true}'::jsonb then raise exception 'public settings allowlist mismatch';end if;
+ if public.read_public_settings()<>'{"organization_name":"UVICS","registration_open":true,"phone":"+6281234567890","logo":"/logo/uvics.png","linkedin_url":"https://www.linkedin.com/company/uvics"}'::jsonb then raise exception 'public settings allowlist mismatch';end if;
  begin perform key from public.website_settings;raise exception 'anon raw settings allowed';exception when insufficient_privilege then null;end;
  if (select count(*) from public.pages)<>1 or exists(select from public.programs) then raise exception 'anon draft leak';end if;
  begin perform public.publish_page('00000000-0000-4000-8000-000000000101');raise exception 'anon publish allowed';exception when insufficient_privilege then null;end;
  begin insert into public.pages(title,slug) values('x','anon-x');raise exception 'anon insert allowed';exception when insufficient_privilege then null;end;
 end$$;
 reset role;
+
+-- Validasi per key di reader SQL: batas telepon (digit tanpa "+"), URL, dan aset branding.
+do $$declare p record;begin
+ for p in select * from (values
+  ('phone','"+12345678"',true),('phone','"+1234567"',false),('phone','"+123456789012345"',true),('phone','"+1234567890123456"',false),
+  ('phone','"08123456789"',false),('phone','"+62 812345678"',false),('phone','"+0812345678"',false),
+  ('email','"admin@uvics.example"',true),('email','"not-an-email"',false),('email','"a b@uvics.example"',false),
+  ('youtube_url','"https://youtube.com/@uvics"',true),('youtube_url','"ftp://youtube.com/uvics"',false),('youtube_url','"https://user@youtube.com"',false),
+  ('logo','"https://res.cloudinary.com/synthetic/image/upload/c_limit,w_256/v1/uvics/published/00000000-0000-4000-8000-000000000004.png"',true),
+  ('logo','"https://res.cloudinary.com/synthetic/image/upload/v1/uvics/pending/00000000-0000-4000-8000-000000000004.png"',false),
+  ('logo','"/../secret.png"',false),('favicon','"javascript:alert(1)"',false),('favicon','"/favicon.ico"',true),
+  ('organization_name','"   "',false),
+  -- Pasangan reproduksi review: SQL tidak boleh lebih longgar daripada DTO.
+  ('youtube_url','"https://example.org/path?x=1#y"',true),('youtube_url','"https://example.org:99999/path"',false),
+  ('youtube_url','"https://uvics.123/"',false),
+  ('youtube_url','"https://ab--c.example/x"',true),('youtube_url','"https://xn--a.example/x"',false),
+  ('youtube_url','"https://XN--0.example/x"',false),('youtube_url','"https://www.xn--bcher-kva.example/x"',false),
+  ('email','"a.b@uvics.example"',true),('email','"a..b@uvics.example"',false),
+  ('organization_name','"UVICS Unklab"',true),('organization_name','"\t"',false)) v(key,value,allowed) loop
+  begin
+   insert into public.website_settings(key,value) values(p.key,p.value::jsonb) on conflict(key) do update set value=excluded.value;
+   set local role anon;
+   if (public.read_public_settings() ? p.key)<>p.allowed then raise exception 'settings validation mismatch %=%',p.key,p.value;end if;
+   reset role;
+   raise sqlstate 'P0003';
+  exception when sqlstate 'P0003' then null;end;
+ end loop;
+end$$;
 
 -- Non-admin, sesi kedaluwarsa, sesi dicabut, dan admin nonaktif ditolak di RPC.
 do $$declare claims text;begin
@@ -52,7 +86,7 @@ end$$;
 -- Active admin: raw read diizinkan, DML langsung ditolak, publish tercatat atomik.
 set local role authenticated;
 do $$declare a public.audit_logs;begin
- if (select count(*) from public.website_settings)<>5 or (select count(*) from public.pages)<>2 then raise exception 'admin read denied';end if;
+ if (select count(*) from public.website_settings)<>11 or (select count(*) from public.pages)<>2 then raise exception 'admin read denied';end if;
  begin insert into public.pages(title,slug) values('x','direct-x');raise exception 'direct page insert allowed';exception when insufficient_privilege then null;end;
  begin update public.pages set status='PUBLISHED';raise exception 'direct page update allowed';exception when insufficient_privilege then null;end;
  begin delete from public.programs;raise exception 'direct program delete allowed';exception when insufficient_privilege then null;end;
