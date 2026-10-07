@@ -37,7 +37,7 @@ PUBLISHING menolak publisher kedua (409). Jika proses terputus, operator memasti
 npm run verify:auth -- <project-ref-terverifikasi>
 ```
 
-Server uji memakai namespace `RATE_LIMIT_NAMESPACE=issue7_<run>`. Kemudian set `RUN_HOSTED_TESTS=1` dan jalankan `npm run test:e2e -- tests/e2e/auth.spec.ts tests/e2e/media.spec.ts`. Tes ini memutasi fixture hosted; jangan jalankan setelah data live masuk. CI hanya memakai unit dan DB disposable tanpa credential hosted. `test:db` menguji batas waktu dengan Auth tiruan lokal, tanpa mengubah clock/row hosted.
+Server uji memakai namespace `RATE_LIMIT_NAMESPACE=issue7_<run>`. Kemudian set `RUN_HOSTED_TESTS=1` dan jalankan `npm run test:e2e -- tests/e2e/auth.spec.ts tests/e2e/media.spec.ts`. Tes ini memutasi fixture hosted; jangan jalankan setelah data live masuk. CI hanya memakai unit dan DB disposable tanpa credential hosted. `test:db` menguji batas waktu dengan Auth tiruan lokal, tanpa mengubah clock/row hosted. Suite `tests/db/security.sql` (#31) membuktikan allow/deny CMS/settings, penutupan DML langsung, context audit, dan rollback audit; setiap migration security baru wajib lulus suite ini sebelum `db:types`.
 
 Identitas fixture pada `.runtime/auth-fixtures.json`; credential terpisah di `.runtime/auth-credentials.json`. Keduanya ignored; jangan cetak/upload. Manifest media ditulis sebelum upload dan menyimpan ID/deadline cleanup. Publikasi sample dapat diuji dengan `node --conditions=react-server --import tsx scripts/verify-publication.mts <project-ref> <media-manifest>`.
 
