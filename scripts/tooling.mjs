@@ -1,6 +1,7 @@
 import nextEnv from "@next/env";
 import { spawnSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
+import { existsSync } from "node:fs";
 nextEnv.loadEnvConfig(process.cwd());
 export function required(name) {
   const v = process.env[name];
@@ -22,10 +23,21 @@ export function operatorClient() {
   );
 }
 export function psql(sql) {
+  const defaultWinPsql =
+    [
+      "C:/Program Files/PostgreSQL/18/bin/psql.exe",
+      "C:/Program Files/PostgreSQL/17/bin/psql.exe",
+    ].find((p) => {
+      try {
+        return existsSync(p);
+      } catch {
+        return false;
+      }
+    }) || "C:/Program Files/PostgreSQL/17/bin/psql.exe";
   const binary =
     process.env.PSQL_BIN ||
     (process.platform === "win32"
-      ? "C:/Program Files/PostgreSQL/17/bin/psql.exe"
+      ? defaultWinPsql
       : "psql");
   const r = spawnSync(
     binary,
