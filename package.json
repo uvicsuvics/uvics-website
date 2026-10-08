@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:db": "node scripts/test-database.mjs",
+    "test:integration": "node scripts/test-integration-membership.mjs",
     "test:e2e": "playwright test",
     "verify:auth": "node scripts/verify-auth.mjs",
     "db:migrate": "node scripts/migrate.mjs",
