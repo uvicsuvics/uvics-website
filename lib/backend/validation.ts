@@ -1,8 +1,41 @@
 import { z } from "zod";
+export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(254),
+  email: emailSchema,
   password: z.string().min(1).max(1024),
 });
+
+// Jumlah digit dihitung setelah normalisasi, tanpa tanda "+". Maksimum mengikuti
+// ITU E.164. Harus sama dengan constraint SQL registrations/members.phone (D04);
+// kesetaraan batas dijaga tests/db/security.sql.
+export const PHONE_MIN_DIGITS = 8;
+export const PHONE_MAX_DIGITS = 15;
+const phonePattern = new RegExp(
+  `^\\+[1-9][0-9]{${PHONE_MIN_DIGITS - 1},${PHONE_MAX_DIGITS - 1}}$`,
+);
+/** Telepon: "08..." Indonesia menjadi "+628...", selain itu wajib "+kodenegara". */
+export const phoneSchema = z
+  .string()
+  .max(32)
+  .transform((value) => {
+    const compact = value.trim().replace(/[\s-]/g, "");
+    return compact.startsWith("08") ? `+62${compact.slice(1)}` : compact;
+  })
+  .pipe(z.string().regex(phonePattern));
+
+/** URL HTTP/HTTPS tanpa credential. Validasi bukan izin server melakukan fetch. */
+export const httpUrlSchema = z
+  .url({ protocol: /^https?$/ })
+  .max(2048)
+  .refine((value) => {
+    const url = URL.parse(value);
+    return !!url && !url.username && !url.password;
+  });
+
+/** ISO 8601 dengan timezone eksplisit, dinormalisasi ke UTC `Z`. */
+export const datetimeSchema = z.iso
+  .datetime({ offset: true })
+  .transform((value) => new Date(value).toISOString());
 const positiveInteger = z
   .union([z.number(), z.string().regex(/^[1-9][0-9]*$/)])
   .pipe(
