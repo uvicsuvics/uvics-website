@@ -5,26 +5,39 @@ on:
     branches: [main, development]
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # Hanya run PR yang tergantikan dibatalkan; setiap push ke main/development diperiksa penuh.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  APP_ORIGIN: http://localhost:3000
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_disposable_ci_placeholder
 jobs:
-  verify:
+  static:
+    name: static (lint, typecheck, migrations)
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:17
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # guard migration butuh merge-base
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22.14.0"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run check:migrations
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: disposable-ci-only
-          POSTGRES_DB: uvics_test
-        ports: ["55437:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres -d uvics_test"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-    env:
-      NEXT_TELEMETRY_DISABLED: "1"
-      APP_ORIGIN: http://localhost:3000
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_disposable_ci_placeholder
+          MIGRATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -34,13 +47,91 @@ jobs:
           node-version: "22.14.0"
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
       - run: npm test
+
+  database:
+    name: database (PostgreSQL ${{ matrix.postgres }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ["17", "18"] # 17 = CI lama/hosted, 18 = lokal Windows; lihat Task 8
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: uvics_test
+        ports: ["55437:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d uvics_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22.14.0"
+          cache: npm
+      - run: npm ci
       - run: npm run test:db
         env:
           TEST_DATABASE_URL: postgres://postgres:disposable-ci-only@127.0.0.1:55437/uvics_test
+
+  e2e:
+    name: e2e (build + Playwright)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22.14.0"
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'components/**', 'lib/**', 'config/**', 'data/**', 'types/**') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - id: browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.browsers.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - run: npm run test:e2e -- tests/e2e/auth.spec.ts tests/e2e/public.spec.ts --grep 'guest routes|origin/method|public navigation'
       # Real Auth/Cloudinary tests are operator-run pre-go-live, never PR secrets.
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  verify:
+    name: verify
+    if: always()
+    needs: [static, unit, database, e2e]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Semua job wajib lulus
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success")' > /dev/null

@@ -23,6 +23,8 @@ Gunakan Node 22.14+ major 22, npm, dan package-lock.json. Jalankan `npm ci`, sal
 
 ## Verifikasi
 
-`npm run lint`, `npm run typecheck`, `npm test`, `npm run test:db`, `npm run build`.
+`npm run lint`, `npm run typecheck`, `npm test`, `npm run test:db`, `npm run build`, `npm run check:migrations`.
+
+`npm run lint` gagal bila ada warning. `npm run test:db` melaporkan setiap suite SQL yang gagal, lalu gagal juga bila `types/database.ts` berbeda dari schema hasil migration. `npm run check:migrations` menolak perubahan pada migration yang sudah ada di `origin/development`.
 
 Database test membutuhkan binary PostgreSQL 17 atau TEST_DATABASE_URL loopback ke database **kosong** bernama uvics_test. Tidak mereset database bersama. Tes provider/browser memakai fixture terkontrol sesuai runbook; tidak memberi secret hosted ke CI PR.
