@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Nilai tersimpan (D04); normalisasi input "08…" milik phoneSchema di validation.ts (#33).
-const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
+export const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
 // PostgREST mengembalikan timestamptz dengan offset (+00:00) dan mikrodetik.
 const timestampSchema = z.iso.datetime({ offset: true });
 // Referensi media, bukan URL (BACKEND_CONVENTIONS); bentuknya ditetapkan alur upload #28/#29.

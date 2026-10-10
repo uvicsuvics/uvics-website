@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageSchema, programSchema, websiteSettingsSchema } from "@/lib/backend/cms";
 import type { Database } from "@/types/database";
 
 type Public = Database["public"];
@@ -14,5 +15,25 @@ const publishArgs: Public["Functions"]["publish_page"]["Args"] = { p_id: "000000
 describe("database types mirror cms_foundation migration", () => {
   it("exposes pages, programs, settings and publish RPCs", () => {
     expect([pageRow, programRow, settingRow, publishArgs]).toHaveLength(4);
+  });
+});
+
+describe("cms input validation", () => {
+  it("defaults pages and programs to DRAFT and rejects bad slugs", () => {
+    expect(pageSchema.parse({ title: "Tentang", slug: "tentang" }).status).toBe("DRAFT");
+    expect(programSchema.parse({ name: "Study Group", slug: "study-group" }).status).toBe("DRAFT");
+    expect(pageSchema.safeParse({ title: "X", slug: "Bad Slug" }).success).toBe(false);
+    expect(pageSchema.safeParse({ title: "X", slug: "x", status: "LIVE" }).success).toBe(false);
+  });
+
+  it("accepts only allowlisted settings with safe links, email and D04 phone", () => {
+    expect(websiteSettingsSchema.safeParse({ email: "halo@example.invalid", phone: "+6281234567890", instagram_url: "https://instagram.com/uvics", registration_open: true }).success).toBe(true);
+    for (const bad of [
+      { instagram_url: "javascript:alert(1)" },
+      { email: "bukan-email" },
+      { phone: "081234567890" },
+      { maintenance_mode: true },
+    ])
+      expect(websiteSettingsSchema.safeParse(bad).success).toBe(false);
   });
 });
