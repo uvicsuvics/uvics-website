@@ -126,6 +126,23 @@ do $$begin
   or exists(select from public.audit_logs where action='PROGRAM_PUBLISHED') then raise exception 'publish not atomic with audit';end if;
 end$$;
 
+-- D13: service_role tidak boleh menulis langsung tabel domain (bypass audit); hanya SELECT.
+do $$declare t text;p text;begin
+ foreach t in array array['registrations','members','membership_histories','departments','positions','organization_periods',
+  'pages','programs','website_settings','competitions','achievements','achievement_members','projects','project_members','achievement_certificates'] loop
+  if not has_table_privilege('service_role','public.'||t,'SELECT') then raise exception 'service_role lost SELECT on %',t;end if;
+  foreach p in array array['INSERT','UPDATE','DELETE','TRUNCATE'] loop
+   if has_table_privilege('service_role','public.'||t,p) then raise exception 'service_role % on % bypasses audit',p,t;end if;
+  end loop;
+ end loop;
+end$$;
+
+-- Policy tulis yang tidak terpakai dihapus agar grant di masa depan tidak diam-diam membuka bypass audit.
+do $$begin
+ if exists(select from pg_policies where schemaname='public' and tablename in('pages','programs','website_settings') and cmd<>'SELECT')
+  then raise exception 'dormant CMS write policy present';end if;
+end$$;
+
 -- D04: batas digit constraint SQL kanonis harus sama dengan PHONE_MIN_DIGITS/PHONE_MAX_DIGITS (8–15) di Zod.
 do $$declare n int;ok boolean;begin
  foreach n in array array[7,8,15,16] loop
