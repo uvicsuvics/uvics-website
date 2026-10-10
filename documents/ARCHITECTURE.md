@@ -62,7 +62,7 @@ flowchart LR
 | Organisasi | `departments`, `positions`, `organization_periods`, `membership_histories` | `20260922110000` | #9 | Di `development` |
 | Membership | `members`, `registrations` | `20260922120000` | #8 | Di `development` |
 | CMS | `pages`, `programs`, `website_settings` | `20261003192000` | #10 | Di `development` |
-| Konten | `competitions`, `achievements`, `projects`, `achievement_members`, `project_members` | — | #11 | PR #20 belum di-merge |
+| Konten | `competitions`, `achievements`, `achievement_certificates`, `projects`, `achievement_members`, `project_members` | `20261004080000` | #11 | PR #36 (menggantikan #20) |
 | Belum dibuat | news/posts, events, gallery, partners, periode pendaftaran | — | — | Sprint berikutnya |
 
 Relasi inti organisasi dan membership:
