@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { Constants } from "@/types/database";
 import { storedPhoneSchema } from "./membership";
-import { slugSchema } from "./validation";
+import { httpUrlSchema, slugSchema } from "./validation";
+
+// Konvensi #31: http/https tanpa credential; diekspor ulang agar caller lama tetap jalan.
+export { httpUrlSchema };
 
 export const contentStatusSchema = z.enum(Constants.public.Enums.content_status);
-// Tautan dirender ke publik: hanya http/https (menolak javascript:, data:).
-export const httpUrlSchema = z.url({ protocol: /^https?$/ });
 
 export const pageSchema = z.object({
   title: z.string().trim().min(1).max(255),

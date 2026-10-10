@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { httpUrlSchema } from "./validation";
 
 // Nilai tersimpan (D04); normalisasi input "08…" milik phoneSchema di validation.ts (#33).
 export const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
@@ -21,9 +22,9 @@ export const memberSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE", "ALUMNI"]),
   joined_at: timestampSchema.optional().nullable(),
   graduated_at: timestampSchema.optional().nullable(),
-  linkedin_url: z.string().url().optional().nullable(),
-  github_url: z.string().url().optional().nullable(),
-  instagram_url: z.string().url().optional().nullable(),
+  linkedin_url: httpUrlSchema.optional().nullable(),
+  github_url: httpUrlSchema.optional().nullable(),
+  instagram_url: httpUrlSchema.optional().nullable(),
   public_profile: z.boolean().default(true),
   created_at: timestampSchema,
   updated_at: timestampSchema,
@@ -56,7 +57,7 @@ export const registrationSchema = z.object({
   skills: z.string().optional().nullable(),
   experience: z.string().optional().nullable(),
   motivation: z.string().optional().nullable(),
-  portfolio_url: z.string().url().optional().nullable(),
+  portfolio_url: httpUrlSchema.optional().nullable(),
   photo: photoSchema,
   status: z.enum(["SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"]).default("SUBMITTED"),
   admin_notes: z.string().optional().nullable(),

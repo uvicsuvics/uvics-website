@@ -7,7 +7,10 @@ import {
   httpUrlSchema,
   phoneSchema,
 } from "@/lib/backend/validation";
+import { websiteSettingsSchema } from "@/lib/backend/cms";
+import { competitionSchema } from "@/lib/backend/content";
 import { toPublicMember, toPublicSettings } from "@/lib/backend/dto";
+import { memberSchema, registrationSchema } from "@/lib/backend/membership";
 import { AppError } from "@/lib/backend/errors";
 
 const SENTINEL = "private-sentinel";
@@ -148,5 +151,27 @@ describe("explicit DTO projections", () => {
     for (const url of ["https://xn--a.example/x", "https://XN--0.example/x"])
       expect(toPublicSettings({ youtube_url: url })).toEqual({});
     expect(() => toPublicSettings(null)).toThrow(AppError);
+  });
+});
+
+describe("domain URL fields reuse the shared HTTP/S convention", () => {
+  const fields = {
+    "settings.instagram_url": websiteSettingsSchema.shape.instagram_url,
+    "competition.registration_url": competitionSchema.shape.registration_url,
+    "member.linkedin_url": memberSchema.shape.linkedin_url,
+    "member.github_url": memberSchema.shape.github_url,
+    "member.instagram_url": memberSchema.shape.instagram_url,
+    "registration.portfolio_url": registrationSchema.shape.portfolio_url,
+  };
+
+  it.each(Object.entries(fields))("%s", (_, schema) => {
+    expect(schema.safeParse("https://uvics.example/a").success).toBe(true);
+    for (const value of [
+      "javascript:alert(1)",
+      "data:text/html,x",
+      "https://user:pass@uvics.example/a",
+    ]) {
+      expect(schema.safeParse(value).success).toBe(false);
+    }
   });
 });
