@@ -1,17 +1,23 @@
 "use client";
+
+import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import { IconMenu2, IconX, IconChevronDown } from "@tabler/icons-react";
+import { IconMenu2, IconX, IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import {
   motion,
   AnimatePresence,
   useScroll,
   useMotionValueEvent,
 } from "motion/react";
+import { isPublicNavItemActive, type PublicNavItem, type PublicNavSubItem } from "@/config/public-navigation";
 
-import React, { useRef, useState, useEffect } from "react";
+// Backward-compatible type aliases
+export type NavSubItem = PublicNavSubItem;
+export type NavItemType = PublicNavItem;
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -26,21 +32,8 @@ interface NavBodyProps {
   alwaysVisible?: boolean;
 }
 
-export interface NavSubItem {
-  title: string;
-  codeName?: string;
-  link: string;
-  desc?: string;
-}
-
-export interface NavItemType {
-  name: string;
-  link: string;
-  subItems?: NavSubItem[];
-}
-
 interface NavItemsProps {
-  items: NavItemType[];
+  items: PublicNavItem[];
   className?: string;
   onItemClick?: () => void;
 }
@@ -83,10 +76,9 @@ export const Navbar = ({ children, className, alwaysVisible }: NavbarProps) => {
   });
 
   return (
-    <motion.div
+    <motion.header
       ref={ref}
-      // IMPORTANT: Change this to class of `fixed` if you want the navbar to be fixed
-      className={cn("sticky inset-x-0 top-20 z-40 w-full", className)}
+      className={cn("sticky inset-x-0 top-0 z-40 w-full pt-4", className)}
     >
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
@@ -99,7 +91,7 @@ export const Navbar = ({ children, className, alwaysVisible }: NavbarProps) => {
             )
           : child,
       )}
-    </motion.div>
+    </motion.header>
   );
 };
 
@@ -114,29 +106,23 @@ export const NavBody = ({
   return (
     <motion.div
       animate={{
-        backdropFilter: isVis ? "blur(10px)" : "none",
-        boxShadow: isVis ? "0 4px 12px rgba(0,0,0,0.10)" : "none",
-        border: isVis
-          ? "1px solid var(--color-muted)"
-          : "1px solid transparent",
-        width: isVis ? "40%" : "100%",
-        y: isVis ? 20 : 0,
+        backdropFilter: isVis ? "blur(16px)" : "none",
+        boxShadow: isVis ? "0 10px 30px -10px rgba(2, 48, 167, 0.12)" : "none",
+        borderColor: isVis ? "rgba(229, 231, 235, 0.9)" : "transparent",
+        y: isVis ? 4 : 0,
       }}
       transition={
         alwaysVisible
           ? { duration: 0 }
           : {
               type: "spring",
-              stiffness: 200,
-              damping: 50,
+              stiffness: 260,
+              damping: 28,
             }
       }
-      style={{
-        minWidth: "800px",
-      }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-transparent px-4 py-2 lg:flex",
-        isVis && "bg-white/95",
+        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full border bg-transparent px-5 py-2 lg:flex transition-colors duration-200",
+        isVis ? "bg-white/95" : "bg-white/80 backdrop-blur-md",
         className,
       )}
     >
@@ -148,21 +134,98 @@ export const NavBody = ({
 export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const pathname = usePathname();
+
+  const renderSubItem = (
+    sub: PublicNavSubItem,
+    sIdx: number,
+    onItemClickCb?: () => void,
+    closeDropdownCb?: () => void,
+  ) => {
+    const cleanHref = sub.href.split("#")[0];
+    const isSubActive =
+      cleanHref && cleanHref !== "/"
+        ? pathname === cleanHref || pathname.startsWith(`${cleanHref}/`)
+        : pathname === sub.href;
+
+    return (
+      <Link
+        key={sIdx}
+        href={sub.href}
+        onClick={() => {
+          closeDropdownCb?.();
+          onItemClickCb?.();
+        }}
+        className={cn(
+          "group flex items-start justify-between p-2 rounded-xl transition-all",
+          isSubActive
+            ? "bg-primary-50 text-primary"
+            : "hover:bg-primary-50/70 text-gray-700",
+        )}
+      >
+        <div className="flex-1 pr-2">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "text-xs font-bold transition-colors",
+                isSubActive
+                  ? "text-primary"
+                  : "text-gray-900 group-hover:text-primary",
+              )}
+            >
+              {sub.title}
+            </span>
+            {sub.badge && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200/60">
+                {sub.badge}
+              </span>
+            )}
+          </div>
+          {sub.desc && (
+            <p className="text-[11px] text-gray-500 mt-0.5 leading-snug line-clamp-1">
+              {sub.desc}
+            </p>
+          )}
+        </div>
+        <IconChevronRight
+          size={14}
+          className={cn(
+            "shrink-0 mt-0.5 transition-transform duration-200 text-gray-300 group-hover:text-primary group-hover:translate-x-0.5",
+            isSubActive && "text-primary translate-x-0.5",
+          )}
+          aria-hidden="true"
+        />
+      </Link>
+    );
+  };
 
   return (
-    <motion.div
+    <nav
       onMouseLeave={() => {
         setHovered(null);
         setActiveDropdown(null);
       }}
       className={cn(
-        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-1 text-sm font-medium text-gray-600 transition duration-200 lg:flex",
+        "relative hidden flex-1 flex-row items-center justify-center space-x-0.5 text-xs xl:text-sm font-medium text-gray-600 transition duration-200 lg:flex px-2",
         className,
       )}
+      aria-label="Navigasi Utama"
     >
       {items.map((item, idx) => {
         const hasDropdown = Boolean(item.subItems && item.subItems.length > 0);
         const isDropdownOpen = activeDropdown === idx;
+        const isActive = isPublicNavItemActive(pathname, item);
+        const isTwoColumn = item.layout === "two-column";
+
+        // Group items if two-column layout
+        const col1Items = isTwoColumn
+          ? item.subItems?.filter(
+              (s) => s.group === "Profil Organisasi" || !s.group
+            ) || []
+          : [];
+        const col2Items = isTwoColumn
+          ? item.subItems?.filter((s) => s.group === "Aktivitas & Media") || []
+          : [];
 
         return (
           <div
@@ -174,92 +237,119 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
               else setActiveDropdown(null);
             }}
           >
-            <a
-              onClick={onItemClick}
-              className="relative px-3.5 py-2 text-gray-600 hover:text-primary transition-colors inline-flex items-center gap-1 cursor-pointer"
+            <Link
               href={item.link}
+              onClick={onItemClick}
+              className={cn(
+                "relative px-3 py-2 transition-colors inline-flex items-center gap-1 rounded-full cursor-pointer select-none",
+                isActive
+                  ? "text-primary font-semibold"
+                  : "text-gray-600 hover:text-primary",
+              )}
+              aria-expanded={hasDropdown ? isDropdownOpen : undefined}
+              aria-haspopup={hasDropdown ? "true" : undefined}
             >
               {hovered === idx && (
                 <motion.div
-                  layoutId="hovered"
-                  className="absolute inset-0 h-full w-full rounded-full bg-primary-50"
+                  layoutId="navbar-hover-pill"
+                  className="absolute inset-0 h-full w-full rounded-full bg-primary-50/80 -z-10"
+                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
                 />
               )}
-              <span className="relative z-20">{item.name}</span>
+              <span className="relative z-10">{item.name}</span>
               {hasDropdown && (
                 <IconChevronDown
                   size={14}
                   className={cn(
-                    "relative z-20 transition-transform duration-200 text-gray-400",
+                    "relative z-10 transition-transform duration-200 text-gray-400",
                     isDropdownOpen && "rotate-180 text-primary",
+                    isActive && "text-primary",
                   )}
+                  aria-hidden="true"
                 />
               )}
-            </a>
+              {/* Subtle active underline indicator */}
+              {isActive && (
+                <span
+                  className="absolute bottom-1 left-3 right-3 h-0.5 rounded-full bg-primary"
+                  aria-hidden="true"
+                />
+              )}
+            </Link>
 
-            {/* Animated Dropdown Menu */}
+            {/* Dropdown Menu */}
             <AnimatePresence>
               {hasDropdown && isDropdownOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.96 }}
                   transition={{ duration: 0.16, ease: "easeOut" }}
-                  className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-72 z-50"
+                  className={cn(
+                    "absolute top-full left-1/2 -translate-x-1/2 pt-2 z-50",
+                    isTwoColumn
+                      ? "w-[500px] xl:w-[540px]"
+                      : "w-72 xl:w-80",
+                  )}
                 >
-                  <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-2 shadow-2xl shadow-primary/15 border border-gray-200/90 ring-1 ring-black/5">
-                    <div className="px-3 py-1.5 mb-1 border-b border-gray-100 flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                        Pilih Angkatan
-                      </span>
-                      <span className="text-[10px] font-mono text-primary font-semibold bg-primary-50 px-1.5 py-0.5 rounded">
-                        UVICS
-                      </span>
-                    </div>
-                    <div className="space-y-0.5">
-                      {item.subItems?.map((sub, sIdx) => (
-                        <a
-                          key={sIdx}
-                          href={sub.link}
-                          onClick={() => {
-                            setActiveDropdown(null);
-                            onItemClick?.();
-                          }}
-                          className="flex items-start justify-between p-2.5 rounded-xl hover:bg-primary-50/80 group transition-all"
-                        >
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-gray-800 group-hover:text-primary transition-colors">
-                                {sub.title}
-                              </span>
-                              {sub.codeName && (
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60">
-                                  {sub.codeName}
-                                </span>
-                              )}
-                            </div>
-                            {sub.desc && (
-                              <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                                {sub.desc}
-                              </p>
-                            )}
+                  <div className="bg-white/98 backdrop-blur-xl rounded-2xl p-3 shadow-2xl shadow-primary/15 border border-gray-200/90 ring-1 ring-black/5">
+                    {isTwoColumn ? (
+                      /* Side-by-side 2-column layout */
+                      <div className="grid grid-cols-2 gap-3 divide-x divide-gray-100">
+                        {/* Column 1: Profil Organisasi */}
+                        <div className="space-y-0.5 pr-1">
+                          <div className="px-2.5 py-1 mb-1 border-b border-gray-100/80 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                              Profil Organisasi
+                            </span>
                           </div>
-                        </a>
-                      ))}
-                    </div>
-                    <div className="pt-1.5 mt-1 border-t border-gray-100 px-2">
-                      <a
-                        href="/batch"
-                        onClick={() => {
-                          setActiveDropdown(null);
-                          onItemClick?.();
-                        }}
-                        className="text-[11px] font-bold text-primary hover:underline flex items-center justify-between py-1"
-                      >
-                        <span>Lihat Semua Angkatan</span>
-                        <span>→</span>
-                      </a>
-                    </div>
+                          {col1Items.map((sub, sIdx) =>
+                            renderSubItem(
+                              sub,
+                              sIdx,
+                              onItemClick,
+                              () => setActiveDropdown(null),
+                            )
+                          )}
+                        </div>
+
+                        {/* Column 2: Aktivitas & Media */}
+                        <div className="space-y-0.5 pl-3">
+                          <div className="px-2.5 py-1 mb-1 border-b border-gray-100/80 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                              Aktivitas & Media
+                            </span>
+                          </div>
+                          {col2Items.map((sub, sIdx) =>
+                            renderSubItem(
+                              sub,
+                              sIdx,
+                              onItemClick,
+                              () => setActiveDropdown(null),
+                            )
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Single column layout */
+                      <div>
+                        <div className="px-3 py-1.5 mb-1 border-b border-gray-100 flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            {item.name}
+                          </span>
+                        </div>
+                        <div className="space-y-0.5">
+                          {item.subItems?.map((sub, sIdx) =>
+                            renderSubItem(
+                              sub,
+                              sIdx,
+                              onItemClick,
+                              () => setActiveDropdown(null),
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -267,7 +357,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
           </div>
         );
       })}
-    </motion.div>
+    </nav>
   );
 };
 
@@ -282,24 +372,24 @@ export const MobileNav = ({
   return (
     <motion.div
       animate={{
-        backdropFilter: isVis ? "blur(10px)" : "none",
-        boxShadow: isVis ? "0 4px 12px rgba(0,0,0,0.10)" : "none",
+        backdropFilter: isVis ? "blur(12px)" : "none",
+        boxShadow: isVis ? "0 4px 16px rgba(0,0,0,0.08)" : "none",
         border: isVis
           ? "1px solid var(--color-muted)"
           : "1px solid transparent",
-        width: isVis ? "90%" : "100%",
+        width: isVis ? "92%" : "100%",
         paddingRight: isVis ? "12px" : "0px",
         paddingLeft: isVis ? "12px" : "0px",
-        borderRadius: isVis ? "4px" : "2rem",
-        y: isVis ? 20 : 0,
+        borderRadius: isVis ? "1rem" : "2rem",
+        y: isVis ? 8 : 0,
       }}
       transition={
         alwaysVisible
           ? { duration: 0 }
           : {
               type: "spring",
-              stiffness: 200,
-              damping: 50,
+              stiffness: 220,
+              damping: 30,
             }
       }
       className={cn(
@@ -346,16 +436,18 @@ export const MobileNavMenu = ({
     document.addEventListener("keydown", onEscape);
     return () => document.removeEventListener("keydown", onEscape);
   }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
           id="mobile-navigation"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
           className={cn(
-            "absolute inset-x-0 top-16 z-50 flex w-full flex-col items-start justify-start gap-4 rounded-lg bg-white px-4 py-8 shadow-lg border border-gray-100",
+            "absolute inset-x-0 top-16 z-50 flex w-full flex-col items-start justify-start gap-4 rounded-2xl bg-white/98 backdrop-blur-xl px-5 py-6 shadow-2xl border border-gray-100 max-h-[85vh] overflow-y-auto",
             className,
           )}
         >
@@ -397,7 +489,7 @@ export const NavbarLogo = () => {
   return (
     <Link
       href="/"
-      className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1"
+      className="relative z-20 mr-2 flex items-center space-x-2 px-1 py-1 shrink-0"
     >
       <Image
         width={143}
@@ -406,6 +498,7 @@ export const NavbarLogo = () => {
         src="/logo/logo_uvics.webp"
         alt="Uvics Logo"
         className="h-8 w-auto object-contain"
+        priority
       />
     </Link>
   );
