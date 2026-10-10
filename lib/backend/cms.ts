@@ -26,7 +26,7 @@ export const programSchema = z.object({
   display_order: z.number().int().default(0),
 });
 
-// Allowlist key issue #10; key lain ditolak.
+// Allowlist key issue #10 + PRD §36; key lain ditolak.
 export const websiteSettingsSchema = z
   .object({
     organization_name: z.string().max(255),
@@ -44,6 +44,7 @@ export const websiteSettingsSchema = z
     default_meta_title: z.string().max(255),
     default_meta_description: z.string().max(500),
     registration_open: z.boolean(),
+    maintenance_mode: z.boolean(),
   })
   .partial()
   .strict();

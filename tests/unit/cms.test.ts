@@ -27,12 +27,12 @@ describe("cms input validation", () => {
   });
 
   it("accepts only allowlisted settings with safe links, email and D04 phone", () => {
-    expect(websiteSettingsSchema.safeParse({ email: "halo@example.invalid", phone: "+6281234567890", instagram_url: "https://instagram.com/uvics", registration_open: true }).success).toBe(true);
+    expect(websiteSettingsSchema.safeParse({ email: "halo@example.invalid", phone: "+6281234567890", instagram_url: "https://instagram.com/uvics", registration_open: true, maintenance_mode: false }).success).toBe(true);
     for (const bad of [
       { instagram_url: "javascript:alert(1)" },
       { email: "bukan-email" },
       { phone: "081234567890" },
-      { maintenance_mode: true },
+      { unknown_key: true },
     ])
       expect(websiteSettingsSchema.safeParse(bad).success).toBe(false);
   });
