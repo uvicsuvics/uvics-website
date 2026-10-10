@@ -88,6 +88,31 @@ begin
     insert into public.projects (title, slug, summary, cover_image) values ('Media', 'media-proj', 'S', repeat('a', 501));
     raise exception 'project cover_image longer than 500 accepted';
   exception when check_violation then null; end;
+  -- Batas panjang field (sama dengan Zod)
+  declare
+    r record;
+  begin
+    for r in select * from (values
+      ('achievement organizer > 255', $s$insert into public.achievements (title, slug, competition_name, ranking, achievement_date, organizer) values ('L', 'len-1', 'C', '1', '2026-01-01', repeat('a', 256))$s$),
+      ('competition category > 120', $s$insert into public.competitions (title, slug, organizer, category) values ('L', 'len-2', 'Org', repeat('a', 121))$s$),
+      ('competition team_size > 100', $s$insert into public.competitions (title, slug, organizer, team_size) values ('L', 'len-3', 'Org', repeat('a', 101))$s$),
+      ('competition eligibility > 2000', $s$insert into public.competitions (title, slug, organizer, eligibility) values ('L', 'len-4', 'Org', repeat('a', 2001))$s$),
+      ('achievement ranking > 120', $s$insert into public.achievements (title, slug, competition_name, ranking, achievement_date) values ('L', 'len-5', 'C', repeat('a', 121), '2026-01-01')$s$),
+      ('empty achievement ranking', $s$insert into public.achievements (title, slug, competition_name, ranking, achievement_date) values ('L', 'len-6', 'C', '', '2026-01-01')$s$),
+      ('achievement member role > 120', $s$insert into public.achievement_members (achievement_id, member_name, role) values ('00000000-0000-4000-8000-000000000721', 'X', repeat('a', 121))$s$),
+      ('project member role > 120', $s$insert into public.project_members (project_id, member_name, role) values ('00000000-0000-4000-8000-000000000731', 'X', repeat('a', 121))$s$),
+      ('competition description > 20000', $s$insert into public.competitions (title, slug, organizer, description) values ('L', 'len-9', 'Org', repeat('a', 20001))$s$),
+      ('achievement description > 20000', $s$insert into public.achievements (title, slug, competition_name, ranking, achievement_date, description) values ('L', 'len-10', 'C', '1', '2026-01-01', repeat('a', 20001))$s$),
+      ('project description > 20000', $s$insert into public.projects (title, slug, summary, description) values ('L', 'len-11', 'S', repeat('a', 20001))$s$),
+      ('blank project summary', $s$insert into public.projects (title, slug, summary) values ('L', 'len-12', '   ')$s$),
+      ('project summary > 500', $s$insert into public.projects (title, slug, summary) values ('L', 'len-13', repeat('a', 501))$s$)
+    ) v(label, stmt) loop
+      begin
+        execute r.stmt;
+        raise exception '% accepted', r.label;
+      exception when check_violation then null; end;
+    end loop;
+  end;
   -- D18
   begin
     insert into public.achievement_members (achievement_id) values ('00000000-0000-4000-8000-000000000721');

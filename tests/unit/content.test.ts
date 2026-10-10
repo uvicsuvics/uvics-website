@@ -100,6 +100,19 @@ describe("content input validation", () => {
     expect(achievementSchema.parse({ title: "A", slug: "a", competition_name: "C", ranking: "1", achievement_date: "2026-01-01" })).not.toHaveProperty("published");
   });
 
+  it("enforces the same length limits as the database", () => {
+    const achievement = { title: "A", slug: "a", competition_name: "C", ranking: "1", achievement_date: "2026-01-01" };
+    const project = { title: "P", slug: "p", summary: "S" };
+    for (const bad of [{ category: "a".repeat(121) }, { team_size: "a".repeat(101) }, { eligibility: "a".repeat(2001) }, { description: "a".repeat(20001) }])
+      expect(competitionSchema.safeParse({ ...competition, ...bad }).success).toBe(false);
+    for (const bad of [{ organizer: "a".repeat(256) }, { ranking: "a".repeat(121) }, { ranking: "  " }, { description: "a".repeat(20001) }])
+      expect(achievementSchema.safeParse({ ...achievement, ...bad }).success).toBe(false);
+    for (const bad of [{ summary: "   " }, { summary: "a".repeat(501) }, { description: "a".repeat(20001) }])
+      expect(projectSchema.safeParse({ ...project, ...bad }).success).toBe(false);
+    expect(contentMemberSchema.safeParse({ member_name: "X", role: "a".repeat(121) }).success).toBe(false);
+    expect(competitionSchema.parse({ ...competition, category: "  UI/UX  " }).category).toBe("UI/UX");
+  });
+
   it("keeps certificates out of the public achievement input (U18)", () => {
     const achievement = { title: "A", slug: "a", competition_name: "C", ranking: "1", achievement_date: "2026-01-01" };
     expect(achievementSchema.parse({ ...achievement, certificate_file: "x" })).not.toHaveProperty("certificate_file");
