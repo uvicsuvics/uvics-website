@@ -6,10 +6,12 @@ insert into auth.sessions (id, user_id, created_at) values ('00000000-0000-4000-
 
 insert into public.pages (id, title, slug, status) values
   ('00000000-0000-4000-8000-000000000801', 'Draft Page', 'draft-page', 'DRAFT'),
-  ('00000000-0000-4000-8000-000000000802', 'Published Page', 'published-page', 'PUBLISHED');
+  ('00000000-0000-4000-8000-000000000802', 'Published Page', 'published-page', 'PUBLISHED'),
+  ('00000000-0000-4000-8000-000000000803', 'Archived Page', 'archived-page', 'ARCHIVED');
 insert into public.programs (id, name, slug, status) values
   ('00000000-0000-4000-8000-000000000811', 'Draft Program', 'draft-program', 'DRAFT'),
-  ('00000000-0000-4000-8000-000000000812', 'Published Program', 'published-program', 'PUBLISHED');
+  ('00000000-0000-4000-8000-000000000812', 'Published Program', 'published-program', 'PUBLISHED'),
+  ('00000000-0000-4000-8000-000000000813', 'Archived Program', 'archived-program', 'ARCHIVED');
 insert into public.website_settings (key, value) values ('organization_name', '"UVICS"');
 
 do $$
@@ -57,8 +59,8 @@ select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000
 set local role authenticated;
 do $$
 begin
-  if (select count(*) from public.pages) <> 2 then raise exception 'active admin must read draft pages'; end if;
-  if (select count(*) from public.programs) <> 2 then raise exception 'active admin must read draft programs'; end if;
+  if (select count(*) from public.pages) <> 3 then raise exception 'active admin must read draft and archived pages'; end if;
+  if (select count(*) from public.programs) <> 3 then raise exception 'active admin must read draft and archived programs'; end if;
   if not exists (select from public.website_settings where key = 'organization_name') then raise exception 'active admin must read settings'; end if;
   perform public.publish_page('00000000-0000-4000-8000-000000000801');
   perform public.publish_program('00000000-0000-4000-8000-000000000811');
