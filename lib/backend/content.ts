@@ -9,6 +9,9 @@ type Client = SupabaseClient<Database>;
 
 export const competitionStatusSchema = z.enum(Constants.public.Enums.competition_status);
 export const projectStatusSchema = z.enum(Constants.public.Enums.project_status);
+export const levelSchema = z.enum(Constants.public.Enums.content_level);
+// Referensi media, bukan URL; bentuk final ditetapkan alur upload #28/#29.
+const mediaSchema = z.string().trim().max(500).nullable().optional();
 
 export const competitionSchema = z
   .object({
@@ -17,12 +20,12 @@ export const competitionSchema = z
     organizer: z.string().trim().min(1).max(255),
     description: z.string().default(""),
     category: z.string().nullable().optional(),
-    level: z.string().nullable().optional(),
+    level: levelSchema.nullable().optional(),
     registration_deadline: calendarDateSchema.nullable().optional(),
     competition_date: calendarDateSchema.nullable().optional(),
     registration_url: httpUrlSchema.nullable().optional(),
     guidebook_url: httpUrlSchema.nullable().optional(),
-    poster_url: z.string().nullable().optional(),
+    poster: mediaSchema,
     team_size: z.string().nullable().optional(),
     eligibility: z.string().nullable().optional(),
     status: competitionStatusSchema.default("UPCOMING"),
@@ -39,11 +42,11 @@ export const achievementSchema = z.object({
   slug: slugSchema,
   competition_name: z.string().trim().min(1).max(255),
   organizer: z.string().nullable().optional(),
-  level: z.string().nullable().optional(),
+  level: levelSchema.nullable().optional(),
   ranking: z.string().trim().min(1),
   achievement_date: calendarDateSchema,
   description: z.string().default(""),
-  cover_image: z.string().nullable().optional(),
+  cover_image: mediaSchema,
   certificate_file: z.string().nullable().optional(),
   publication_status: contentStatusSchema.default("DRAFT"),
 });
@@ -54,7 +57,7 @@ export const projectSchema = z
     slug: slugSchema,
     summary: z.string().max(500),
     description: z.string().default(""),
-    cover_image: z.string().nullable().optional(),
+    cover_image: mediaSchema,
     project_url: httpUrlSchema.nullable().optional(),
     repository_url: httpUrlSchema.nullable().optional(),
     start_date: calendarDateSchema.nullable().optional(),
@@ -88,15 +91,15 @@ const competitionFilterSchema = z.object({
   search: searchSchema,
   status: optional(competitionStatusSchema),
   category: optional(z.string().max(120)),
-  level: optional(z.string().max(120)),
+  level: optional(levelSchema),
   featured: featuredSchema,
 });
-const achievementFilterSchema = z.object({ search: searchSchema, level: optional(z.string().max(120)) });
+const achievementFilterSchema = z.object({ search: searchSchema, level: optional(levelSchema) });
 const projectFilterSchema = z.object({ search: searchSchema, status: optional(projectStatusSchema), featured: featuredSchema });
 
 // Proyeksi publik eksplisit: tanpa publication_status, certificate_file, dan member_id (D02).
 const COMPETITION_FIELDS =
-  "id,title,slug,organizer,description,category,level,registration_deadline,competition_date,registration_url,guidebook_url,poster_url,team_size,eligibility,status,featured,created_at,updated_at";
+  "id,title,slug,organizer,description,category,level,registration_deadline,competition_date,registration_url,guidebook_url,poster,team_size,eligibility,status,featured,created_at,updated_at";
 const ACHIEVEMENT_FIELDS =
   "id,title,slug,competition_name,organizer,level,ranking,achievement_date,description,cover_image,created_at,updated_at,achievement_members(member_name,role)";
 const PROJECT_FIELDS =

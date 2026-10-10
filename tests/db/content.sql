@@ -64,6 +64,28 @@ begin
     insert into public.achievements (title, slug, competition_name, ranking, achievement_date) values ('Bad', 'Bad Slug', 'C', '1', '2026-01-01');
     raise exception 'invalid slug accepted';
   exception when check_violation then null; end;
+  -- U17: level memakai kode baku content_level
+  begin
+    insert into public.competitions (title, slug, organizer, level) values ('Lvl', 'lvl-comp', 'Org', 'Nasional');
+    raise exception 'free-text competition level accepted';
+  exception when invalid_text_representation then null; end;
+  begin
+    insert into public.achievements (title, slug, competition_name, ranking, achievement_date, level) values ('Lvl', 'lvl-ach', 'C', '1', '2026-01-01', 'National');
+    raise exception 'free-text achievement level accepted';
+  exception when invalid_text_representation then null; end;
+  -- Kolom media berisi referensi, maksimal 500 karakter
+  begin
+    insert into public.competitions (title, slug, organizer, poster) values ('Media', 'media-comp', 'Org', repeat('a', 501));
+    raise exception 'poster longer than 500 accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into public.achievements (title, slug, competition_name, ranking, achievement_date, cover_image) values ('Media', 'media-ach', 'C', '1', '2026-01-01', repeat('a', 501));
+    raise exception 'achievement cover_image longer than 500 accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into public.projects (title, slug, summary, cover_image) values ('Media', 'media-proj', 'S', repeat('a', 501));
+    raise exception 'project cover_image longer than 500 accepted';
+  exception when check_violation then null; end;
   -- D18
   begin
     insert into public.achievement_members (achievement_id) values ('00000000-0000-4000-8000-000000000721');

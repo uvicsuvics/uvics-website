@@ -11,13 +11,13 @@ INSERT INTO public.programs (id, name, slug, short_description, description, sta
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.competitions (id, title, slug, organizer, description, category, level, registration_deadline, competition_date, registration_url, status, publication_status, featured) VALUES
-  ('00000000-0000-4000-8000-000000000921', 'UI/UX Competition (Seed)', 'seed-ui-ux-competition', 'Example University', 'Lomba contoh sintetis.', 'UI/UX', 'Nasional', '2026-10-10', '2026-10-20', 'https://example.invalid/register', 'OPEN', 'PUBLISHED', true),
-  ('00000000-0000-4000-8000-000000000922', 'Competitive Programming (Seed)', 'seed-competitive-programming', 'Example Institute', '', 'Programming', 'Internasional', '2026-11-01', '2026-11-15', NULL, 'UPCOMING', 'DRAFT', false)
+  ('00000000-0000-4000-8000-000000000921', 'UI/UX Competition (Seed)', 'seed-ui-ux-competition', 'Example University', 'Lomba contoh sintetis.', 'UI/UX', 'NASIONAL', '2026-10-10', '2026-10-20', 'https://example.invalid/register', 'OPEN', 'PUBLISHED', true),
+  ('00000000-0000-4000-8000-000000000922', 'Competitive Programming (Seed)', 'seed-competitive-programming', 'Example Institute', '', 'Programming', 'INTERNASIONAL', '2026-11-01', '2026-11-15', NULL, 'UPCOMING', 'DRAFT', false)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.achievements (id, title, slug, competition_name, organizer, level, ranking, achievement_date, description, publication_status) VALUES
-  ('00000000-0000-4000-8000-000000000931', 'Juara 1 Hackathon (Seed)', 'seed-juara-1-hackathon', 'Hackathon Contoh', 'Example Corp', 'Nasional', 'Juara 1', '2026-08-15', 'Prestasi contoh sintetis.', 'PUBLISHED'),
-  ('00000000-0000-4000-8000-000000000932', 'Finalis CTF (Seed)', 'seed-finalis-ctf', 'CTF Contoh', 'Example Org', 'Internal', 'Finalis', '2026-09-01', '', 'DRAFT')
+  ('00000000-0000-4000-8000-000000000931', 'Juara 1 Hackathon (Seed)', 'seed-juara-1-hackathon', 'Hackathon Contoh', 'Example Corp', 'NASIONAL', 'Juara 1', '2026-08-15', 'Prestasi contoh sintetis.', 'PUBLISHED'),
+  ('00000000-0000-4000-8000-000000000932', 'Finalis CTF (Seed)', 'seed-finalis-ctf', 'CTF Contoh', 'Example Org', 'INTERNAL', 'Finalis', '2026-09-01', '', 'DRAFT')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.achievement_members (id, achievement_id, member_name, role) VALUES

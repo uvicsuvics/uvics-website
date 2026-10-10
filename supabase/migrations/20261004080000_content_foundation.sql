@@ -2,6 +2,8 @@
 -- Mutasi admin lewat RPC ber-audit (D13) belum ada di sini; anon/authenticated hanya SELECT.
 create type public.competition_status as enum ('UPCOMING', 'OPEN', 'CLOSED', 'ONGOING', 'FINISHED');
 create type public.project_status as enum ('PLANNED', 'ONGOING', 'COMPLETED', 'ARCHIVED');
+-- U17: kode baku level; label tampilan urusan frontend.
+create type public.content_level as enum ('INTERNAL', 'REGIONAL', 'NASIONAL', 'INTERNASIONAL');
 
 create table public.competitions (
     id uuid primary key default gen_random_uuid(),
@@ -10,12 +12,12 @@ create table public.competitions (
     organizer text not null check(char_length(organizer) between 1 and 255),
     description text not null default '',
     category text,
-    level text,
+    level public.content_level,
     registration_deadline date,
     competition_date date,
     registration_url text check(registration_url ~* '^https?://'),
     guidebook_url text check(guidebook_url ~* '^https?://'),
-    poster_url text,
+    poster text check(char_length(poster) <= 500),
     team_size text,
     eligibility text,
     status public.competition_status not null default 'UPCOMING',
@@ -32,11 +34,11 @@ create table public.achievements (
     slug text not null unique check(char_length(slug) between 1 and 160 and slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
     competition_name text not null check(char_length(competition_name) between 1 and 255),
     organizer text,
-    level text,
+    level public.content_level,
     ranking text not null,
     achievement_date date not null,
     description text not null default '',
-    cover_image text,
+    cover_image text check(char_length(cover_image) <= 500),
     certificate_file text,
     publication_status public.content_status not null default 'DRAFT',
     created_at timestamptz not null default statement_timestamp(),
@@ -62,7 +64,7 @@ create table public.projects (
     slug text not null unique check(char_length(slug) between 1 and 160 and slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
     summary text not null check(char_length(summary) <= 500),
     description text not null default '',
-    cover_image text,
+    cover_image text check(char_length(cover_image) <= 500),
     project_url text check(project_url ~* '^https?://'),
     repository_url text check(repository_url ~* '^https?://'),
     start_date date,
@@ -86,6 +88,10 @@ create table public.project_members (
     unique(project_id, member_id)
 );
 create index project_members_member_id_idx on public.project_members(member_id);
+
+comment on column public.competitions.poster is 'Referensi media, bukan URL; bentuk final ditetapkan alur upload #28/#29';
+comment on column public.achievements.cover_image is 'Referensi media, bukan URL; bentuk final ditetapkan alur upload #28/#29';
+comment on column public.projects.cover_image is 'Referensi media, bukan URL; bentuk final ditetapkan alur upload #28/#29';
 
 revoke all on table public.competitions, public.achievements, public.achievement_members, public.projects, public.project_members from public, anon, authenticated;
 grant select on table public.competitions, public.achievements, public.achievement_members, public.projects, public.project_members to authenticated;

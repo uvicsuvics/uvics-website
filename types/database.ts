@@ -60,7 +60,7 @@ export type Database = {
           created_at: string;
           description: string;
           id: string;
-          level: string | null;
+          level: Database["public"]["Enums"]["content_level"] | null;
           organizer: string | null;
           publication_status: Database["public"]["Enums"]["content_status"];
           ranking: string;
@@ -76,7 +76,7 @@ export type Database = {
           created_at?: string;
           description?: string;
           id?: string;
-          level?: string | null;
+          level?: Database["public"]["Enums"]["content_level"] | null;
           organizer?: string | null;
           publication_status?: Database["public"]["Enums"]["content_status"];
           ranking: string;
@@ -92,7 +92,7 @@ export type Database = {
           created_at?: string;
           description?: string;
           id?: string;
-          level?: string | null;
+          level?: Database["public"]["Enums"]["content_level"] | null;
           organizer?: string | null;
           publication_status?: Database["public"]["Enums"]["content_status"];
           ranking?: string;
@@ -183,9 +183,9 @@ export type Database = {
           featured: boolean;
           guidebook_url: string | null;
           id: string;
-          level: string | null;
+          level: Database["public"]["Enums"]["content_level"] | null;
           organizer: string;
-          poster_url: string | null;
+          poster: string | null;
           publication_status: Database["public"]["Enums"]["content_status"];
           registration_deadline: string | null;
           registration_url: string | null;
@@ -204,9 +204,9 @@ export type Database = {
           featured?: boolean;
           guidebook_url?: string | null;
           id?: string;
-          level?: string | null;
+          level?: Database["public"]["Enums"]["content_level"] | null;
           organizer: string;
-          poster_url?: string | null;
+          poster?: string | null;
           publication_status?: Database["public"]["Enums"]["content_status"];
           registration_deadline?: string | null;
           registration_url?: string | null;
@@ -225,9 +225,9 @@ export type Database = {
           featured?: boolean;
           guidebook_url?: string | null;
           id?: string;
-          level?: string | null;
+          level?: Database["public"]["Enums"]["content_level"] | null;
           organizer?: string;
-          poster_url?: string | null;
+          poster?: string | null;
           publication_status?: Database["public"]["Enums"]["content_status"];
           registration_deadline?: string | null;
           registration_url?: string | null;
@@ -840,6 +840,7 @@ export type Database = {
     };
     Enums: {
       competition_status: "UPCOMING" | "OPEN" | "CLOSED" | "ONGOING" | "FINISHED";
+      content_level: "INTERNAL" | "REGIONAL" | "NASIONAL" | "INTERNASIONAL";
       content_status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
       project_status: "PLANNED" | "ONGOING" | "COMPLETED" | "ARCHIVED";
     };
@@ -970,6 +971,7 @@ export const Constants = {
   public: {
     Enums: {
       competition_status: ["UPCOMING", "OPEN", "CLOSED", "ONGOING", "FINISHED"],
+      content_level: ["INTERNAL", "REGIONAL", "NASIONAL", "INTERNASIONAL"],
       content_status: ["DRAFT", "PUBLISHED", "ARCHIVED"],
       project_status: ["PLANNED", "ONGOING", "COMPLETED", "ARCHIVED"],
     },

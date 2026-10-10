@@ -37,6 +37,11 @@ const projectMember: Pick<Tables["project_members"]["Insert"], "project_id" | "m
   project_id: "00000000-0000-4000-8000-000000000731",
   member_id: "00000000-0000-4000-8000-000000000701",
 };
+const competitionMedia: Pick<Tables["competitions"]["Row"], "poster" | "level"> = { poster: null, level: "NASIONAL" };
+// @ts-expect-error poster_url diganti poster (referensi media)
+const legacyPoster: Pick<Tables["competitions"]["Row"], "poster_url"> = { poster_url: null };
+// @ts-expect-error level memakai kode baku content_level (U17)
+const freeTextLevel: Tables["achievements"]["Row"]["level"] = "Nasional";
 // @ts-expect-error lifecycle bukan teks bebas
 const freeTextStatus: Tables["competitions"]["Row"]["status"] = "Open";
 // @ts-expect-error boolean published diganti publication_status (D17)
@@ -44,7 +49,7 @@ const legacyPublished: Pick<Tables["achievements"]["Row"], "published"> = { publ
 
 describe("database types mirror content_foundation migration", () => {
   it("exposes publication_status, lifecycle enums and member links", () => {
-    expect([competitionRow, achievementRow, achievementMember, projectRow, projectMember, freeTextStatus, legacyPublished]).toHaveLength(7);
+    expect([competitionRow, achievementRow, achievementMember, projectRow, projectMember, freeTextStatus, legacyPublished, competitionMedia, legacyPoster, freeTextLevel]).toHaveLength(10);
   });
 });
 
@@ -73,11 +78,14 @@ describe("content input validation", () => {
 
   it("enforces date order, real calendar dates and http(s) links", () => {
     expect(competitionSchema.safeParse({ ...competition, registration_deadline: "2026-10-20", competition_date: "2026-10-20" }).success).toBe(true);
+    expect(competitionSchema.safeParse({ ...competition, level: "NASIONAL", poster: "uvics/published/poster-1" }).success).toBe(true);
     for (const bad of [
       { registration_deadline: "2026-10-21", competition_date: "2026-10-20" },
       { competition_date: "2026-02-30" },
       { registration_url: "javascript:alert(1)" },
       { status: "Open" },
+      { level: "Nasional" },
+      { poster: "a".repeat(501) },
     ])
       expect(competitionSchema.safeParse({ ...competition, ...bad }).success).toBe(false);
     expect(projectSchema.safeParse({ title: "P", slug: "p", summary: "S", start_date: "2026-02-01", end_date: "2026-01-01" }).success).toBe(false);
@@ -110,16 +118,19 @@ describe("public content queries", () => {
 
   it("applies allowlisted filters and ignores an empty search", async () => {
     const { client, calls } = fakeClient(empty);
-    await listPublicCompetitions(client, { search: "ui", status: "OPEN", level: "Nasional", category: "UI/UX" });
+    await listPublicCompetitions(client, { search: "ui", status: "OPEN", level: "NASIONAL", category: "UI/UX" });
     expect(calls).toEqual(expect.arrayContaining([
       ["ilike", ["title", "%ui%"]],
       ["eq", ["status", "OPEN"]],
-      ["eq", ["level", "Nasional"]],
+      ["eq", ["level", "NASIONAL"]],
       ["eq", ["category", "UI/UX"]],
     ]));
     const blank = fakeClient(empty);
     await listPublicProjects(blank.client, { search: "  " });
     expect(blank.calls.some(([method]) => method === "ilike")).toBe(false);
+    const fields = String(calls.find(([method]) => method === "select")?.[1][0]);
+    expect(fields.split(",")).toContain("poster");
+    expect(fields).not.toMatch(/poster_url/);
   });
 
   it("filters featured content and treats empty form values as no filter", async () => {
@@ -154,8 +165,9 @@ describe("public content queries", () => {
   });
 
   it("rejects invalid filters and pagination with VALIDATION_ERROR", async () => {
-    for (const raw of [{ status: "DRAFT" }, { page_size: "101" }, { page: "0" }])
+    for (const raw of [{ status: "DRAFT" }, { page_size: "101" }, { page: "0" }, { level: "Nasional" }])
       await expect(listPublicCompetitions(fakeClient(empty).client, raw)).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    await expect(listPublicAchievements(fakeClient(empty).client, { level: "National" })).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
   });
 
   it("maps database failures without leaking provider errors", async () => {
