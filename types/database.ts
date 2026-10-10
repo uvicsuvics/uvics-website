@@ -9,89 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      achievement_members: {
-        Row: {
-          achievement_id: string;
-          created_at: string;
-          id: string;
-          member_name: string;
-          role: string | null;
-        };
-        Insert: {
-          achievement_id: string;
-          created_at?: string;
-          id?: string;
-          member_name: string;
-          role?: string | null;
-        };
-        Update: {
-          achievement_id?: string;
-          created_at?: string;
-          id?: string;
-          member_name?: string;
-          role?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "achievement_members_achievement_id_fkey";
-            columns: ["achievement_id"];
-            isOneToOne: false;
-            referencedRelation: "achievements";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      achievements: {
-        Row: {
-          certificate_file: string | null;
-          competition_name: string;
-          cover_image: string | null;
-          created_at: string;
-          description: string;
-          id: string;
-          level: string | null;
-          organizer: string | null;
-          published: boolean;
-          ranking: string;
-          slug: string;
-          achievement_date: string;
-          title: string;
-          updated_at: string;
-        };
-        Insert: {
-          certificate_file?: string | null;
-          competition_name: string;
-          cover_image?: string | null;
-          created_at?: string;
-          description?: string;
-          id?: string;
-          level?: string | null;
-          organizer?: string | null;
-          published?: boolean;
-          ranking: string;
-          slug: string;
-          achievement_date: string;
-          title: string;
-          updated_at?: string;
-        };
-        Update: {
-          certificate_file?: string | null;
-          competition_name?: string;
-          cover_image?: string | null;
-          created_at?: string;
-          description?: string;
-          id?: string;
-          level?: string | null;
-          organizer?: string | null;
-          published?: boolean;
-          ranking?: string;
-          slug?: string;
-          achievement_date?: string;
-          title?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       admins: {
         Row: {
           created_at: string;
@@ -163,262 +80,539 @@ export type Database = {
           },
         ];
       };
-      competitions: {
+      departments: {
         Row: {
-          category: string | null;
-          competition_date: string | null;
+          active: boolean;
           created_at: string;
-          description: string;
-          eligibility: string | null;
-          featured: boolean;
-          guidebook_url: string | null;
-          id: string;
-          level: string | null;
-          organizer: string;
-          poster_url: string | null;
-          registration_deadline: string | null;
-          registration_url: string | null;
-          slug: string;
-          status: Database["public"]["Enums"]["competition_status"];
-          team_size: string | null;
-          title: string;
-          updated_at: string;
-        };
-        Insert: {
-          category?: string | null;
-          competition_date?: string | null;
-          created_at?: string;
-          description?: string;
-          eligibility?: string | null;
-          featured?: boolean;
-          guidebook_url?: string | null;
-          id?: string;
-          level?: string | null;
-          organizer: string;
-          poster_url?: string | null;
-          registration_deadline?: string | null;
-          registration_url?: string | null;
-          slug: string;
-          status?: Database["public"]["Enums"]["competition_status"];
-          team_size?: string | null;
-          title: string;
-          updated_at?: string;
-        };
-        Update: {
-          category?: string | null;
-          competition_date?: string | null;
-          created_at?: string;
-          description?: string;
-          eligibility?: string | null;
-          featured?: boolean;
-          guidebook_url?: string | null;
-          id?: string;
-          level?: string | null;
-          organizer?: string;
-          poster_url?: string | null;
-          registration_deadline?: string | null;
-          registration_url?: string | null;
-          slug?: string;
-          status?: Database["public"]["Enums"]["competition_status"];
-          team_size?: string | null;
-          title?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      pages: {
-        Row: {
-          content: string;
-          created_at: string;
-          id: string;
-          meta_description: string | null;
-          meta_title: string | null;
-          published_at: string | null;
-          slug: string;
-          status: Database["public"]["Enums"]["content_status"];
-          title: string;
-          updated_at: string;
-        };
-        Insert: {
-          content?: string;
-          created_at?: string;
-          id?: string;
-          meta_description?: string | null;
-          meta_title?: string | null;
-          published_at?: string | null;
-          slug: string;
-          status?: Database["public"]["Enums"]["content_status"];
-          title: string;
-          updated_at?: string;
-        };
-        Update: {
-          content?: string;
-          created_at?: string;
-          id?: string;
-          meta_description?: string | null;
-          meta_title?: string | null;
-          published_at?: string | null;
-          slug?: string;
-          status?: Database["public"]["Enums"]["content_status"];
-          title?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      programs: {
-        Row: {
-          created_at: string;
-          description: string;
+          description: string | null;
           display_order: number;
           id: string;
-          image: string | null;
           name: string;
-          short_description: string | null;
           slug: string;
-          status: Database["public"]["Enums"]["content_status"];
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      members: {
+        Row: {
+          batch: number | null;
+          bio: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          email: string | null;
+          faculty: string | null;
+          full_name: string;
+          github_url: string | null;
+          graduated_at: string | null;
+          id: string;
+          instagram_url: string | null;
+          joined_at: string | null;
+          linkedin_url: string | null;
+          nim: string | null;
+          phone: string | null;
+          photo: string | null;
+          public_profile: boolean;
+          status: string;
+          study_program: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          batch?: number | null;
+          bio?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          email?: string | null;
+          faculty?: string | null;
+          full_name: string;
+          github_url?: string | null;
+          graduated_at?: string | null;
+          id?: string;
+          instagram_url?: string | null;
+          joined_at?: string | null;
+          linkedin_url?: string | null;
+          nim?: string | null;
+          phone?: string | null;
+          photo?: string | null;
+          public_profile?: boolean;
+          status?: string;
+          study_program?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          batch?: number | null;
+          bio?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          email?: string | null;
+          faculty?: string | null;
+          full_name?: string;
+          github_url?: string | null;
+          graduated_at?: string | null;
+          id?: string;
+          instagram_url?: string | null;
+          joined_at?: string | null;
+          linkedin_url?: string | null;
+          nim?: string | null;
+          phone?: string | null;
+          photo?: string | null;
+          public_profile?: boolean;
+          status?: string;
+          study_program?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      membership_histories: {
+        Row: {
+          created_at: string;
+          department_id: string;
+          end_date: string | null;
+          id: string;
+          member_id: string;
+          notes: string | null;
+          organization_period_id: string;
+          position_id: string;
+          start_date: string | null;
           updated_at: string;
         };
         Insert: {
           created_at?: string;
-          description?: string;
-          display_order?: number;
+          department_id: string;
+          end_date?: string | null;
           id?: string;
-          image?: string | null;
-          name: string;
-          short_description?: string | null;
-          slug: string;
-          status?: Database["public"]["Enums"]["content_status"];
+          member_id: string;
+          notes?: string | null;
+          organization_period_id: string;
+          position_id: string;
+          start_date?: string | null;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
-          description?: string;
+          department_id?: string;
+          end_date?: string | null;
+          id?: string;
+          member_id?: string;
+          notes?: string | null;
+          organization_period_id?: string;
+          position_id?: string;
+          start_date?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "membership_histories_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_organization_period_id_fkey";
+            columns: ["organization_period_id"];
+            isOneToOne: false;
+            referencedRelation: "organization_periods";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_position_id_fkey";
+            columns: ["position_id"];
+            isOneToOne: false;
+            referencedRelation: "positions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_periods: {
+        Row: {
+          created_at: string;
+          end_date: string;
+          id: string;
+          name: string;
+          start_date: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          end_date: string;
+          id?: string;
+          name: string;
+          start_date: string;
+          status: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          end_date?: string;
+          id?: string;
+          name?: string;
+          start_date?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      positions: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          display_order: number;
+          id: string;
+          level: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
           display_order?: number;
           id?: string;
-          image?: string | null;
-          name?: string;
-          short_description?: string | null;
-          slug?: string;
-          status?: Database["public"]["Enums"]["content_status"];
+          level: string;
+          name: string;
           updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          level?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      registrations: {
+        Row: {
+          accepted_at: string | null;
+          admin_notes: string | null;
+          batch: number;
+          converted_member_id: string | null;
+          created_at: string;
+          email: string;
+          experience: string | null;
+          faculty: string;
+          full_name: string;
+          id: string;
+          motivation: string | null;
+          nim: string;
+          phone: string;
+          photo: string | null;
+          portfolio_url: string | null;
+          preferred_department_id: string | null;
+          rejected_at: string | null;
+          skills: string | null;
+          status: string;
+          study_program: string;
+          submitted_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          admin_notes?: string | null;
+          batch: number;
+          converted_member_id?: string | null;
+          created_at?: string;
+          email: string;
+          experience?: string | null;
+          faculty: string;
+          full_name: string;
+          id?: string;
+          motivation?: string | null;
+          nim: string;
+          phone: string;
+          photo?: string | null;
+          portfolio_url?: string | null;
+          preferred_department_id?: string | null;
+          rejected_at?: string | null;
+          skills?: string | null;
+          status?: string;
+          study_program: string;
+          submitted_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          admin_notes?: string | null;
+          batch?: number;
+          converted_member_id?: string | null;
+          created_at?: string;
+          email?: string;
+          experience?: string | null;
+          faculty?: string;
+          full_name?: string;
+          id?: string;
+          motivation?: string | null;
+          nim?: string;
+          phone?: string;
+          photo?: string | null;
+          portfolio_url?: string | null;
+          preferred_department_id?: string | null;
+          rejected_at?: string | null;
+          skills?: string | null;
+          status?: string;
+          study_program?: string;
+          submitted_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "registrations_converted_member_id_fkey";
+            columns: ["converted_member_id"];
+            isOneToOne: true;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "registrations_preferred_department_id_fkey";
+            columns: ["preferred_department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      competitions: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          organizer: string;
+          description: string;
+          category: string | null;
+          level: string | null;
+          registration_deadline: string | null;
+          competition_date: string | null;
+          registration_url: string | null;
+          guidebook_url: string | null;
+          poster_url: string | null;
+          team_size: string | null;
+          eligibility: string | null;
+          status: string;
+          featured: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          organizer: string;
+          description?: string;
+          category?: string | null;
+          level?: string | null;
+          registration_deadline?: string | null;
+          competition_date?: string | null;
+          registration_url?: string | null;
+          guidebook_url?: string | null;
+          poster_url?: string | null;
+          team_size?: string | null;
+          eligibility?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          organizer?: string;
+          description?: string;
+          category?: string | null;
+          level?: string | null;
+          registration_deadline?: string | null;
+          competition_date?: string | null;
+          registration_url?: string | null;
+          guidebook_url?: string | null;
+          poster_url?: string | null;
+          team_size?: string | null;
+          eligibility?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Relationships: [];
+      };
+      achievements: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          competition_name: string;
+          organizer: string | null;
+          level: string | null;
+          ranking: string;
+          achievement_date: string;
+          description: string;
+          cover_image: string | null;
+          certificate_file: string | null;
+          published: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          competition_name: string;
+          organizer?: string | null;
+          level?: string | null;
+          ranking: string;
+          achievement_date: string;
+          description?: string;
+          cover_image?: string | null;
+          certificate_file?: string | null;
+          published?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          competition_name?: string;
+          organizer?: string | null;
+          level?: string | null;
+          ranking?: string;
+          achievement_date?: string;
+          description?: string;
+          cover_image?: string | null;
+          certificate_file?: string | null;
+          published?: boolean;
+        };
+        Relationships: [];
+      };
+      projects: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          summary: string;
+          description: string;
+          cover_image: string | null;
+          project_url: string | null;
+          repository_url: string | null;
+          start_date: string | null;
+          end_date: string | null;
+          status: string;
+          featured: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          summary: string;
+          description?: string;
+          cover_image?: string | null;
+          project_url?: string | null;
+          repository_url?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          summary?: string;
+          description?: string;
+          cover_image?: string | null;
+          project_url?: string | null;
+          repository_url?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Relationships: [];
+      };
+      achievement_members: {
+        Row: {
+          id: string;
+          achievement_id: string;
+          member_name: string;
+          role: string;
+        };
+        Insert: {
+          id?: string;
+          achievement_id: string;
+          member_name: string;
+          role: string;
+        };
+        Update: {
+          id?: string;
+          achievement_id?: string;
+          member_name?: string;
+          role?: string;
         };
         Relationships: [];
       };
       project_members: {
         Row: {
-          created_at: string;
           id: string;
-          member_name: string;
           project_id: string;
-          role: string | null;
+          member_name: string;
+          role: string;
         };
         Insert: {
-          created_at?: string;
           id?: string;
-          member_name: string;
           project_id: string;
-          role?: string | null;
+          member_name: string;
+          role: string;
         };
         Update: {
-          created_at?: string;
           id?: string;
-          member_name?: string;
           project_id?: string;
-          role?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "project_members_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      projects: {
-        Row: {
-          cover_image: string | null;
-          created_at: string;
-          description: string;
-          end_date: string | null;
-          featured: boolean;
-          id: string;
-          project_url: string | null;
-          repository_url: string | null;
-          slug: string;
-          start_date: string | null;
-          status: Database["public"]["Enums"]["project_status"];
-          summary: string;
-          title: string;
-          updated_at: string;
-        };
-        Insert: {
-          cover_image?: string | null;
-          created_at?: string;
-          description?: string;
-          end_date?: string | null;
-          featured?: boolean;
-          id?: string;
-          project_url?: string | null;
-          repository_url?: string | null;
-          slug: string;
-          start_date?: string | null;
-          status?: Database["public"]["Enums"]["project_status"];
-          summary: string;
-          title: string;
-          updated_at?: string;
-        };
-        Update: {
-          cover_image?: string | null;
-          created_at?: string;
-          description?: string;
-          end_date?: string | null;
-          featured?: boolean;
-          id?: string;
-          project_url?: string | null;
-          repository_url?: string | null;
-          slug?: string;
-          start_date?: string | null;
-          status?: Database["public"]["Enums"]["project_status"];
-          summary?: string;
-          title?: string;
-          updated_at?: string;
+          member_name?: string;
+          role?: string;
         };
         Relationships: [];
       };
-      website_settings: {
-        Row: {
-          key: string;
-          updated_at: string;
-          updated_by: string | null;
-          value: Json;
-        };
-        Insert: {
-          key: string;
-          updated_at?: string;
-          updated_by?: string | null;
-          value?: Json;
-        };
-        Update: {
-          key?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-          value?: Json;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "website_settings_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "admins";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
     };
     Views: {
-      [key: string]: never;
+      [_ in never]: never;
     };
     Functions: {
       begin_media_publication: {
@@ -477,14 +671,6 @@ export type Database = {
         Returns: Json;
       };
       has_active_admin_session: { Args: never; Returns: boolean };
-      publish_page: {
-        Args: { p_id: string };
-        Returns: undefined;
-      };
-      publish_program: {
-        Args: { p_id: string };
-        Returns: undefined;
-      };
       read_upload_intent: {
         Args: { p_actor: string; p_intent: string; p_session: string };
         Returns: Json;
@@ -495,19 +681,8 @@ export type Database = {
         Returns: undefined;
       };
     };
-    Enums: {
-      competition_status:
-        | "UPCOMING"
-        | "OPEN"
-        | "CLOSED"
-        | "ONGOING"
-        | "FINISHED";
-      content_status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
-      project_status: "PLANNED" | "ONGOING" | "COMPLETED" | "ARCHIVED";
-    };
-    CompositeTypes: {
-      [key: string]: never;
-    };
+    Enums: Record<string, unknown>;
+    CompositeTypes: Record<string, unknown>;
   };
 };
 
@@ -597,49 +772,42 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Enums"] & Record<string, unknown>)
+    | { schema: keyof DatabaseWithoutInternals } = never,
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : keyof (DefaultSchema["Enums"] & Record<string, unknown>)) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : DefaultSchemaEnumNameOrOptions extends keyof (DefaultSchema["Enums"] &
+      Record<string, unknown>)
+    ? (DefaultSchema["Enums"] & Record<string, unknown>)[EnumName]
     : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["CompositeTypes"] & Record<string, unknown>)
+    | { schema: keyof DatabaseWithoutInternals } = never,
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : keyof (DefaultSchema["CompositeTypes"] & Record<string, unknown>)) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof (DefaultSchema["CompositeTypes"] &
+      Record<string, unknown>)
+    ? (DefaultSchema["CompositeTypes"] & Record<string, unknown>)[CompositeTypeName]
     : never;
 
 export const Constants = {
   public: {
-    Enums: {
-      competition_status: [
-        "UPCOMING",
-        "OPEN",
-        "CLOSED",
-        "ONGOING",
-        "FINISHED",
-      ],
-      content_status: ["DRAFT", "PUBLISHED", "ARCHIVED"],
-      project_status: ["PLANNED", "ONGOING", "COMPLETED", "ARCHIVED"],
-    },
+    Enums: {},
   },
 } as const;
