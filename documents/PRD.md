@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 # UVICS Website Platform
 
-**Document Version:** 1.1  
+**Document Version:** 1.0  
 **Status:** Draft for Development  
 **Product:** UVICS Website Platform  
 **Document Type:** Product Requirements Document  
@@ -9,15 +9,6 @@
 **Prepared For:** UVICS Development Team  
 
 **Keputusan teknis:** Stack implementasi telah disepakati pada 22 September 2026 dalam [TECH_STACK.md](TECH_STACK.md), termasuk full-stack Next.js, Supabase, Cloudinary, dan shadcn/ui. Status draft serta open questions bisnis dalam PRD ini tetap berlaku.
-
-**Keputusan produk:** Jawaban open questions (§79) dan penyelesaian bagian yang ambigu dicatat di [DECISIONS.md](DECISIONS.md). Keputusan berstatus *Diterima* di sana berlaku sampai PRD diperbarui. Penanda **Catatan v1.1** di dokumen ini menunjuk bagian yang masih menunggu keputusan.
-
-### Riwayat Perubahan
-
-| Versi | Tanggal | Perubahan |
-| --- | --- | --- |
-| 1.1 | 10 Oktober 2026 | Menyelaraskan istilah autentikasi, keamanan, dan error dengan TECH_STACK (§8, §45.1, §48, §54); menambah modul Programs (§21A) sesuai tabel yang sudah dibuat; menandai bagian yang bertentangan dengan spesifikasi atau implementasi; mengubah §79 menjadi tabel status; memperbarui struktur dokumentasi (§81). |
-| 1.0 | — | Draft awal. |
 
 ---
 
@@ -237,14 +228,13 @@ Admin Dashboard
 
 Minimum authentication requirement:
 
-- login email dan password melalui Supabase Auth (hashing password dikelola Supabase Auth);
-- sesi berbasis cookie SSR (`@supabase/ssr`) dengan masa maksimal satu jam absolut sejak login;
+- email;
+- password;
+- secure password hashing;
+- session-based authentication;
 - logout;
-- pesan error yang tidak membedakan email salah dan password salah;
-- rate limit percobaan login;
-- akun admin dibuat lewat provisioning operator; signup publik dinonaktifkan.
-
-Detail teknis ada di [BACKEND_CONVENTIONS.md](BACKEND_CONVENTIONS.md#auth-database-dan-audit).
+- failed login handling;
+- session expiration.
 
 Optional future enhancement:
 
@@ -325,7 +315,6 @@ Dashboard
 
 WEBSITE
 ├── Pages
-├── Programs
 ├── News
 ├── Events
 ├── Competitions
@@ -432,8 +421,6 @@ Departments
 
 Admin dapat mengganti periode yang ingin ditampilkan.
 
-> **Catatan v1.1:** Pengurus inti tidak berada di departemen, tetapi kolom departemen pada histori keanggotaan saat ini wajib diisi ([U01](DECISIONS.md#u01--pengurus-inti-tanpa-departemen)). Pengunjung belum punya jalur baca data organisasi ([U02](DECISIONS.md#u02--akses-publik-data-organisasi)).
-
 ---
 
 # 14. Departments
@@ -532,8 +519,6 @@ CANCELLED
 
 Status dapat dihitung otomatis berdasarkan waktu atau diubah admin apabila diperlukan.
 
-> **Catatan v1.1:** Visibilitas event mengikuti [D17](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima) (`content_status`). Aturan prioritas status otomatis dan status dari admin masih terbuka ([T06](DECISIONS.md#d-isu-terbuka)).
-
 Public pages:
 
 ```text
@@ -586,8 +571,6 @@ Admin dapat:
 - archive;
 - set featured.
 
-> **Catatan v1.1:** Status di atas adalah lifecycle. Publish/archive memakai `publication_status` sesuai [D17](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima).
-
 Public dapat:
 
 - melihat listing;
@@ -627,8 +610,6 @@ members
 ```
 
 Admin dapat menentukan apakah achievement ditampilkan secara publik.
-
-> **Catatan v1.1:** Relasi ke `members` dan peserta non-member mengikuti [D18](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima); `published` diganti `publication_status` (D17).
 
 ---
 
@@ -688,8 +669,6 @@ Requirement:
 - image compression;
 - optional album grouping.
 
-> **Catatan v1.1:** Spesifikasi halaman publik memakai album wajib dengan route `/gallery/{slug}`. Lihat [U14](DECISIONS.md#u14--galeri).
-
 ---
 
 # 21. Partners Management
@@ -709,57 +688,6 @@ Admin dapat menentukan partner mana yang ditampilkan.
 
 ---
 
-# 21A. Programs Management
-
-Program adalah kegiatan rutin UVICS (mis. workshop, study group, bootcamp) yang ditampilkan di homepage dan halaman Programs. Modul ini ditambahkan pada v1.1 untuk mendokumentasikan tabel yang sudah dibuat di migration CMS foundation (issue #10).
-
-Data (tabel `programs`):
-
-```text
-name
-slug
-short_description
-description
-image
-status
-display_order
-created_at
-updated_at
-```
-
-Status mengikuti status konten:
-
-```text
-DRAFT
-PUBLISHED
-ARCHIVED
-```
-
-Admin dapat:
-
-- create;
-- edit;
-- publish;
-- archive;
-- mengatur urutan tampil.
-
-Public pages:
-
-```text
-/programs
-/programs/{slug}
-```
-
-### Business Rules
-
-- slug harus unique;
-- hanya program `PUBLISHED` yang tampil di website publik;
-- publish dilakukan lewat fungsi database yang memeriksa sesi admin.
-
-> **Catatan v1.1:** Spesifikasi halaman publik meminta informasi tambahan (kategori, ikon, relasi ke departemen) yang belum ada di tabel. Lihat [U05](DECISIONS.md#u05--field-programs).
-
----
-
 # 22. Member Registration
 
 ## 22.1 Registration Availability
@@ -774,8 +702,6 @@ Admin harus dapat:
 - menentukan announcement text.
 
 Public registration hanya dapat digunakan ketika registration aktif.
-
-> **Catatan v1.1:** Status "pendaftaran dibuka" saat ini punya dua sumber (periode di bagian ini dan flag `registration_open` di §36), dan aturan unik per periode (§22.3) belum punya entitas periode. Lihat [U04](DECISIONS.md#u04--sumber-status-pendaftaran-dibuka). Route halaman pendaftaran menunggu [U03](DECISIONS.md#u03--route-pendaftaran).
 
 ## 22.2 Registration Form
 
@@ -1129,8 +1055,6 @@ GitHub optional
 
 Field internal seperti phone number, personal email, NIM, dan admin notes tidak boleh ditampilkan.
 
-> **Catatan v1.1:** Akses publik langsung ke data member ditutup ([D02](DECISIONS.md#a-keputusan-teknis-d01d05-kontrak-3133)); data member hanya tampil lewat proyeksi field. Apakah halaman `/members` dan `/alumni` masuk MVP menunggu [U12](DECISIONS.md#u12--halaman-members-dan-alumni), dan default `public_profile` menunggu [U11](DECISIONS.md#u11--default-public_profile).
-
 ---
 
 # 34. Public Alumni Directory
@@ -1396,7 +1320,6 @@ High-level entities:
 admins
 
 pages
-programs
 posts
 events
 competitions
@@ -1450,13 +1373,12 @@ members
 ```text
 id
 name
-is_active
+email
+password
 last_login_at
 created_at
 updated_at
 ```
-
-Email dan password tidak disimpan di tabel aplikasi; keduanya dikelola Supabase Auth. `admins.id` sama dengan ID user Auth.
 
 ## 45.2 registrations
 
@@ -1697,21 +1619,21 @@ Tidak boleh tampil pada public website tanpa requirement khusus:
 
 Minimum security requirements:
 
-- password dikelola Supabase Auth (tidak ada kolom password di tabel aplikasi);
-- pemeriksaan admin di setiap Server Action, Route Handler, dan query privat, bukan hanya di layout atau `proxy.ts`;
-- penolakan mutasi lintas origin (Origin harus sama persis dengan `APP_ORIGIN`) dan cookie `SameSite=Lax` sebagai pengganti token CSRF;
-- validasi input di server dengan Zod;
-- output escaping (bawaan React; konten rich text dirender dengan sanitasi);
-- upload aman lewat signature server dan verifikasi hasil upload;
-- validasi tipe dan ukuran file per kategori media;
+- secure password hashing;
+- authentication middleware;
+- CSRF protection;
+- input validation;
+- output escaping;
+- secure file upload;
+- MIME validation;
+- file size restrictions;
 - rate limiting login;
 - rate limiting registration;
-- sesi baru dari Supabase Auth di setiap login, dengan masa maksimal satu jam absolut;
-- cookie `Secure` di production;
-- query lewat Supabase SDK/RPC yang terparameter, tanpa SQL dinamis dari input pengguna;
-- Row Level Security di semua tabel yang terekspos Data API.
-
-Detail teknis ada di [BACKEND_CONVENTIONS.md](BACKEND_CONVENTIONS.md) dan [ARCHITECTURE.md](ARCHITECTURE.md#5-keamanan).
+- session regeneration after login;
+- session expiration;
+- secure cookies in production;
+- protection against SQL injection through ORM/prepared statements;
+- authorization middleware for admin routes.
 
 ---
 
@@ -1808,18 +1730,13 @@ Sistem harus menyediakan error states yang jelas.
 Examples:
 
 ```text
-401 Belum login atau sesi berakhir (UNAUTHENTICATED)
-403 Tidak berhak (FORBIDDEN)
-404 Halaman tidak ditemukan (NOT_FOUND)
-409 Konflik data, mis. slug sudah dipakai (CONFLICT)
-422 Validasi gagal (VALIDATION_ERROR)
-429 Terlalu banyak percobaan (RATE_LIMITED)
-500 Kesalahan server (INTERNAL_ERROR)
-503 Layanan sementara tidak tersedia (SERVICE_UNAVAILABLE)
+404 Page Not Found
+403 Unauthorized
+419 Session Expired
+500 Internal Server Error
+Validation Errors
 Upload Errors
 ```
-
-Kode error dan format respons mengikuti [BACKEND_CONVENTIONS.md](BACKEND_CONVENTIONS.md#validasi-dan-error).
 
 Admin form harus mempertahankan input apabila validation gagal sejauh memungkinkan.
 
@@ -2074,7 +1991,6 @@ Recommended routes:
 /admin/login
 /admin/dashboard
 /admin/pages
-/admin/programs
 /admin/news
 /admin/events
 /admin/competitions
@@ -2106,9 +2022,6 @@ Recommended:
 /about
 /organization
 /departments
-/departments/{slug}
-/programs
-/programs/{slug}
 /news
 /news/{slug}
 /events
@@ -2125,14 +2038,6 @@ Recommended:
 /contact
 /register
 ```
-
-> **Catatan v1.1:** Beberapa route berbeda dengan spesifikasi halaman publik dan kode:
->
-> - pendaftaran `/register` vs `/join` ([U03](DECISIONS.md#u03--route-pendaftaran));
-> - berita `/news` vs `/blog`, serta route template `/pricing`, `/batch`, `/forgot-password` ([U09](DECISIONS.md#u09--route-berita-dan-route-template));
-> - halaman Visi & Misi `/vision-mission` ([U10](DECISIONS.md#u10--halaman-visi--misi));
-> - detail galeri `/gallery/{slug}` ([U14](DECISIONS.md#u14--galeri));
-> - `/members` dan `/alumni` ([U12](DECISIONS.md#u12--halaman-members-dan-alumni)).
 
 ---
 
@@ -2556,30 +2461,28 @@ Keputusan utama PRD ini:
 
 # 79. Open Questions
 
-Beberapa keputusan bisnis perlu dikonfirmasi sebelum implementation final. Status per v1.1 (detail di [DECISIONS.md](DECISIONS.md)):
+Beberapa keputusan bisnis perlu dikonfirmasi sebelum implementation final.
 
-| No | Pertanyaan | Status | Rujukan |
-| --- | --- | --- | --- |
-| 1 | Apakah halaman Members akan tampil publik? | Usulan: tidak masuk MVP | U12, D02 |
-| 2 | Apakah halaman Alumni akan tampil publik? | Usulan: tidak masuk MVP | U12, D02 |
-| 3 | Field apa saja yang harus tersedia pada registration? | Sebagian diterima: field issue #8; field tambahan masih terbuka | D06, T05 |
-| 4 | Apakah registration memiliki periode/batch penerimaan? | Usulan: ya, tabel periode pendaftaran | U04 |
-| 5 | Apakah admin perlu menyimpan hasil interview? | Terbuka | T01 |
-| 6 | Apakah satu member dapat berada pada lebih dari satu department dalam periode yang sama? | Terbuka | T02 |
-| 7 | Apakah satu member dapat memiliki lebih dari satu position? | Terbuka | T02 |
-| 8 | Apakah organization period menggunakan tahun akademik atau periode kepengurusan bebas? | Diterima: nama bebas dengan tanggal mulai/selesai | D07 |
-| 9 | Apakah competition hanya informasi lomba atau juga tracking tim lomba? | Diterima: informasi lomba saja | D15 |
-| 10 | Apakah project perlu contributor/member relationship? | Diterima: ya, dengan dukungan non-member | D18 |
-| 11 | Apakah achievement dapat berasal dari individu non-member? | Diterima: ya | D18 |
-| 12 | Apakah homepage sections harus configurable urutannya? | Usulan: tidak, urutan tetap | U15 |
-| 13 | Apakah diperlukan bilingual Indonesia/English? | Usulan: Bahasa Indonesia untuk MVP | U16 |
-| 14 | Apakah admin terdiri dari satu akun atau beberapa akun dengan hak yang sama? | Diterima: beberapa akun, hak sama | D08 |
-| 15 | Apakah registration memerlukan upload CV/portfolio? | Diterima: tanpa CV, hanya URL portofolio | D10 |
-| 16 | Apakah alumni memiliki current occupation/company field? | Terbuka | T03 |
-| 17 | Apakah contact form perlu disimpan di database atau cukup external link/email? | Usulan: tautan kontak resmi tanpa penyimpanan | U13 |
-| 18 | Apakah diperlukan newsletter? | Terbuka | T04 |
-| 19 | Apakah website memiliki brand/design system resmi? | Diterima: `design.md` | D11 |
-| 20 | Apakah public member profile harus memiliki opt-in privacy? | Usulan: opt-in (`public_profile` default false) | U11, D02 |
+1. Apakah halaman Members akan tampil publik?
+2. Apakah halaman Alumni akan tampil publik?
+3. Field apa saja yang harus tersedia pada registration?
+4. Apakah registration memiliki periode/batch penerimaan?
+5. Apakah admin perlu menyimpan hasil interview?
+6. Apakah satu member dapat berada pada lebih dari satu department dalam periode yang sama?
+7. Apakah satu member dapat memiliki lebih dari satu position?
+8. Apakah organization period menggunakan tahun akademik atau periode kepengurusan bebas?
+9. Apakah competition hanya informasi lomba atau juga tracking tim lomba?
+10. Apakah project perlu contributor/member relationship?
+11. Apakah achievement dapat berasal dari individu non-member?
+12. Apakah homepage sections harus configurable urutannya?
+13. Apakah diperlukan bilingual Indonesia/English?
+14. Apakah admin terdiri dari satu akun atau beberapa akun dengan hak yang sama?
+15. Apakah registration memerlukan upload CV/portfolio?
+16. Apakah alumni memiliki current occupation/company field?
+17. Apakah contact form perlu disimpan di database atau cukup external link/email?
+18. Apakah diperlukan newsletter?
+19. Apakah website memiliki brand/design system resmi?
+20. Apakah public member profile harus memiliki opt-in privacy?
 
 Open questions harus diselesaikan sebelum fitur terkait masuk ke tahap development final.
 
@@ -2604,22 +2507,49 @@ Sebuah feature dianggap selesai jika:
 
 # 81. Recommended Documentation Structure
 
-Dokumentasi berada di folder `documents/` (kecuali aturan kode di `AGENTS.md` dan design system di `design.md` pada root repository):
+Repository direkomendasikan memiliki struktur:
 
-| Dokumen | Isi |
-| --- | --- |
-| `documents/PRD.md` | Kebutuhan produk (dokumen ini) |
-| `documents/UVICS_Public_Website_Page_Specification.md` | Spesifikasi halaman website publik |
-| `documents/DECISIONS.md` | Catatan keputusan dan jawaban open questions |
-| `documents/TECH_STACK.md` | Pilihan teknologi dan batas arsitektur |
-| `documents/ARCHITECTURE.md` | Peta sistem, struktur kode, domain data, dan alur utama |
-| `documents/BACKEND_CONVENTIONS.md` | Kontrak backend: data, validasi, error, auth, audit, media |
-| `documents/BACKEND_OPERATIONS.md` | Runbook operator: environment, migration, pengujian hosted |
-| `documents/DEVELOPMENT_WORKFLOW.md` | Branch, issue, commit, PR, merge, rilis, Definition of Done |
-| `AGENTS.md` | Aturan penulisan kode dan struktur proyek |
-| `design.md` | Design system |
+```text
+docs/
+│
+├── 01-product/
+│   ├── PRD.md
+│   ├── PRODUCT-SCOPE.md
+│   └── ROADMAP.md
+│
+├── 02-requirements/
+│   ├── PUBLIC-WEBSITE.md
+│   ├── CMS.md
+│   ├── MEMBERSHIP.md
+│   ├── ALUMNI.md
+│   ├── COMPETITION.md
+│   └── ACHIEVEMENT.md
+│
+├── 03-architecture/
+│   ├── SYSTEM-ARCHITECTURE.md
+│   ├── DATABASE.md
+│   ├── ERD.md
+│   ├── AUTHENTICATION.md
+│   └── STORAGE.md
+│
+├── 04-workflows/
+│   ├── MEMBER-REGISTRATION.md
+│   ├── MEMBER-LIFECYCLE.md
+│   ├── ALUMNI-TRANSITION.md
+│   └── CONTENT-PUBLISHING.md
+│
+├── 05-ui-ux/
+│   ├── INFORMATION-ARCHITECTURE.md
+│   ├── ADMIN-NAVIGATION.md
+│   └── DESIGN-SYSTEM.md
+│
+└── 06-quality/
+    ├── ACCEPTANCE-CRITERIA.md
+    ├── TESTING.md
+    └── SECURITY.md
+```
 
-PRD ini tetap menjadi dokumen utama. Requirement yang semakin detail dapat dipisahkan ke file khusus bila sebuah modul sudah terlalu besar untuk PRD.
+PRD ini dapat menjadi dokumen utama, sementara requirement yang semakin detail dapat dipisahkan ke file khusus di kemudian hari.
 
 ---
 
