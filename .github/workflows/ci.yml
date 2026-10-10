@@ -7,7 +7,8 @@ permissions:
   contents: read
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Hanya run PR yang tergantikan dibatalkan; setiap push ke main/development diperiksa penuh.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   NEXT_TELEMETRY_DISABLED: "1"
   APP_ORIGIN: http://localhost:3000
