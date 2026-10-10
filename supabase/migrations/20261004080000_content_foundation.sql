@@ -1,5 +1,5 @@
 -- Konten publik #11. Visibilitas memakai content_status (D17); lifecycle tetap enum terpisah.
--- Mutasi admin lewat RPC ber-audit (#30); di sini anon/authenticated hanya SELECT (D13).
+-- Mutasi admin lewat RPC ber-audit (D13) belum ada di sini; anon/authenticated hanya SELECT.
 create type public.competition_status as enum ('UPCOMING', 'OPEN', 'CLOSED', 'ONGOING', 'FINISHED');
 create type public.project_status as enum ('PLANNED', 'ONGOING', 'COMPLETED', 'ARCHIVED');
 
@@ -88,7 +88,12 @@ create table public.project_members (
 create index project_members_member_id_idx on public.project_members(member_id);
 
 revoke all on table public.competitions, public.achievements, public.achievement_members, public.projects, public.project_members from public, anon, authenticated;
-grant select on table public.competitions, public.achievements, public.achievement_members, public.projects, public.project_members to anon, authenticated;
+grant select on table public.competitions, public.achievements, public.achievement_members, public.projects, public.project_members to authenticated;
+-- D02: anon tidak membaca certificate_file (dokumen privat) maupun member_id.
+grant select on table public.competitions, public.projects to anon;
+grant select (id, title, slug, competition_name, organizer, level, ranking, achievement_date, description, cover_image, publication_status, created_at, updated_at) on public.achievements to anon;
+grant select (id, achievement_id, member_name, role, created_at) on public.achievement_members to anon;
+grant select (id, project_id, member_name, role, created_at) on public.project_members to anon;
 grant all on table public.competitions, public.achievements, public.achievement_members, public.projects, public.project_members to service_role;
 
 alter table public.competitions enable row level security;

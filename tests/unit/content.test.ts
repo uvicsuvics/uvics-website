@@ -100,6 +100,8 @@ describe("public content queries", () => {
     expect(calls).toContainEqual(["from", [table]]);
     expect(calls).toContainEqual(["eq", ["publication_status", "PUBLISHED"]]);
     expect(calls).toContainEqual(["range", [10, 19]]);
+    const fields = String(calls.find(([method]) => method === "select")?.[1][0]);
+    expect(fields).not.toMatch(/certificate_file|member_id|publication_status|\*/);
     expect(result).toEqual({ items: [], pagination: { page: 2, page_size: 10, total_items: 25, total_pages: 3 } });
   });
 

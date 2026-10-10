@@ -87,6 +87,12 @@ begin
   ) then
     raise exception 'service_role must keep full access on content tables';
   end if;
+  -- D02: dokumen sertifikat privat dan tautan member tidak terbaca anon
+  if has_column_privilege('anon', 'public.achievements', 'certificate_file', 'SELECT')
+     or has_column_privilege('anon', 'public.achievement_members', 'member_id', 'SELECT')
+     or has_column_privilege('anon', 'public.project_members', 'member_id', 'SELECT') then
+    raise exception 'anon must not read certificate_file or member_id (D02)';
+  end if;
 end$$;
 
 -- anon: hanya PUBLISHED; anggota hanya dari induk PUBLISHED
