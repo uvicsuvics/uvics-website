@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } fro
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import assert from "node:assert/strict";
+import { compareSchema, readCatalog, readTypes } from "./schema-types.mjs";
 const directory = mkdtempSync(join(tmpdir(), "uvics-db-"));
 const defaultWinBin =
   [
@@ -134,6 +135,10 @@ try {
     } finally {
       await pool.end();
     }
+  });
+  await step("types/database.ts sesuai schema", async () => {
+    const diffs = compareSchema(await readCatalog(client), readTypes(readFileSync("types/database.ts", "utf8")));
+    if (diffs.length) throw Error(`${diffs.length} selisih\n${diffs.join("\n")}`);
   });
   console.log(JSON.stringify({ database: "disposable", session_rls_audit: failures.length ? "FAIL" : "PASS", failures, ...concurrency }));
   if (failures.length) process.exitCode = 1;
