@@ -5,15 +5,21 @@ const DIR = "supabase/migrations/";
 const NAME = /^\d{14}_[a-z0-9_]+\.sql$/;
 
 /** Migration yang sudah ada di base bersifat append-only (DEVELOPMENT_WORKFLOW §9). */
+// migrate.mjs menyimpan 14 digit awal sebagai primary key schema_migrations.
+const version = (name) => name.slice(0, 14);
+
 export function checkMigrations(changes, baseFiles) {
-  const latest = [...baseFiles].sort().at(-1) ?? "";
+  const latest = baseFiles.map(version).sort().at(-1) ?? "";
+  const added = new Set();
   const errors = [];
   for (const { status, file } of changes) {
     if (!file.startsWith(DIR)) continue;
     const name = file.slice(DIR.length);
     if (status !== "A") errors.push(`${file}: migration yang sudah ada tidak boleh diubah, dihapus, atau di-rename (${status})`);
     else if (!NAME.test(name)) errors.push(`${file}: nama harus YYYYMMDDHHMMSS_topik.sql`);
-    else if (name <= latest) errors.push(`${file}: harus diurutkan setelah ${latest}`);
+    else if (version(name) <= latest) errors.push(`${file}: versi ${version(name)} harus lebih besar dari ${latest}`);
+    else if (added.has(version(name))) errors.push(`${file}: versi ${version(name)} dipakai lebih dari satu migration`);
+    else added.add(version(name));
   }
   return errors;
 }

@@ -26,6 +26,15 @@ describe("migration guard (DEVELOPMENT_WORKFLOW §9)", () => {
     expect(checkMigrations([{ status: "A", file: `${dir}20261001000000_backdated.sql` }], base)).toHaveLength(1);
   });
 
+  it("compares the 14-digit version, which migrate.mjs stores as the primary key", () => {
+    expect(checkMigrations([{ status: "A", file: `${dir}20261004080000_zzz_followup.sql` }], base)).toHaveLength(1);
+    const twins = [
+      { status: "A", file: `${dir}20261011090000_a.sql` },
+      { status: "A", file: `${dir}20261011090000_b.sql` },
+    ];
+    expect(checkMigrations(twins, base)).toHaveLength(1);
+  });
+
   it("ignores files outside the migration directory", () => {
     expect(checkMigrations([{ status: "M", file: "supabase/config.toml" }], base)).toEqual([]);
   });
