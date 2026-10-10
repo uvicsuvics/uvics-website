@@ -80,6 +80,389 @@ export type Database = {
           },
         ];
       };
+      departments: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          display_order: number;
+          id: string;
+          name: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      members: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      membership_histories: {
+        Row: {
+          created_at: string;
+          department_id: string;
+          id: string;
+          member_id: string;
+          organization_period_id: string;
+          position_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          department_id: string;
+          id?: string;
+          member_id: string;
+          organization_period_id: string;
+          position_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          department_id?: string;
+          id?: string;
+          member_id?: string;
+          organization_period_id?: string;
+          position_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "membership_histories_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_organization_period_id_fkey";
+            columns: ["organization_period_id"];
+            isOneToOne: false;
+            referencedRelation: "organization_periods";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_position_id_fkey";
+            columns: ["position_id"];
+            isOneToOne: false;
+            referencedRelation: "positions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_periods: {
+        Row: {
+          created_at: string;
+          end_date: string;
+          id: string;
+          name: string;
+          start_date: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          end_date: string;
+          id?: string;
+          name: string;
+          start_date: string;
+          status: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          end_date?: string;
+          id?: string;
+          name?: string;
+          start_date?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      positions: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          display_order: number;
+          id: string;
+          level: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          level: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          level?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      competitions: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          organizer: string;
+          description: string;
+          category: string | null;
+          level: string | null;
+          registration_deadline: string | null;
+          competition_date: string | null;
+          registration_url: string | null;
+          guidebook_url: string | null;
+          poster_url: string | null;
+          team_size: string | null;
+          eligibility: string | null;
+          status: string;
+          featured: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          organizer: string;
+          description?: string;
+          category?: string | null;
+          level?: string | null;
+          registration_deadline?: string | null;
+          competition_date?: string | null;
+          registration_url?: string | null;
+          guidebook_url?: string | null;
+          poster_url?: string | null;
+          team_size?: string | null;
+          eligibility?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          organizer?: string;
+          description?: string;
+          category?: string | null;
+          level?: string | null;
+          registration_deadline?: string | null;
+          competition_date?: string | null;
+          registration_url?: string | null;
+          guidebook_url?: string | null;
+          poster_url?: string | null;
+          team_size?: string | null;
+          eligibility?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Relationships: [];
+      };
+      achievements: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          competition_name: string;
+          organizer: string | null;
+          level: string | null;
+          ranking: string;
+          achievement_date: string;
+          description: string;
+          cover_image: string | null;
+          certificate_file: string | null;
+          published: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          competition_name: string;
+          organizer?: string | null;
+          level?: string | null;
+          ranking: string;
+          achievement_date: string;
+          description?: string;
+          cover_image?: string | null;
+          certificate_file?: string | null;
+          published?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          competition_name?: string;
+          organizer?: string | null;
+          level?: string | null;
+          ranking?: string;
+          achievement_date?: string;
+          description?: string;
+          cover_image?: string | null;
+          certificate_file?: string | null;
+          published?: boolean;
+        };
+        Relationships: [];
+      };
+      projects: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          slug: string;
+          summary: string;
+          description: string;
+          cover_image: string | null;
+          project_url: string | null;
+          repository_url: string | null;
+          start_date: string | null;
+          end_date: string | null;
+          status: string;
+          featured: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          slug: string;
+          summary: string;
+          description?: string;
+          cover_image?: string | null;
+          project_url?: string | null;
+          repository_url?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title?: string;
+          slug?: string;
+          summary?: string;
+          description?: string;
+          cover_image?: string | null;
+          project_url?: string | null;
+          repository_url?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          status?: string;
+          featured?: boolean;
+        };
+        Relationships: [];
+      };
+      achievement_members: {
+        Row: {
+          id: string;
+          achievement_id: string;
+          member_name: string;
+          role: string;
+        };
+        Insert: {
+          id?: string;
+          achievement_id: string;
+          member_name: string;
+          role: string;
+        };
+        Update: {
+          id?: string;
+          achievement_id?: string;
+          member_name?: string;
+          role?: string;
+        };
+        Relationships: [];
+      };
+      project_members: {
+        Row: {
+          id: string;
+          project_id: string;
+          member_name: string;
+          role: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          member_name: string;
+          role: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          member_name?: string;
+          role?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -151,12 +534,8 @@ export type Database = {
         Returns: undefined;
       };
     };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
+    Enums: Record<string, unknown>;
+    CompositeTypes: Record<string, unknown>;
   };
 };
 
@@ -246,35 +625,38 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Enums"] & Record<string, unknown>)
+    | { schema: keyof DatabaseWithoutInternals } = never,
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : keyof (DefaultSchema["Enums"] & Record<string, unknown>)) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : DefaultSchemaEnumNameOrOptions extends keyof (DefaultSchema["Enums"] &
+      Record<string, unknown>)
+    ? (DefaultSchema["Enums"] & Record<string, unknown>)[EnumName]
     : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["CompositeTypes"] & Record<string, unknown>)
+    | { schema: keyof DatabaseWithoutInternals } = never,
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : keyof (DefaultSchema["CompositeTypes"] & Record<string, unknown>)) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof (DefaultSchema["CompositeTypes"] &
+      Record<string, unknown>)
+    ? (DefaultSchema["CompositeTypes"] & Record<string, unknown>)[CompositeTypeName]
     : never;
 
 export const Constants = {

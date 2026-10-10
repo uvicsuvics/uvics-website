@@ -2,7 +2,7 @@
 create table public.departments (
   id uuid primary key default gen_random_uuid(),
   name text not null check(char_length(name) between 1 and 120),
-  slug text not null unique check(char_length(slug) between 1 and 120),
+  slug text not null unique check(char_length(slug) between 1 and 120 and slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
   description text,
   display_order int not null default 0,
   active boolean not null default true,
@@ -45,7 +45,7 @@ create table public.members (
 create table public.membership_histories (
   id uuid primary key default gen_random_uuid(),
   member_id uuid not null references public.members(id) on delete restrict,
-  period_id uuid not null references public.organization_periods(id) on delete restrict,
+  organization_period_id uuid not null references public.organization_periods(id) on delete restrict,
   department_id uuid not null references public.departments(id) on delete restrict,
   position_id uuid not null references public.positions(id) on delete restrict,
   created_at timestamptz not null default statement_timestamp(),
@@ -60,27 +60,27 @@ create trigger membership_histories_updated before update on public.membership_h
 
 alter table public.departments enable row level security;
 revoke all on public.departments from public,anon,authenticated;
-grant select on public.departments to anon,authenticated;
+grant select on public.departments to authenticated;
 grant select,insert,update,delete on public.departments to service_role;
 
 alter table public.positions enable row level security;
 revoke all on public.positions from public,anon,authenticated;
-grant select on public.positions to anon,authenticated;
+grant select on public.positions to authenticated;
 grant select,insert,update,delete on public.positions to service_role;
 
 alter table public.organization_periods enable row level security;
 revoke all on public.organization_periods from public,anon,authenticated;
-grant select on public.organization_periods to anon,authenticated;
+grant select on public.organization_periods to authenticated;
 grant select,insert,update,delete on public.organization_periods to service_role;
 
 alter table public.members enable row level security;
 revoke all on public.members from public,anon,authenticated;
-grant select on public.members to service_role;
+grant select on public.members to authenticated;
 grant select,insert,update,delete on public.members to service_role;
 
 alter table public.membership_histories enable row level security;
 revoke all on public.membership_histories from public,anon,authenticated;
-grant select on public.membership_histories to service_role;
+grant select on public.membership_histories to authenticated;
 grant select,insert,update,delete on public.membership_histories to service_role;
 
 create policy active_admin_read on public.departments for select to authenticated using((select private.has_active_admin_session()));
