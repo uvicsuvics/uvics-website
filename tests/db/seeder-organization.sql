@@ -220,7 +220,7 @@ end$$;
 -- 6. EXISTING HISTORICAL MEMBERSHIP RECORDS
 -- ==============================================================
 -- Attach a historical membership record to seeded department, position, period
-insert into public.members (id, name) values ('00000000-0000-4000-8000-000000000401', 'Historical Member');
+insert into public.members (id, full_name) values ('00000000-0000-4000-8000-000000000401', 'Historical Member');
 insert into public.membership_histories (id, member_id, organization_period_id, department_id, position_id)
 values (
   '00000000-0000-4000-8000-000000000501',

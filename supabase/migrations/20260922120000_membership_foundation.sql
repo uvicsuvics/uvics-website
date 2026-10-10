@@ -20,12 +20,9 @@ alter table public.members add column public_profile boolean not null default tr
 alter table public.members add column deleted_at timestamptz;
 
 -- 2. Alter existing `membership_histories` table
-alter table public.membership_histories rename column period_id to organization_period_id;
 alter table public.membership_histories add column start_date date;
 alter table public.membership_histories add column end_date date;
 alter table public.membership_histories add column notes text;
-alter table public.membership_histories drop constraint membership_histories_period_id_fkey;
-alter table public.membership_histories add constraint membership_histories_organization_period_id_fkey foreign key (organization_period_id) references public.organization_periods(id) on delete restrict;
 
 -- 3. Create `registrations` table
 create table public.registrations (
@@ -67,11 +64,3 @@ grant select,update on public.registrations to authenticated;
 
 create policy active_admin_read_registrations on public.registrations for select to authenticated using((select private.has_active_admin_session()));
 create policy active_admin_update_registrations on public.registrations for update to authenticated using((select private.has_active_admin_session()));
-
--- Update RLS for members to allow public reading of active, non-deleted, public_profile=true members (if needed by frontend later, but backend foundation usually keeps it restricted unless specified).
--- The requirement: "Public/private member fields dapat dibedakan." is handled by the `public_profile` flag, but access control might be done at the API layer. We will add a policy for anonymous read for public profiles just in case.
-create policy anon_read_public_members on public.members for select to anon,authenticated using (
-  public_profile = true 
-  and deleted_at is null 
-  and status != 'INACTIVE'
-);
