@@ -78,6 +78,7 @@ try {
   await client.query(readFileSync("tests/db/foundation.sql", "utf8"));
   await client.query(readFileSync("tests/db/media.sql", "utf8"));
   await client.query(readFileSync("tests/db/rate-limit.sql", "utf8"));
+  await client.query(readFileSync("tests/db/cms.sql", "utf8"));
   const namespace = "concurrency-test";
   const pool = new pg.Pool({
     ...connection,
