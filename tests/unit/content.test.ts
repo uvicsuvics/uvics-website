@@ -5,6 +5,9 @@ import {
   achievementSchema,
   competitionSchema,
   contentMemberSchema,
+  getPublicAchievementBySlug,
+  getPublicCompetitionBySlug,
+  getPublicProjectBySlug,
   listPublicAchievements,
   listPublicCompetitions,
   listPublicProjects,
@@ -45,12 +48,12 @@ describe("database types mirror content_foundation migration", () => {
   });
 });
 
-function fakeClient(result: { data: unknown[] | null; error: { code?: string } | null; count: number | null }) {
+function fakeClient(result: { data: unknown; error: { code?: string } | null; count: number | null }) {
   const calls: [string, unknown[]][] = [];
   const builder: Record<string, unknown> = {
     then: (resolve: (value: typeof result) => unknown) => resolve(result),
   };
-  for (const method of ["from", "select", "eq", "ilike", "order", "range"])
+  for (const method of ["from", "select", "eq", "ilike", "order", "range", "maybeSingle"])
     builder[method] = (...args: unknown[]) => {
       calls.push([method, args]);
       return builder;
@@ -117,6 +120,37 @@ describe("public content queries", () => {
     const blank = fakeClient(empty);
     await listPublicProjects(blank.client, { search: "  " });
     expect(blank.calls.some(([method]) => method === "ilike")).toBe(false);
+  });
+
+  it("filters featured content and treats empty form values as no filter", async () => {
+    const featured = fakeClient(empty);
+    await listPublicCompetitions(featured.client, { featured: "true" });
+    expect(featured.calls).toContainEqual(["eq", ["featured", true]]);
+    const notFeatured = fakeClient(empty);
+    await listPublicProjects(notFeatured.client, { featured: "false" });
+    expect(notFeatured.calls).toContainEqual(["eq", ["featured", false]]);
+    const blank = fakeClient(empty);
+    await listPublicCompetitions(blank.client, { status: "", level: "", category: "", featured: "" });
+    expect(blank.calls.filter(([method]) => method === "eq")).toEqual([["eq", ["publication_status", "PUBLISHED"]]]);
+  });
+
+  it.each([
+    ["competitions", getPublicCompetitionBySlug],
+    ["achievements", getPublicAchievementBySlug],
+    ["projects", getPublicProjectBySlug],
+  ] as const)("%s detail reads one PUBLISHED row by slug", async (table, get) => {
+    const { client, calls } = fakeClient({ data: { slug: "lomba-a" }, error: null, count: null });
+    await expect(get(client, "lomba-a")).resolves.toEqual({ slug: "lomba-a" });
+    expect(calls).toEqual(expect.arrayContaining([
+      ["from", [table]],
+      ["eq", ["publication_status", "PUBLISHED"]],
+      ["eq", ["slug", "lomba-a"]],
+    ]));
+  });
+
+  it("detail maps a missing row or malformed slug to NOT_FOUND", async () => {
+    await expect(getPublicCompetitionBySlug(fakeClient({ data: null, error: null, count: null }).client, "tidak-ada")).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(getPublicProjectBySlug(fakeClient(empty).client, "../Admin")).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("rejects invalid filters and pagination with VALIDATION_ERROR", async () => {

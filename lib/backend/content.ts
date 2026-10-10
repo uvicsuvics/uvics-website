@@ -80,15 +80,19 @@ export const contentMemberSchema = z
     path: ["member_name"],
   });
 
+// Nilai kosong dari form GET ("Semua") berarti tanpa filter.
+const optional = <T extends z.ZodType>(schema: T) => z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
 const searchSchema = z.string().trim().max(100).optional();
+const featuredSchema = optional(z.stringbool());
 const competitionFilterSchema = z.object({
   search: searchSchema,
-  status: competitionStatusSchema.optional(),
-  category: z.string().max(120).optional(),
-  level: z.string().max(120).optional(),
+  status: optional(competitionStatusSchema),
+  category: optional(z.string().max(120)),
+  level: optional(z.string().max(120)),
+  featured: featuredSchema,
 });
-const achievementFilterSchema = z.object({ search: searchSchema, level: z.string().max(120).optional() });
-const projectFilterSchema = z.object({ search: searchSchema, status: projectStatusSchema.optional() });
+const achievementFilterSchema = z.object({ search: searchSchema, level: optional(z.string().max(120)) });
+const projectFilterSchema = z.object({ search: searchSchema, status: optional(projectStatusSchema), featured: featuredSchema });
 
 // Proyeksi publik eksplisit: tanpa publication_status, certificate_file, dan member_id (D02).
 const COMPETITION_FIELDS =
@@ -113,6 +117,19 @@ async function toPage<T>(
   return { items: data ?? [], pagination: paginationMeta(page, page_size, count ?? 0) };
 }
 
+async function toItem<T>(request: PromiseLike<{ data: T | null; error: { code?: string } | null }>) {
+  const { data, error } = await request;
+  if (error) databaseError(error);
+  if (!data) throw new AppError("NOT_FOUND");
+  return data;
+}
+
+// Slug tidak valid diperlakukan sama dengan slug yang tidak ada (404).
+function publicSlug(slug: string) {
+  if (!slugSchema.safeParse(slug).success) throw new AppError("NOT_FOUND");
+  return slug;
+}
+
 const rangeOf = ({ page, page_size }: { page: number; page_size: number }) => [(page - 1) * page_size, page * page_size - 1] as const;
 
 // Filter PUBLISHED eksplisit: sesi admin di halaman publik membuka draft lewat RLS admin.
@@ -124,6 +141,7 @@ export async function listPublicCompetitions(client: Client, raw: unknown) {
   if (filter.status) query = query.eq("status", filter.status);
   if (filter.category) query = query.eq("category", filter.category);
   if (filter.level) query = query.eq("level", filter.level);
+  if (filter.featured !== undefined) query = query.eq("featured", filter.featured);
   return toPage(query.order("created_at", { ascending: false }).order("id", { ascending: false }).range(...rangeOf(pagination)), pagination);
 }
 
@@ -142,5 +160,21 @@ export async function listPublicProjects(client: Client, raw: unknown) {
   let query = client.from("projects").select(PROJECT_FIELDS, { count: "exact" }).eq("publication_status", "PUBLISHED");
   if (filter.search) query = query.ilike("title", `%${filter.search}%`);
   if (filter.status) query = query.eq("status", filter.status);
+  if (filter.featured !== undefined) query = query.eq("featured", filter.featured);
   return toPage(query.order("created_at", { ascending: false }).order("id", { ascending: false }).range(...rangeOf(pagination)), pagination);
+}
+
+export async function getPublicCompetitionBySlug(client: Client, slug: string) {
+  const key = publicSlug(slug);
+  return toItem(client.from("competitions").select(COMPETITION_FIELDS).eq("publication_status", "PUBLISHED").eq("slug", key).maybeSingle());
+}
+
+export async function getPublicAchievementBySlug(client: Client, slug: string) {
+  const key = publicSlug(slug);
+  return toItem(client.from("achievements").select(ACHIEVEMENT_FIELDS).eq("publication_status", "PUBLISHED").eq("slug", key).maybeSingle());
+}
+
+export async function getPublicProjectBySlug(client: Client, slug: string) {
+  const key = publicSlug(slug);
+  return toItem(client.from("projects").select(PROJECT_FIELDS).eq("publication_status", "PUBLISHED").eq("slug", key).maybeSingle());
 }
