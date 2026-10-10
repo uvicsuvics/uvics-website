@@ -80,6 +80,182 @@ export type Database = {
           },
         ];
       };
+      departments: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          display_order: number;
+          id: string;
+          name: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      members: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      membership_histories: {
+        Row: {
+          created_at: string;
+          department_id: string;
+          id: string;
+          member_id: string;
+          organization_period_id: string;
+          position_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          department_id: string;
+          id?: string;
+          member_id: string;
+          organization_period_id: string;
+          position_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          department_id?: string;
+          id?: string;
+          member_id?: string;
+          organization_period_id?: string;
+          position_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "membership_histories_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_organization_period_id_fkey";
+            columns: ["organization_period_id"];
+            isOneToOne: false;
+            referencedRelation: "organization_periods";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "membership_histories_position_id_fkey";
+            columns: ["position_id"];
+            isOneToOne: false;
+            referencedRelation: "positions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_periods: {
+        Row: {
+          created_at: string;
+          end_date: string;
+          id: string;
+          name: string;
+          start_date: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          end_date: string;
+          id?: string;
+          name: string;
+          start_date: string;
+          status: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          end_date?: string;
+          id?: string;
+          name?: string;
+          start_date?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      positions: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          description: string | null;
+          display_order: number;
+          id: string;
+          level: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          level: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          description?: string | null;
+          display_order?: number;
+          id?: string;
+          level?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       competitions: {
         Row: {
           id: string;
