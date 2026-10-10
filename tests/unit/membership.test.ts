@@ -1,5 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { memberSchema, registrationSchema } from "@/lib/backend/membership";
+import type { Database } from "@/types/database";
+
+type Tables = Database["public"]["Tables"];
+const registrationRow: Pick<Tables["registrations"]["Row"], "converted_member_id" | "status" | "phone"> = {
+  converted_member_id: null,
+  status: "SUBMITTED",
+  phone: "+628123456789",
+};
+const memberRow: Pick<Tables["members"]["Row"], "full_name" | "public_profile" | "deleted_at"> = {
+  full_name: "Test Member",
+  public_profile: false,
+  deleted_at: null,
+};
+const historyRow: Pick<Tables["membership_histories"]["Row"], "start_date" | "end_date" | "notes"> = {
+  start_date: null,
+  end_date: null,
+  notes: null,
+};
 
 const registration = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -27,4 +45,10 @@ describe("membership row schemas (D04 stored phone)", () => {
       expect(memberSchema.shape.phone.safeParse(phone).success).toBe(false);
     },
   );
+});
+
+describe("database types mirror membership migration", () => {
+  it("exposes registrations, member and history columns", () => {
+    expect([registrationRow, memberRow, historyRow]).toHaveLength(3);
+  });
 });
