@@ -94,6 +94,10 @@ try {
   await client.query(readFileSync("tests/db/content.sql", "utf8"));
   await client.query(readFileSync("tests/db/cms.sql", "utf8"));
   await client.query(readFileSync("tests/db/seeder-organization.sql", "utf8"));
+  const seedCms = readFileSync("scripts/seed-cms.sql", "utf8");
+  await client.query(seedCms);
+  await client.query(seedCms); // rerun harus idempotent
+  await client.query(readFileSync("tests/db/seeder-cms.sql", "utf8"));
   const namespace = "concurrency-test";
   const pool = new pg.Pool({
     ...connection,
