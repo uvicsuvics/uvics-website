@@ -47,20 +47,29 @@ create table public.registrations (
   rejected_at timestamptz,
   converted_member_id uuid unique references public.members(id) on delete set null,
   created_at timestamptz not null default statement_timestamp(),
-  updated_at timestamptz not null default statement_timestamp()
+  updated_at timestamptz not null default statement_timestamp(),
+  check(converted_member_id is null or status = 'ACCEPTED')
 );
 
 -- Trigger for updated_at
 create trigger registrations_updated before update on public.registrations for each row execute function private.touch_updated_at();
 
+-- Satu registration hanya menghasilkan satu member; null tetap boleh untuk on delete set null.
+create function private.guard_registration_conversion() returns trigger language plpgsql set search_path='' as $$
+begin
+  if old.converted_member_id is not null and new.converted_member_id is not null and new.converted_member_id <> old.converted_member_id then
+    raise exception 'Registration already converted' using errcode = 'check_violation';
+  end if;
+  return new;
+end;$$;
+revoke all on function private.guard_registration_conversion() from public,anon,authenticated;
+create trigger registrations_convert_once before update of converted_member_id on public.registrations for each row execute function private.guard_registration_conversion();
+
 -- RLS for registrations
 alter table public.registrations enable row level security;
 revoke all on public.registrations from public,anon,authenticated;
--- Applicants are not login users. They might create registration via public RPC or authenticated service role
--- Since this is foundation, we give service_role full access.
--- Active admin can read and update.
+-- Applicant bukan user login. Admin aktif hanya membaca; mutasi lewat RPC ter-audit (#28/#29).
 grant select,insert,update,delete on public.registrations to service_role;
-grant select,update on public.registrations to authenticated;
+grant select on public.registrations to authenticated;
 
 create policy active_admin_read_registrations on public.registrations for select to authenticated using((select private.has_active_admin_session()));
-create policy active_admin_update_registrations on public.registrations for update to authenticated using((select private.has_active_admin_session()));

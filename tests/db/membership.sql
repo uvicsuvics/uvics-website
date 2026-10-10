@@ -1,12 +1,19 @@
 begin;
 
+-- Seed synthetic auth fixture for testing RLS policies
+insert into auth.users (id) values ('00000000-0000-4000-8000-000000000001'), ('00000000-0000-4000-8000-000000000002');
+insert into public.admins (id, name, is_active) values ('00000000-0000-4000-8000-000000000001', 'Synthetic Admin', true);
+insert into auth.sessions (id, user_id, created_at) values ('00000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000001', statement_timestamp());
+
 do $$
 declare
   d uuid;
   p uuid;
   o uuid;
   m uuid;
+  m2 uuid;
   r uuid;
+  r2 uuid;
 begin
   insert into public.departments (name, slug) values ('UI/UX', 'ui-ux2') returning id into d;
   insert into public.positions (name, level) values ('Member', 'Staff') returning id into p;
@@ -63,6 +70,63 @@ begin
     null;
   end;
 
+  -- Issue #8: satu registration hanya dikonversi sekali, dan hanya bila ACCEPTED
+  insert into public.members (full_name) values ('Second Member') returning id into m2;
+  begin
+    update public.registrations set converted_member_id = m2 where id = r;
+    raise exception 'registration must not be converted twice';
+  exception when check_violation then
+    null;
+  end;
+  begin
+    insert into public.registrations (full_name, nim, email, phone, faculty, study_program, batch, status)
+    values ('Rejected Applicant', '105021810015', 'rejected@student.unklab.ac.id', '+628123456783', 'FIK', 'Informatika', 2023, 'REJECTED')
+    returning id into r2;
+    update public.registrations set converted_member_id = m2 where id = r2;
+    raise exception 'rejected registration must not be converted';
+  exception when check_violation then
+    null;
+  end;
+
 end$$;
+
+-- RLS registrations: admin hanya baca, non-admin nihil, anon ditolak
+select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-4000-8000-000000000001'::uuid, 'session_id', '00000000-0000-4000-8000-000000000011'::uuid)::text, true);
+set local role authenticated;
+do $$
+begin
+  if not exists(select from public.registrations) then
+    raise exception 'active admin should be able to read registrations';
+  end if;
+  begin
+    update public.registrations set admin_notes = 'direct write';
+    raise exception 'direct registration update must go through an audited RPC';
+  exception when insufficient_privilege then
+    null;
+  end;
+end$$;
+reset role;
+
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000002"}', true);
+set local role authenticated;
+do $$
+begin
+  if exists(select from public.registrations) then
+    raise exception 'non-admin should not be able to read registrations';
+  end if;
+end$$;
+reset role;
+
+set local role anon;
+do $$
+begin
+  begin
+    perform id from public.registrations;
+    raise exception 'anon should not have access to registrations';
+  exception when insufficient_privilege then
+    null;
+  end;
+end$$;
+reset role;
 
 rollback;
