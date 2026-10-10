@@ -532,7 +532,7 @@ CANCELLED
 
 Status dapat dihitung otomatis berdasarkan waktu atau diubah admin apabila diperlukan.
 
-> **Catatan v1.1:** Aturan prioritas antara status otomatis dan status dari admin, serta cara menyembunyikan event yang belum siap tayang, menunggu [U06](DECISIONS.md#u06--status-publikasi-dan-lifecycle).
+> **Catatan v1.1:** Visibilitas event mengikuti [D17](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima) (`content_status`). Aturan prioritas status otomatis dan status dari admin masih terbuka ([T06](DECISIONS.md#d-isu-terbuka)).
 
 Public pages:
 
@@ -586,7 +586,7 @@ Admin dapat:
 - archive;
 - set featured.
 
-> **Catatan v1.1:** Status di atas hanya lifecycle; aksi publish/archive belum punya status visibilitas. Lihat [U06](DECISIONS.md#u06--status-publikasi-dan-lifecycle).
+> **Catatan v1.1:** Status di atas adalah lifecycle. Publish/archive memakai `publication_status` sesuai [D17](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima).
 
 Public dapat:
 
@@ -628,7 +628,7 @@ members
 
 Admin dapat menentukan apakah achievement ditampilkan secara publik.
 
-> **Catatan v1.1:** Cara mencatat peserta non-member (Q11) dan bentuk relasi ke `members` menunggu [U07](DECISIONS.md#u07--anggota-pada-achievement-dan-project).
+> **Catatan v1.1:** Relasi ke `members` dan peserta non-member mengikuti [D18](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima); `published` diganti `publication_status` (D17).
 
 ---
 
@@ -2569,8 +2569,8 @@ Beberapa keputusan bisnis perlu dikonfirmasi sebelum implementation final. Statu
 | 7 | Apakah satu member dapat memiliki lebih dari satu position? | Terbuka | T02 |
 | 8 | Apakah organization period menggunakan tahun akademik atau periode kepengurusan bebas? | Diterima: nama bebas dengan tanggal mulai/selesai | D07 |
 | 9 | Apakah competition hanya informasi lomba atau juga tracking tim lomba? | Diterima: informasi lomba saja | D15 |
-| 10 | Apakah project perlu contributor/member relationship? | Usulan: ya, dengan dukungan non-member | U07 |
-| 11 | Apakah achievement dapat berasal dari individu non-member? | Usulan: ya | U07 |
+| 10 | Apakah project perlu contributor/member relationship? | Diterima: ya, dengan dukungan non-member | D18 |
+| 11 | Apakah achievement dapat berasal dari individu non-member? | Diterima: ya | D18 |
 | 12 | Apakah homepage sections harus configurable urutannya? | Usulan: tidak, urutan tetap | U15 |
 | 13 | Apakah diperlukan bilingual Indonesia/English? | Usulan: Bahasa Indonesia untuk MVP | U16 |
 | 14 | Apakah admin terdiri dari satu akun atau beberapa akun dengan hak yang sama? | Diterima: beberapa akun, hak sama | D08 |
