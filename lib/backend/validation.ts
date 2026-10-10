@@ -58,6 +58,23 @@ export const slugSchema = z
   .min(1)
   .max(160)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+export const calendarDateSchema = z
+  .string()
+  .regex(/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/, {
+    message: "Format tanggal harus YYYY-MM-DD.",
+  })
+  .refine(
+    (val) => {
+      const [year, month, day] = val.split("-").map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day));
+      return (
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day
+      );
+    },
+    { message: "Tanggal kalender tidak valid." },
+  );
 export function paginationMeta(
   page: number,
   page_size: number,

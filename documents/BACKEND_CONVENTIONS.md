@@ -112,7 +112,7 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 - Settings publik hanya lewat `rpc('read_public_settings')` + `toPublicSettings()`. Allowlist: branding (`organization_name`, `website_title`, `logo`, `favicon`, `footer_text`), kontak resmi organisasi (`email`, `phone`, `address`, `instagram_url`, `linkedin_url`, `github_url`, `youtube_url`), SEO (`default_meta_title`, `default_meta_description`), serta flag boolean `registration_open` dan `maintenance_mode`. Unknown key, `updated_by`, dan nilai malformed tidak keluar; validasi per key ditegakkan di reader SQL (aman untuk pemanggil Data API langsung) sebagai subset konservatif dari DTO: URL sosial tanpa port dengan host ASCII bertld huruf dan tanpa label `xn--` (punycode), email memakai regex Zod yang sama, teks wajib memuat karakter alfanumerik. Ubah keduanya bersamaan. `logo`/`favicon` hanya path statis same-origin (`/dir/file.png`) atau salinan Cloudinary `uvics/published/<uuid>`; aset pending/authenticated dan protokol lain ditolak. `phone` publik wajib tersimpan ternormalisasi `+digit`. Consumer menafsirkan `registration_open !== true` sebagai tertutup.
 - Proyeksi list registration admin (diselaraskan nama kolom kanonis): `id, full_name, nim, study_program, batch, preferred_department, status, submitted_at`. Jawaban, kontak, catatan, dan dokumen hanya pada operasi detail berizin.
 
-**Validasi** (`lib/backend/validation.ts`): `emailSchema`, `phoneSchema`, `httpUrlSchema` (HTTP/S tanpa credential), `datetimeSchema` (offset wajib → UTC `Z`), `paginationSchema`, `slugSchema`. UUID memakai `z.uuid()`; tanggal kalender `z.iso.date()` (rollover seperti 2026-02-30 ditolak). Enum memakai `z.enum` dengan nilai kanonis domain. Telepon: spasi/hyphen dibuang, `08…` → `+628…`, selain itu wajib `+kodenegara`; panjang dihitung dari digit setelah normalisasi tanpa `+`, maksimum 15. Minimum `PHONE_MIN_DIGITS` masih sementara sampai disamakan dengan constraint SQL kanonis.
+**Validasi** (`lib/backend/validation.ts`): `emailSchema`, `phoneSchema`, `httpUrlSchema` (HTTP/S tanpa credential), `datetimeSchema` (offset wajib → UTC `Z`), `paginationSchema`, `slugSchema`, `calendarDateSchema` (`YYYY-MM-DD`, rollover seperti 2026-02-30 ditolak). UUID memakai `z.uuid()`. Enum memakai `z.enum` dengan nilai kanonis domain. Telepon: spasi/hyphen dibuang, `08…` → `+628…`, selain itu wajib `+kodenegara`; panjang dihitung dari digit setelah normalisasi tanpa `+`, 8–15 digit (`PHONE_MIN_DIGITS`/`PHONE_MAX_DIGITS`), sama dengan constraint SQL `registrations.phone`/`members.phone` (D04). Kesetaraan batas diuji di `tests/db/security.sql`; ubah keduanya bersamaan.
 
 **Error.** Reuse `AppError`, `toFailure`, `httpFailure`, `databaseError`: `42501` → FORBIDDEN, `23505`/`P0001` → CONFLICT, `P0002` → NOT_FOUND, lainnya → SERVICE_UNAVAILABLE tanpa detail SQL/provider.
 
@@ -124,4 +124,33 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 | --- | --- | --- | --- |
 | pages, programs | SELECT row `PUBLISHED` | SELECT semua | RPC publish ter-audit; DML langsung ditutup |
 | website_settings | Hanya `read_public_settings()` | SELECT raw | Tertutup sampai RPC ter-audit #30 |
-| registrations, members, membership_histories, departments, positions, organization_periods | Tertunda: migration kanonis belum ada di `development` | — | — |
+| registrations, members, membership_histories, departments, positions, organization_periods | Schema #16/#17 sudah terintegrasi; review grants/RLS gabungan tertunda (T4 #31) | — | — |
+
+## Kontrak konten #11
+
+Berlaku untuk `lib/backend/content.ts` (competition, achievement, project). Field DTO memakai snake_case sesuai kolom database.
+
+- **Tanggal:** `registration_deadline`, `competition_date`, `achievement_date`, `start_date`, dan `end_date` bertipe `date`, dikirim `YYYY-MM-DD` tanpa jam dan zona waktu.
+- **Level:** kode `content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` ([U17](DECISIONS.md#u17--nilai-baku-level)). Label tampilan menjadi urusan frontend. Filter `level` di luar kode ini menghasilkan `VALIDATION_ERROR`.
+- **Media:** `poster` (competition) dan `cover_image` (achievement, project) berisi referensi media, bukan URL, maksimal 500 karakter. Bentuk final ditetapkan alur upload #28/#29. Sertifikat ada di tabel `achievement_certificates` yang hanya terbaca admin aktif ([U18](DECISIONS.md#u18--data-privat-konten-untuk-authenticated-non-admin)).
+- **Anggota:** proyeksi publik `achievement_members`/`project_members` hanya `member_name` dan `role`. Anggota yang tertaut lewat `member_id` tampil dengan `member_name: null` sampai proyeksi D02 tersedia.
+- **Visibilitas:** query publik selalu memfilter `publication_status = 'PUBLISHED'` dan tidak mengirim field `publication_status`.
+- **Pencarian:** competition mencari `title` dan `organizer`, achievement mencari `title` dan `competition_name`, project mencari `title`. Karakter `, ( ) " ' \ * % _ :` dibuang dari kata kunci; hasil kosong berarti tanpa filter.
+- **Pagination:** page di luar total baris (PostgREST `PGRST103`) menghasilkan `NOT_FOUND` 404. Mapping ini ada di `databaseError()` sehingga berlaku untuk semua domain.
+
+Pemetaan DTO competition ke `types/competition.ts` (frontend #15), untuk issue integrasi frontend:
+
+| DTO backend | `Competition` frontend | Catatan |
+| --- | --- | --- |
+| `id` (UUID string) | `id` | Mock memakai `comp-1`; ganti ke UUID |
+| `title`, `slug`, `organizer`, `description` | sama | |
+| `category` (nullable) | `category` (wajib) | Tangani `null` |
+| `level` (`NASIONAL`, …; nullable) | `level` (`'Nasional'`, …) | Petakan kode ke label; `REGIONAL` belum ada di union frontend |
+| `registration_deadline` (`YYYY-MM-DD`) | `registrationDeadline` (datetime berjam) | Tanpa jam; aturan zona waktu WITA menunggu [T06](DECISIONS.md#d-isu-terbuka) |
+| `competition_date` (`YYYY-MM-DD`, nullable) | `competitionDate` (wajib) | Sama seperti di atas; tangani `null` |
+| `registration_url`, `guidebook_url` | `registrationUrl`, `guidebookUrl` | |
+| `poster` (referensi media) | `poster` (path gambar) | Diubah menjadi URL lewat alur media publik |
+| `team_size`, `eligibility` | `teamSize`, `eligibility` | |
+| `status` | `status` | Nilai sama (`UPCOMING` … `FINISHED`) |
+| `featured`, `created_at`, `updated_at` | `featured`, `createdAt`, `updatedAt` | |
+| Filter kosong (`status=`, `level=`) | Filter `'ALL'` | Kirim kosong atau hilangkan parameter; `ALL` ditolak |

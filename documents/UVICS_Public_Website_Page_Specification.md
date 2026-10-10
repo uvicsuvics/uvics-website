@@ -6,6 +6,8 @@
 **Document Type:** Public Website Information Architecture & Page Specification  
 **Primary Audience:** Product Team, UI/UX Designer, Frontend Developer, Backend Developer, QA  
 
+> **Sinkronisasi (10 Oktober 2026):** Beberapa route dan model data di dokumen ini berbeda dengan PRD dan implementasi, antara lain `/join` vs `/register`, `/vision-mission`, `/gallery/{slug}`, field Programs, dan halaman Member/Alumni. Penyelesaiannya dicatat di [DECISIONS.md](DECISIONS.md) bagian C. Sebelum membangun halaman, periksa status keputusan terkait di sana.
+
 ---
 
 # 1. Purpose
