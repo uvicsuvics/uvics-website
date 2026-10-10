@@ -6,8 +6,8 @@ export const loginSchema = z.object({
 });
 
 // Jumlah digit dihitung setelah normalisasi, tanpa tanda "+". Maksimum mengikuti
-// ITU E.164. ponytail: minimum sementara; difinalisasi bersama constraint SQL
-// schema kanonis pada gate T3 issue #31.
+// ITU E.164. Harus sama dengan constraint SQL registrations/members.phone (D04);
+// kesetaraan batas dijaga tests/db/security.sql.
 export const PHONE_MIN_DIGITS = 8;
 export const PHONE_MAX_DIGITS = 15;
 const phonePattern = new RegExp(

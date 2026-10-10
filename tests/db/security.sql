@@ -125,4 +125,16 @@ do $$begin
  if (select status from public.programs where id='00000000-0000-4000-8000-000000000202')<>'DRAFT'
   or exists(select from public.audit_logs where action='PROGRAM_PUBLISHED') then raise exception 'publish not atomic with audit';end if;
 end$$;
+
+-- D04: batas digit constraint SQL kanonis harus sama dengan PHONE_MIN_DIGITS/PHONE_MAX_DIGITS (8–15) di Zod.
+do $$declare n int;ok boolean;begin
+ foreach n in array array[7,8,15,16] loop
+  begin
+   insert into public.registrations(full_name,nim,email,phone,faculty,study_program,batch)
+   values('Phone Bound','nim-phone-'||n,'phone'||n||'@example.invalid','+1'||repeat('2',n-1),'FIK','Informatika',2026);
+   ok:=true;
+  exception when check_violation then ok:=false;end;
+  if ok<>(n between 8 and 15) then raise exception 'phone digit bound mismatch at %',n;end if;
+ end loop;
+end$$;
 rollback;
