@@ -124,7 +124,10 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 | --- | --- | --- | --- |
 | pages, programs | SELECT row `PUBLISHED` | SELECT semua | RPC publish ter-audit; DML langsung ditutup |
 | website_settings | Hanya `read_public_settings()` | SELECT raw | Tertutup sampai RPC ter-audit #30 |
-| registrations, members, membership_histories, departments, positions, organization_periods | Schema #16/#17 sudah terintegrasi; review grants/RLS gabungan tertunda (T4 #31) | — | — |
+| registrations, members, membership_histories | Tanpa grant anon; non-admin 0 baris (D02) | SELECT `active_admin_read` | Tertutup sampai RPC ter-audit #29 |
+| departments, positions, organization_periods | Tanpa grant anon (proyeksi publik menunggu U02); non-admin 0 baris | SELECT `active_admin_read` | Tertutup sampai RPC ter-audit #29 |
+
+Semua tabel memakai RLS; `service_role` hanya SELECT pada seluruh tabel domain di atas dan tabel content #36. Matrix diperiksa dari katalog PostgreSQL schema gabungan, dibuktikan `tests/db/security.sql`.
 
 ## Kontrak konten #11
 
