@@ -91,6 +91,7 @@ try {
   await client.query(readFileSync("tests/db/rate-limit.sql", "utf8"));
   await client.query(readFileSync("tests/db/organization.sql", "utf8"));
   await client.query(readFileSync("tests/db/membership.sql", "utf8"));
+  await client.query(readFileSync("tests/db/content.sql", "utf8"));
   await client.query(readFileSync("tests/db/seeder-organization.sql", "utf8"));
   const namespace = "concurrency-test";
   const pool = new pg.Pool({
