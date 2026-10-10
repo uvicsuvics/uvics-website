@@ -16,14 +16,14 @@ begin
   insert into public.registrations (
     full_name, nim, email, phone, faculty, study_program, batch, preferred_department_id
   ) values (
-    'Test Applicant', '105021810011', 'applicant@student.unklab.ac.id', '08123456789', 'FIK', 'Informatika', 2023, d
+    'Test Applicant', '105021810011', 'applicant@student.unklab.ac.id', '+628123456789', 'FIK', 'Informatika', 2023, d
   ) returning id into r;
 
   -- Test member insert
   insert into public.members (
     full_name, nim, email, phone, faculty, study_program, batch, status
   ) values (
-    'Test Member', '105021810012', 'member@student.unklab.ac.id', '08123456780', 'FIK', 'Informatika', 2023, 'ACTIVE'
+    'Test Member', '105021810012', 'member@student.unklab.ac.id', '+628123456780', 'FIK', 'Informatika', 2023, 'ACTIVE'
   ) returning id into m;
   
   -- Test membership history insert
@@ -46,12 +46,21 @@ begin
     insert into public.registrations (
       full_name, nim, email, phone, faculty, study_program, batch
     ) values (
-      'Duplicate Convert', '105021810013', 'dup@student.unklab.ac.id', '08123456781', 'FIK', 'Informatika', 2023
+      'Duplicate Convert', '105021810013', 'dup@student.unklab.ac.id', '+628123456781', 'FIK', 'Informatika', 2023
     );
     update public.registrations set status = 'ACCEPTED', converted_member_id = m where nim = '105021810013';
     raise exception 'Multiple registrations converted to same member guard failed';
   exception when unique_violation then
     null; -- Expected due to unique constraint on converted_member_id
+  end;
+
+  -- D04: telepon tersimpan wajib ternormalisasi +kodenegara
+  begin
+    insert into public.registrations (full_name, nim, email, phone, faculty, study_program, batch)
+    values ('Raw Phone', '105021810014', 'raw@student.unklab.ac.id', '08123456782', 'FIK', 'Informatika', 2023);
+    raise exception 'unnormalized phone should be rejected';
+  exception when check_violation then
+    null;
   end;
 
 end$$;

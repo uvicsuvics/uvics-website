@@ -4,7 +4,7 @@
 alter table public.members rename column name to full_name;
 alter table public.members add column nim text unique check(char_length(nim) between 5 and 20);
 alter table public.members add column email text unique check(email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$');
-alter table public.members add column phone text check(phone ~* '^\+?[0-9\s-]{8,20}$');
+alter table public.members add column phone text check(phone ~ '^\+[1-9][0-9]{7,14}$');
 alter table public.members add column faculty text check(char_length(faculty) between 2 and 100);
 alter table public.members add column study_program text check(char_length(study_program) between 2 and 100);
 alter table public.members add column batch int;
@@ -30,7 +30,7 @@ create table public.registrations (
   full_name text not null check(char_length(full_name) between 1 and 120),
   nim text not null check(char_length(nim) between 5 and 20),
   email text not null check(email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-  phone text not null check(phone ~* '^\+?[0-9\s-]{8,20}$'),
+  phone text not null check(phone ~ '^\+[1-9][0-9]{7,14}$'),
   faculty text not null check(char_length(faculty) between 2 and 100),
   study_program text not null check(char_length(study_program) between 2 and 100),
   batch int not null,

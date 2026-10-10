@@ -1,11 +1,14 @@
 import { z } from "zod";
 
+// Nilai tersimpan (D04); normalisasi input "08…" milik phoneSchema di validation.ts (#33).
+const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
+
 export const memberSchema = z.object({
   id: z.string().uuid(),
   full_name: z.string().min(1).max(120),
   nim: z.string().min(5).max(20),
   email: z.string().email(),
-  phone: z.string().min(8).max(20),
+  phone: storedPhoneSchema.optional().nullable(),
   faculty: z.string().min(2).max(100),
   study_program: z.string().min(2).max(100),
   batch: z.number().int().optional().nullable(),
@@ -41,7 +44,7 @@ export const registrationSchema = z.object({
   full_name: z.string().min(1).max(120),
   nim: z.string().min(5).max(20),
   email: z.string().email(),
-  phone: z.string().min(8).max(20),
+  phone: storedPhoneSchema,
   faculty: z.string().min(2).max(100),
   study_program: z.string().min(2).max(100),
   batch: z.number().int(),
