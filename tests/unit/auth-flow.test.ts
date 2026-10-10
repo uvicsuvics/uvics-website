@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { loginAdmin, type LoginOperations } from "@/lib/auth/login";
-import { AppError } from "@/lib/backend/errors";
+import { loginAdmin, type LoginOperations } from "@/src/lib/auth/login";
+import { AppError } from "@/src/lib/backend/errors";
 function operations(): LoginOperations {
   return {
     limit: vi.fn(async () => {}),

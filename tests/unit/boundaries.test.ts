@@ -3,10 +3,10 @@ import {
   loginSchema,
   paginationSchema,
   slugSchema,
-} from "@/lib/backend/validation";
-import { assertOrigin, trustedIp } from "@/lib/backend/request";
-import { AppError, toFailure, httpFailure } from "@/lib/backend/errors";
-import { mediaPolicy, validateProviderAsset } from "@/lib/media/policy";
+} from "@/src/lib/backend/validation";
+import { assertOrigin, trustedIp } from "@/src/lib/backend/request";
+import { AppError, toFailure, httpFailure } from "@/src/lib/backend/errors";
+import { mediaPolicy, validateProviderAsset } from "@/src/lib/media/policy";
 
 describe("untrusted boundaries", () => {
   it("normalizes email but preserves password bytes", () => {
