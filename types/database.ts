@@ -9,6 +9,35 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      achievement_certificates: {
+        Row: {
+          achievement_id: string;
+          certificate_file: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          achievement_id: string;
+          certificate_file: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          achievement_id?: string;
+          certificate_file?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "achievement_certificates_achievement_id_fkey";
+            columns: ["achievement_id"];
+            isOneToOne: true;
+            referencedRelation: "achievements";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       achievement_members: {
         Row: {
           achievement_id: string;
@@ -54,7 +83,6 @@ export type Database = {
       achievements: {
         Row: {
           achievement_date: string;
-          certificate_file: string | null;
           competition_name: string;
           cover_image: string | null;
           created_at: string;
@@ -70,7 +98,6 @@ export type Database = {
         };
         Insert: {
           achievement_date: string;
-          certificate_file?: string | null;
           competition_name: string;
           cover_image?: string | null;
           created_at?: string;
@@ -86,7 +113,6 @@ export type Database = {
         };
         Update: {
           achievement_date?: string;
-          certificate_file?: string | null;
           competition_name?: string;
           cover_image?: string | null;
           created_at?: string;

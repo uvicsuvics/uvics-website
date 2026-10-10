@@ -47,8 +47,13 @@ export const achievementSchema = z.object({
   achievement_date: calendarDateSchema,
   description: z.string().default(""),
   cover_image: mediaSchema,
-  certificate_file: z.string().nullable().optional(),
   publication_status: contentStatusSchema.default("DRAFT"),
+});
+
+// U18: sertifikat adalah media privat, disimpan terpisah dari achievement publik.
+export const achievementCertificateSchema = z.object({
+  achievement_id: z.string().uuid(),
+  certificate_file: z.string().trim().min(1).max(500),
 });
 
 export const projectSchema = z
@@ -97,7 +102,7 @@ const competitionFilterSchema = z.object({
 const achievementFilterSchema = z.object({ search: searchSchema, level: optional(levelSchema) });
 const projectFilterSchema = z.object({ search: searchSchema, status: optional(projectStatusSchema), featured: featuredSchema });
 
-// Proyeksi publik eksplisit: tanpa publication_status, certificate_file, dan member_id (D02).
+// Proyeksi publik eksplisit: tanpa publication_status dan member_id (D02).
 const COMPETITION_FIELDS =
   "id,title,slug,organizer,description,category,level,registration_deadline,competition_date,registration_url,guidebook_url,poster,team_size,eligibility,status,featured,created_at,updated_at";
 const ACHIEVEMENT_FIELDS =

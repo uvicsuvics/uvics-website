@@ -13,6 +13,8 @@ insert into public.achievements (id, title, slug, competition_name, ranking, ach
   ('00000000-0000-4000-8000-000000000721', 'Published Ach', 'published-ach', 'Comp', 'Juara 1', '2026-01-01', 'PUBLISHED'),
   ('00000000-0000-4000-8000-000000000722', 'Draft Ach', 'draft-ach', 'Comp', 'Juara 2', '2026-01-02', 'DRAFT'),
   ('00000000-0000-4000-8000-000000000723', 'Archived Ach', 'archived-ach', 'Comp', 'Juara 3', '2026-01-03', 'ARCHIVED');
+insert into public.achievement_certificates (achievement_id, certificate_file) values
+  ('00000000-0000-4000-8000-000000000721', 'uvics/private/certificate-721');
 insert into public.achievement_members (achievement_id, member_id, member_name, role) values
   ('00000000-0000-4000-8000-000000000721', '00000000-0000-4000-8000-000000000701', null, 'Ketua'),
   ('00000000-0000-4000-8000-000000000721', null, 'Peserta Luar', 'Anggota'),
@@ -116,9 +118,24 @@ begin
     insert into public.project_members (project_id, member_id) values ('00000000-0000-4000-8000-000000000731', '00000000-0000-4000-8000-000000000702');
     raise exception 'same member linked twice to one project';
   exception when unique_violation then null; end;
+  -- U18: certificate_file pindah ke tabel khusus admin
+  if exists (select from information_schema.columns where table_schema = 'public' and table_name = 'achievements' and column_name = 'certificate_file') then
+    raise exception 'certificate_file must not live on public achievements (U18)';
+  end if;
+  begin
+    insert into public.achievement_certificates (achievement_id, certificate_file) values ('00000000-0000-4000-8000-000000000722', '');
+    raise exception 'empty certificate_file accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into public.achievement_certificates (achievement_id, certificate_file) values ('00000000-0000-4000-8000-000000000722', repeat('a', 501));
+    raise exception 'certificate_file longer than 500 accepted';
+  exception when check_violation then null; end;
+  if has_table_privilege('anon', 'public.achievement_certificates', 'SELECT') then
+    raise exception 'anon must not read achievement_certificates (D02)';
+  end if;
   -- D13: tidak ada grant tulis untuk anon/authenticated; service_role penuh
   if exists (
-    select from unnest(array['competitions','achievements','achievement_members','projects','project_members']) t,
+    select from unnest(array['competitions','achievements','achievement_certificates','achievement_members','projects','project_members']) t,
       unnest(array['anon','authenticated']) r,
       unnest(array['INSERT','UPDATE','DELETE','TRUNCATE']) p
     where has_table_privilege(r, format('public.%I', t), p)
@@ -126,17 +143,16 @@ begin
     raise exception 'anon/authenticated must not have write privileges on content tables (D13)';
   end if;
   if exists (
-    select from unnest(array['competitions','achievements','achievement_members','projects','project_members']) t,
+    select from unnest(array['competitions','achievements','achievement_certificates','achievement_members','projects','project_members']) t,
       unnest(array['SELECT','INSERT','UPDATE','DELETE']) p
     where not has_table_privilege('service_role', format('public.%I', t), p)
   ) then
     raise exception 'service_role must keep full access on content tables';
   end if;
-  -- D02: dokumen sertifikat privat dan tautan member tidak terbaca anon
-  if has_column_privilege('anon', 'public.achievements', 'certificate_file', 'SELECT')
-     or has_column_privilege('anon', 'public.achievement_members', 'member_id', 'SELECT')
+  -- D02: tautan member tidak terbaca anon
+  if has_column_privilege('anon', 'public.achievement_members', 'member_id', 'SELECT')
      or has_column_privilege('anon', 'public.project_members', 'member_id', 'SELECT') then
-    raise exception 'anon must not read certificate_file or member_id (D02)';
+    raise exception 'anon must not read member_id (D02)';
   end if;
 end$$;
 
@@ -152,7 +168,7 @@ begin
 end$$;
 reset role;
 
--- authenticated non-admin: sama dengan publik
+-- authenticated non-admin: baris sama dengan publik, tetapi member_id tetap terbaca (U18); sertifikat tidak
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000002"}', true);
 set local role authenticated;
 do $$
@@ -162,6 +178,7 @@ begin
   if (select count(*) from public.projects) <> 1 then raise exception 'non-admin must see only published projects'; end if;
   if (select count(*) from public.achievement_members) <> 2 then raise exception 'non-admin must see only members of published achievements'; end if;
   if (select count(*) from public.project_members) <> 1 then raise exception 'non-admin must see only members of published projects'; end if;
+  if (select count(*) from public.achievement_certificates) <> 0 then raise exception 'non-admin must not read achievement certificates (U18)'; end if;
 end$$;
 reset role;
 
@@ -175,6 +192,7 @@ begin
   if (select count(*) from public.achievement_members) <> 3 then raise exception 'active admin must read all achievement members'; end if;
   if (select count(*) from public.projects) <> 3 then raise exception 'active admin must read all projects'; end if;
   if (select count(*) from public.project_members) <> 2 then raise exception 'active admin must read all project members'; end if;
+  if (select count(*) from public.achievement_certificates) <> 1 then raise exception 'active admin must read achievement certificates'; end if;
   begin
     update public.competitions set featured = true;
     raise exception 'direct competition update must go through an audited RPC (D13)';

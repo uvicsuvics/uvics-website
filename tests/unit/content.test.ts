@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "@/lib/backend/errors";
 import {
+  achievementCertificateSchema,
   achievementSchema,
   competitionSchema,
   contentMemberSchema,
@@ -20,10 +21,16 @@ const competitionRow: Pick<Tables["competitions"]["Row"], "status" | "publicatio
   status: "OPEN",
   publication_status: "DRAFT",
 };
-const achievementRow: Pick<Tables["achievements"]["Row"], "publication_status" | "certificate_file"> = {
+const achievementRow: Pick<Tables["achievements"]["Row"], "publication_status" | "cover_image"> = {
   publication_status: "PUBLISHED",
-  certificate_file: null,
+  cover_image: null,
 };
+const certificateRow: Pick<Tables["achievement_certificates"]["Insert"], "achievement_id" | "certificate_file"> = {
+  achievement_id: "00000000-0000-4000-8000-000000000721",
+  certificate_file: "uvics/private/certificate-721",
+};
+// @ts-expect-error certificate_file pindah ke achievement_certificates (U18)
+const legacyCertificate: Pick<Tables["achievements"]["Row"], "certificate_file"> = { certificate_file: null };
 const achievementMember: Pick<Tables["achievement_members"]["Row"], "member_id" | "member_name" | "role"> = {
   member_id: null,
   member_name: "Peserta Luar",
@@ -49,7 +56,7 @@ const legacyPublished: Pick<Tables["achievements"]["Row"], "published"> = { publ
 
 describe("database types mirror content_foundation migration", () => {
   it("exposes publication_status, lifecycle enums and member links", () => {
-    expect([competitionRow, achievementRow, achievementMember, projectRow, projectMember, freeTextStatus, legacyPublished, competitionMedia, legacyPoster, freeTextLevel]).toHaveLength(10);
+    expect([competitionRow, achievementRow, achievementMember, projectRow, projectMember, freeTextStatus, legacyPublished, competitionMedia, legacyPoster, freeTextLevel, certificateRow, legacyCertificate]).toHaveLength(12);
   });
 });
 
@@ -91,6 +98,14 @@ describe("content input validation", () => {
     expect(projectSchema.safeParse({ title: "P", slug: "p", summary: "S", start_date: "2026-02-01", end_date: "2026-01-01" }).success).toBe(false);
     expect(achievementSchema.safeParse({ title: "A", slug: "a", competition_name: "C", ranking: "1", achievement_date: "2026-01-01", published: true }).success).toBe(true);
     expect(achievementSchema.parse({ title: "A", slug: "a", competition_name: "C", ranking: "1", achievement_date: "2026-01-01" })).not.toHaveProperty("published");
+  });
+
+  it("keeps certificates out of the public achievement input (U18)", () => {
+    const achievement = { title: "A", slug: "a", competition_name: "C", ranking: "1", achievement_date: "2026-01-01" };
+    expect(achievementSchema.parse({ ...achievement, certificate_file: "x" })).not.toHaveProperty("certificate_file");
+    expect(achievementCertificateSchema.safeParse({ achievement_id: "00000000-0000-4000-8000-000000000721", certificate_file: "uvics/private/c" }).success).toBe(true);
+    for (const certificate_file of ["", "  ", "a".repeat(501)])
+      expect(achievementCertificateSchema.safeParse({ achievement_id: "00000000-0000-4000-8000-000000000721", certificate_file }).success).toBe(false);
   });
 
   it("requires member_id or member_name (D18)", () => {
