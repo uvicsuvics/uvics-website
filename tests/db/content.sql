@@ -81,14 +81,15 @@ begin
     insert into public.achievement_members (achievement_id, member_id) values ('00000000-0000-4000-8000-000000000721', '00000000-0000-4000-8000-000000000701');
     raise exception 'same member linked twice to one achievement';
   exception when unique_violation then null; end;
+  -- PostgreSQL 18 melempar restrict_violation untuk ON DELETE RESTRICT; versi 17 (CI) foreign_key_violation.
   begin
     delete from public.members where id = '00000000-0000-4000-8000-000000000701';
     raise exception 'member linked to an achievement hard-deleted (D14)';
-  exception when restrict_violation then null; end;
+  exception when foreign_key_violation or restrict_violation then null; end;
   begin
     delete from public.members where id = '00000000-0000-4000-8000-000000000702';
     raise exception 'member linked to a project hard-deleted (D14)';
-  exception when restrict_violation then null; end;
+  exception when foreign_key_violation or restrict_violation then null; end;
   begin
     insert into public.project_members (project_id, member_id) values ('00000000-0000-4000-8000-000000000731', '00000000-0000-4000-8000-000000000702');
     raise exception 'same member linked twice to one project';
