@@ -20,7 +20,8 @@ export type Database = {
     Enums: { kind: "A" | "B" };
     CompositeTypes: { [_ in never]: never };
   };
-};`;
+};
+export const Constants = { public: { Enums: { kind: ["A", "B"] } } } as const;`;
 
 const catalog = () => ({
   columns: [
@@ -37,6 +38,13 @@ const catalog = () => ({
 describe("schema vs types/database.ts", () => {
   it("reports no difference when types mirror the catalog", () => {
     expect(compareSchema(catalog(), readTypes(source))).toEqual([]);
+  });
+
+  it("compares runtime Constants, which Zod validators are built from, with the enum labels", () => {
+    const stale = source.replace('kind: ["A", "B"]', 'kind: ["A"]');
+    expect(compareSchema(catalog(), readTypes(stale)).some((d) => d.includes("Constants kind"))).toBe(true);
+    const missing = source.slice(0, source.indexOf("export const Constants"));
+    expect(compareSchema(catalog(), readTypes(missing)).some((d) => d.includes("Constants kind"))).toBe(true);
   });
 
   it("detects nullability, Insert optionality, missing columns, enums, functions and relationships", () => {

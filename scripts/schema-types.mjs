@@ -38,9 +38,19 @@ export function readTypes(source) {
   const file = ts.createSourceFile("database.ts", source, ts.ScriptTarget.Latest, true);
   const text = (node) => node.getText(file).replace(/\s+/g, " ").trim();
   const members = (lit) => Object.fromEntries(lit.members.filter(ts.isPropertySignature).map((m) => [m.name.getText(file), m]));
+  const props = (obj) => Object.fromEntries((obj?.properties ?? []).filter(ts.isPropertyAssignment).map((p) => [p.name.getText(file), p.initializer]));
   let database;
+  let constants = {};
   file.forEachChild((n) => {
     if (ts.isTypeAliasDeclaration(n) && n.name.text === "Database") database = n.type;
+    // Constants dipakai saat runtime oleh validator Zod (z.enum(Constants.public.Enums.*)).
+    if (ts.isVariableStatement(n))
+      for (const d of n.declarationList.declarations) {
+        if (d.name.getText(file) !== "Constants") continue;
+        let value = d.initializer;
+        while (value && ts.isAsExpression(value)) value = value.expression;
+        constants = Object.fromEntries(Object.entries(props(props(props(value).public).Enums)).map(([k, list]) => [k, (list.elements ?? []).map((el) => el.text)]));
+      }
   });
   const pub = members(members(database).public.type);
   const tables = {};
@@ -61,7 +71,7 @@ export function readTypes(source) {
   const enums = ts.isTypeLiteralNode(pub.Enums.type)
     ? Object.fromEntries(Object.entries(members(pub.Enums.type)).map(([name, m]) => [name, text(m.type).split("|").map((s) => s.trim().replace(/"/g, ""))]))
     : {};
-  return { tables, functions, enums };
+  return { tables, functions, enums, constants };
 }
 
 export function compareSchema(catalog, types) {
@@ -98,10 +108,12 @@ export function compareSchema(catalog, types) {
     if (args !== s.args) diffs.push(`function ${name} args: types=${s.args} db=${args}`);
     if ((RETURNS[f.res] ?? "?" + f.res) !== s.returns) diffs.push(`function ${name} returns: types=${s.returns} db=${f.res}`);
   }
-  for (const name of new Set([...catalog.enums.map((e) => e.typname), ...Object.keys(types.enums)])) {
-    const e = catalog.enums.find((x) => x.typname === name), s = types.enums[name];
-    if (!e || !s) { diffs.push(`enum ${name}: ${e ? "missing in types" : "only in types"}`); continue; }
-    if (e.labels.join(",") !== s.join(",")) diffs.push(`enum ${name}: types=${s} db=${e.labels}`);
+  for (const name of new Set([...catalog.enums.map((e) => e.typname), ...Object.keys(types.enums), ...Object.keys(types.constants)])) {
+    const e = catalog.enums.find((x) => x.typname === name), s = types.enums[name], c = types.constants[name];
+    if (!e) { diffs.push(`enum ${name}: only in types`); continue; }
+    if (!s) diffs.push(`enum ${name}: missing in types`);
+    else if (e.labels.join(",") !== s.join(",")) diffs.push(`enum ${name}: types=${s} db=${e.labels}`);
+    if (!c || c.join(",") !== e.labels.join(",")) diffs.push(`Constants ${name}: types=${c ?? "missing"} db=${e.labels}`);
   }
   return diffs;
 }
