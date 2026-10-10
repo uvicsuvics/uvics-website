@@ -12,6 +12,7 @@ import {
   listPublicAchievements,
   listPublicCompetitions,
   listPublicProjects,
+  normalizeSearch,
   projectSchema,
 } from "@/lib/backend/content";
 import type { Database } from "@/types/database";
@@ -65,7 +66,7 @@ function fakeClient(result: { data: unknown; error: { code?: string } | null; co
   const builder: Record<string, unknown> = {
     then: (resolve: (value: typeof result) => unknown) => resolve(result),
   };
-  for (const method of ["from", "select", "eq", "ilike", "order", "range", "maybeSingle"])
+  for (const method of ["from", "select", "eq", "ilike", "or", "order", "range", "maybeSingle"])
     builder[method] = (...args: unknown[]) => {
       calls.push([method, args]);
       return builder;
@@ -148,7 +149,7 @@ describe("public content queries", () => {
     const { client, calls } = fakeClient(empty);
     await listPublicCompetitions(client, { search: "ui", status: "OPEN", level: "NASIONAL", category: "UI/UX" });
     expect(calls).toEqual(expect.arrayContaining([
-      ["ilike", ["title", "%ui%"]],
+      ["or", ["title.ilike.%ui%,organizer.ilike.%ui%"]],
       ["eq", ["status", "OPEN"]],
       ["eq", ["level", "NASIONAL"]],
       ["eq", ["category", "UI/UX"]],
@@ -159,6 +160,25 @@ describe("public content queries", () => {
     const fields = String(calls.find(([method]) => method === "select")?.[1][0]);
     expect(fields.split(",")).toContain("poster");
     expect(fields).not.toMatch(/poster_url/);
+  });
+
+  it.each([",", "(", ")", '"', "'", "\\", "*", "%", "_", ":"])("normalizeSearch strips %s", (ch) => {
+    expect(normalizeSearch(`a${ch}b`)).toBe("ab");
+  });
+
+  it("searches organizer and competition_name with a sanitized term", async () => {
+    const competitions = fakeClient(empty);
+    await listPublicCompetitions(competitions.client, { search: String.raw`  ui,(x)"y'z\*%_:  ux  ` });
+    expect(competitions.calls).toContainEqual(["or", ["title.ilike.%uixyz ux%,organizer.ilike.%uixyz ux%"]]);
+    const achievements = fakeClient(empty);
+    await listPublicAchievements(achievements.client, { search: "hack" });
+    expect(achievements.calls).toContainEqual(["or", ["title.ilike.%hack%,competition_name.ilike.%hack%"]]);
+    const projects = fakeClient(empty);
+    await listPublicProjects(projects.client, { search: "portal_%" });
+    expect(projects.calls).toContainEqual(["ilike", ["title", "%portal%"]]);
+    const onlySpecial = fakeClient(empty);
+    await listPublicCompetitions(onlySpecial.client, { search: "%_*,()" });
+    expect(onlySpecial.calls.some(([method]) => method === "or" || method === "ilike")).toBe(false);
   });
 
   it("filters featured content and treats empty form values as no filter", async () => {

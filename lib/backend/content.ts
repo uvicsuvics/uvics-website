@@ -90,7 +90,11 @@ export const contentMemberSchema = z
 
 // Nilai kosong dari form GET ("Semua") berarti tanpa filter.
 const optional = <T extends z.ZodType>(schema: T) => z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
-const searchSchema = z.string().trim().max(100).optional();
+// Buang karakter khusus filter PostgREST (, ( ) " ' \ :) dan pola LIKE (* % _); hasil kosong = tanpa filter.
+export function normalizeSearch(term: string) {
+  return term.replace(/[,()"'\\*%_:]/g, "").replace(/\s+/g, " ").trim();
+}
+const searchSchema = z.string().max(100).optional().transform((v) => (v ? normalizeSearch(v) : "") || undefined);
 const featuredSchema = optional(z.stringbool());
 const competitionFilterSchema = z.object({
   search: searchSchema,
@@ -145,7 +149,7 @@ export async function listPublicCompetitions(client: Client, raw: unknown) {
   const pagination = parseQuery(paginationSchema, raw);
   const filter = parseQuery(competitionFilterSchema, raw);
   let query = client.from("competitions").select(COMPETITION_FIELDS, { count: "exact" }).eq("publication_status", "PUBLISHED");
-  if (filter.search) query = query.ilike("title", `%${filter.search}%`);
+  if (filter.search) query = query.or(`title.ilike.%${filter.search}%,organizer.ilike.%${filter.search}%`);
   if (filter.status) query = query.eq("status", filter.status);
   if (filter.category) query = query.eq("category", filter.category);
   if (filter.level) query = query.eq("level", filter.level);
@@ -157,7 +161,7 @@ export async function listPublicAchievements(client: Client, raw: unknown) {
   const pagination = parseQuery(paginationSchema, raw);
   const filter = parseQuery(achievementFilterSchema, raw);
   let query = client.from("achievements").select(ACHIEVEMENT_FIELDS, { count: "exact" }).eq("publication_status", "PUBLISHED");
-  if (filter.search) query = query.ilike("title", `%${filter.search}%`);
+  if (filter.search) query = query.or(`title.ilike.%${filter.search}%,competition_name.ilike.%${filter.search}%`);
   if (filter.level) query = query.eq("level", filter.level);
   return toPage(query.order("achievement_date", { ascending: false }).order("id", { ascending: false }).range(...rangeOf(pagination)), pagination);
 }
