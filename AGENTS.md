@@ -28,19 +28,8 @@ Setiap kali memulai sesi baru di proyek ini, lakukan hal berikut SECARA BERURUTA
 
 1. Baca `design.md` - Berisi seluruh Design System resmi (warna, tipografi, spacing, komponen, animasi). Semua kode visual harus mengacu ke sini.
 2. Baca `documents/PRD.md` - Berisi Product Requirements Document lengkap. Semua fitur, halaman, dan konten harus sesuai dengan PRD.
-3. Baca `documents/DECISIONS.md` - Keputusan yang melengkapi atau mengoreksi PRD. Keputusan berstatus Diterima berlaku; jangan membangun bagian berstatus Usulan dengan asumsi lain tanpa diskusi.
-4. Baca `app/globals.css` - Berisi token CSS aktual yang sudah didefinisikan dan siap dipakai.
-5. Tinjau komponen yang sudah ada di `components/` sebelum membuat komponen baru untuk menghindari duplikasi.
-
-Dokumen pendukung sesuai jenis pekerjaan:
-
-| Pekerjaan | Dokumen |
-| --- | --- |
-| Halaman publik | `documents/UVICS_Public_Website_Page_Specification.md` |
-| Backend, database, auth, media | `documents/BACKEND_CONVENTIONS.md`, `documents/ARCHITECTURE.md` |
-| Migration dan operasi hosted | `documents/BACKEND_OPERATIONS.md` |
-| Branch, commit, PR, rilis | `documents/DEVELOPMENT_WORKFLOW.md` |
-| Pilihan teknologi | `documents/TECH_STACK.md` |
+3. Baca `app/globals.css` - Berisi token CSS aktual yang sudah didefinisikan dan siap dipakai.
+4. Tinjau komponen yang sudah ada di `components/` sebelum membuat komponen baru untuk menghindari duplikasi.
 
 ---
 
@@ -101,34 +90,25 @@ Ukuran Button: sm | md | lg | xl
 
   uvics/
   app/                      Next.js App Router - HALAMAN & API
-    (public)/               Website publik + layout navigasi publik
-      (marketing)/          Halaman informasi (about, contact, dll)
-    (auth)/, (dashboard)/   Alias lama: redirect ke /admin/login dan /admin/dashboard
-    admin/
-      login/                Login admin
-      (protected)/          Semua halaman dashboard admin (dilindungi)
-    api/                    Route Handlers (media upload admin, contact)
+    (auth)/                 Route group: login, register, forgot-password
+    (dashboard)/            Route group: area admin
+    (marketing)/            Route group: halaman publik (about, blog, contact, dll)
+    admin/                  Panel admin - semua modul CMS
+    api/                    API Routes Next.js
     globals.css             CSS global & design tokens - JANGAN diedit sembarangan
     layout.tsx              Root layout - JANGAN diedit sembarangan
   components/
-    admin/                  Shell dan widget dashboard admin
-    competitions/           Komponen halaman kompetisi
     forms/                  Komponen form yang reusable
     icons/                  Ikon kustom (bukan dari library)
     layout/                 SiteHeader, SiteFooter
     sections/               Section besar untuk halaman (Hero, About, dll)
     ui/                     Komponen UI primitif yang reusable (Button, dll)
-  config/                   Navigasi publik dan admin
-  data/, lib/mock-data/     Data mock sementara (diganti data Supabase)
-  documents/                Dokumentasi proyek (lihat tabel di atas)
-  lib/
-    auth/                   Guard admin dan alur login
-    backend/                Error, validasi Zod, rate limit, schema domain
-    env/                    Pembacaan environment
-    media/                  Upload dan publikasi media Cloudinary
-    supabase/               Client browser, server, service
-    utils.ts                cn()
-  proxy.ts                  Cek origin mutasi + refresh cookie sesi
+  config/                   Konfigurasi global (navigation, site metadata)
+  constants/                Konstanta aplikasi
+  data/                     Data statis (batchData.ts, dll)
+  documents/                Dokumentasi proyek (PRD.md, dll)
+  hooks/                    Custom React hooks
+  lib/                      Utility functions (cn, dll)
   public/
     images/
       img/                  Foto kegiatan UVICS
@@ -136,15 +116,9 @@ Ukuran Button: sm | md | lg | xl
       brand/                Asset branding
       og/                   Open Graph images
     logo/                   Logo UVICS
-  scripts/                  Tooling operator (migrate, provisioning, seed, test DB)
-  supabase/migrations/      Schema, RLS, dan fungsi SQL
-  tests/
-    unit/                   Vitest (*.test.ts)
-    db/                     Tes SQL per domain (PostgreSQL disposable)
-    e2e/                    Playwright
-  types/                    Type global, termasuk database.ts
-
-  Folder hooks/, constants/, styles/, dan utils/ boleh dibuat bila benar-benar dibutuhkan, mengikuti konvensi penamaan di bawah.
+  styles/                   CSS tambahan jika diperlukan
+  types/                    TypeScript type definitions global
+  utils/                    Helper functions umum
 
 ### Penamaan File
 
@@ -334,16 +308,6 @@ Ukuran Button: sm | md | lg | xl
 
   SALAH - kode yang dikomentari (gunakan git untuk history):
     // const oldFunction = () => { ... }
-
-### 11. Tes dan Database
-
-  - Logika bisnis, validasi, dan bug fix ditulis dengan TDD: tulis tes yang gagal dulu, baru implementasi.
-  - Unit test di `tests/unit/<nama>.test.ts` (Vitest, import memakai alias `@/`).
-  - Perubahan schema selalu berupa migration baru di `supabase/migrations/YYYYMMDDHHMMSS_<topik>.sql`. Migration yang sudah diterapkan tidak boleh diedit.
-  - Tes SQL di `tests/db/<domain>.sql`, didaftarkan di `scripts/test-database.mjs`. Setiap file membuka transaksi sendiri, membuat fixture sendiri, dan diakhiri `rollback`.
-  - RLS diuji untuk admin aktif, authenticated non-admin, dan `anon`.
-  - `types/database.ts` diperbarui setiap kali schema berubah.
-  - Detail alur kerja di `documents/DEVELOPMENT_WORKFLOW.md`; kontrak backend di `documents/BACKEND_CONVENTIONS.md`.
 
 ---
 
