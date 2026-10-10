@@ -115,21 +115,69 @@ export type Database = {
       };
       members: {
         Row: {
+          batch: number | null;
+          bio: string | null;
           created_at: string;
+          deleted_at: string | null;
+          email: string | null;
+          faculty: string | null;
+          full_name: string;
+          github_url: string | null;
+          graduated_at: string | null;
           id: string;
-          name: string;
+          instagram_url: string | null;
+          joined_at: string | null;
+          linkedin_url: string | null;
+          nim: string | null;
+          phone: string | null;
+          photo: string | null;
+          public_profile: boolean;
+          status: string;
+          study_program: string | null;
           updated_at: string;
         };
         Insert: {
+          batch?: number | null;
+          bio?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
+          email?: string | null;
+          faculty?: string | null;
+          full_name: string;
+          github_url?: string | null;
+          graduated_at?: string | null;
           id?: string;
-          name: string;
+          instagram_url?: string | null;
+          joined_at?: string | null;
+          linkedin_url?: string | null;
+          nim?: string | null;
+          phone?: string | null;
+          photo?: string | null;
+          public_profile?: boolean;
+          status?: string;
+          study_program?: string | null;
           updated_at?: string;
         };
         Update: {
+          batch?: number | null;
+          bio?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
+          email?: string | null;
+          faculty?: string | null;
+          full_name?: string;
+          github_url?: string | null;
+          graduated_at?: string | null;
           id?: string;
-          name?: string;
+          instagram_url?: string | null;
+          joined_at?: string | null;
+          linkedin_url?: string | null;
+          nim?: string | null;
+          phone?: string | null;
+          photo?: string | null;
+          public_profile?: boolean;
+          status?: string;
+          study_program?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -138,28 +186,37 @@ export type Database = {
         Row: {
           created_at: string;
           department_id: string;
+          end_date: string | null;
           id: string;
           member_id: string;
+          notes: string | null;
           organization_period_id: string;
           position_id: string;
+          start_date: string | null;
           updated_at: string;
         };
         Insert: {
           created_at?: string;
           department_id: string;
+          end_date?: string | null;
           id?: string;
           member_id: string;
+          notes?: string | null;
           organization_period_id: string;
           position_id: string;
+          start_date?: string | null;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
           department_id?: string;
+          end_date?: string | null;
           id?: string;
           member_id?: string;
+          notes?: string | null;
           organization_period_id?: string;
           position_id?: string;
+          start_date?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -255,6 +312,96 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      registrations: {
+        Row: {
+          accepted_at: string | null;
+          admin_notes: string | null;
+          batch: number;
+          converted_member_id: string | null;
+          created_at: string;
+          email: string;
+          experience: string | null;
+          faculty: string;
+          full_name: string;
+          id: string;
+          motivation: string | null;
+          nim: string;
+          phone: string;
+          photo: string | null;
+          portfolio_url: string | null;
+          preferred_department_id: string | null;
+          rejected_at: string | null;
+          skills: string | null;
+          status: string;
+          study_program: string;
+          submitted_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          admin_notes?: string | null;
+          batch: number;
+          converted_member_id?: string | null;
+          created_at?: string;
+          email: string;
+          experience?: string | null;
+          faculty: string;
+          full_name: string;
+          id?: string;
+          motivation?: string | null;
+          nim: string;
+          phone: string;
+          photo?: string | null;
+          portfolio_url?: string | null;
+          preferred_department_id?: string | null;
+          rejected_at?: string | null;
+          skills?: string | null;
+          status?: string;
+          study_program: string;
+          submitted_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          admin_notes?: string | null;
+          batch?: number;
+          converted_member_id?: string | null;
+          created_at?: string;
+          email?: string;
+          experience?: string | null;
+          faculty?: string;
+          full_name?: string;
+          id?: string;
+          motivation?: string | null;
+          nim?: string;
+          phone?: string;
+          photo?: string | null;
+          portfolio_url?: string | null;
+          preferred_department_id?: string | null;
+          rejected_at?: string | null;
+          skills?: string | null;
+          status?: string;
+          study_program?: string;
+          submitted_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "registrations_converted_member_id_fkey";
+            columns: ["converted_member_id"];
+            isOneToOne: true;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "registrations_preferred_department_id_fkey";
+            columns: ["preferred_department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       competitions: {
         Row: {
