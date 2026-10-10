@@ -53,6 +53,8 @@ Keputusan berikut menjawab pertanyaan PRD §79 atau bagian PRD yang ambigu, dan 
 | D14 | Histori keanggotaan tidak pernah dihapus otomatis: FK `membership_histories` memakai `on delete restrict`; member memakai soft delete (`deleted_at`). | §29, §40 | #16, #17 |
 | D15 | Competition hanya berisi informasi lomba, bukan tracking tim. Tracking tim tetap future enhancement. | Q9 | PRD §77 |
 | D16 | `development` adalah branch integrasi; `main` adalah branch rilis. Detail di [workflow pengembangan](DEVELOPMENT_WORKFLOW.md). | — | Sejak 4 Oktober 2026 |
+| D17 | Visibilitas konten publik memakai `content_status` (`DRAFT/PUBLISHED/ARCHIVED`, default `DRAFT`), terpisah dari lifecycle. `competitions`, `achievements`, dan `projects` memakai kolom `publication_status`; lifecycle tetap kolom `status` (`competition_status`, `project_status`). `achievements.published` tidak dipakai. Lifecycle `ARCHIVED` pada project berarti proyek tidak lagi dikelola dan tetap tampil bila `PUBLISHED`. Lifecycle dihitung dari tanggal belum diputuskan (T06). | §17–19, §60 butir 12 (dari U06) | #20 |
+| D18 | `achievement_members` dan `project_members` memakai `member_id` nullable (FK ke `members`, `on delete restrict`) dan `member_name` nullable untuk peserta non-member; minimal salah satu terisi, satu member sekali per induk. Nama member tertaut tampil publik hanya lewat proyeksi D02. | §18, §19, Q10, Q11 (dari U07) | #20 |
 
 ## C. Usulan yang menunggu keputusan PM
 
@@ -65,8 +67,6 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 | U03 | Route pendaftaran | `/join` kanonis, `/register` redirect | #24, #28 |
 | U04 | Sumber status pendaftaran dibuka | Tabel periode pendaftaran | #28 |
 | U05 | Field Programs | Tambah kolom yang dipakai halaman | #25, #27, #30 |
-| U06 | Status publikasi vs lifecycle | Pisahkan `content_status` dari lifecycle | #20, #26 |
-| U07 | Anggota pada achievement/project | FK `member_id` nullable + `member_name` | #20, #26 |
 | U08 | Level posisi | `positions.level` jadi enum | #25 |
 | U09 | Route berita dan route template | `/news` kanonis, route template dihapus | #24 |
 | U10 | Halaman Visi & Misi | Halaman sendiri `/vision-mission` | #18 |
@@ -76,6 +76,8 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 | U14 | Galeri | Album wajib dengan slug | Sprint berikut |
 | U15 | Homepage | Urutan tetap sesuai spesifikasi | Sprint berikut |
 | U16 | Bahasa | Bahasa Indonesia untuk MVP | Semua frontend |
+| U17 | Nilai baku level konten | Enum `content_level` dengan kode tetap | #36, integrasi frontend |
+| U18 | Data privat konten untuk `authenticated` non-admin | Sertifikat ke tabel admin; `member_id` diterima sementara | #36 |
 
 ### U01 — Pengurus inti tanpa departemen
 
@@ -107,17 +109,6 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 - **Masalah:** Programs ada di IA dan spesifikasi (§11 halaman Programs), tabel `programs` sudah ada, tetapi PRD tidak punya modulnya. Spesifikasi meminta kategori, ikon, dan relasi departemen yang tidak ada di tabel.
 - **Rekomendasi:** PRD v1.1 mendokumentasikan tabel yang ada (§21A). Tambahan kolom diputuskan berdasarkan elemen yang benar-benar dirender halaman #25, lalu dibuat lewat migration baru.
 - **Owner:** Jofan (#30).
-
-### U06 — Status publikasi dan lifecycle
-
-- **Masalah:** News memakai `DRAFT/PUBLISHED/ARCHIVED`, tetapi competition, event, dan project hanya punya status lifecycle (`OPEN`, `ONGOING`, dll.) padahal admin diminta bisa publish/archive. Achievement dan gallery memakai boolean `published`. Status event "dihitung otomatis atau diubah admin" tanpa aturan prioritas.
-- **Rekomendasi:** Semua konten publik memakai `content_status` (`DRAFT/PUBLISHED/ARCHIVED`) untuk visibilitas, terpisah dari status lifecycle. Lifecycle event dan competition dihitung dari tanggal; admin hanya boleh menetapkan `CANCELLED` (event) atau `CLOSED` lebih awal (competition).
-- **Owner:** Jofan (#20, #30).
-
-### U07 — Anggota pada achievement dan project
-
-- **Masalah:** PRD §18 mengaitkan achievement ke `members`, tetapi PR #20 memakai kolom teks `member_name`. Q11 (achievement dari non-member) belum dijawab.
-- **Rekomendasi:** `member_id` nullable (FK ke `members`) ditambah `member_name` untuk peserta non-member, dengan check minimal salah satu terisi.
 
 ### U08 — Level posisi
 
@@ -161,6 +152,22 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 
 - **Rekomendasi:** MVP hanya Bahasa Indonesia (menjawab Q13). Teks UI tetap dikumpulkan di config atau konstanta agar siap diterjemahkan, sesuai aturan AGENTS.md.
 
+### U17 — Nilai baku level
+
+- **Masalah:** `level` pada competition dan achievement semula teks bebas, sementara filter mencocokkan persis. Nilainya sudah beragam: contoh issue #11 memakai `National`, seed memakai `Nasional`, `types/competition.ts` mengharapkan `'Internal' | 'Nasional' | 'Internasional'`, dan mock beranda memakai `Regional`.
+- **Bukti:** issue #11 (kontrak awal), `types/competition.ts`, review PR #20 (M2).
+- **Rekomendasi:** enum `public.content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` untuk `competitions.level` dan `achievements.level` (nullable). Label tampilan menjadi urusan frontend.
+- **Dampak:** sudah diterapkan di migration `20261004080000_content_foundation.sql` (PR #36). Frontend perlu memetakan kode ke label dan menambah `REGIONAL`. Setelah migration diterapkan ke hosted, perubahan nilai butuh migration baru.
+- **Menunggu:** konfirmasi PM dan frontend.
+
+### U18 — Data privat konten untuk `authenticated` non-admin
+
+- **Masalah:** admin dan non-admin sama-sama memakai role `authenticated`, jadi column grant tidak bisa membedakan keduanya. Pada baris `PUBLISHED`, `certificate_file` (media privat) dan `member_id` terbaca oleh `authenticated` non-admin.
+- **Bukti:** review PR #20 (M4); `select certificate_file from public.achievements` dengan JWT non-admin berhasil.
+- **Rekomendasi:** `certificate_file` dipindah ke tabel `achievement_certificates` yang hanya terbaca admin aktif (sudah diterapkan di PR #36). `member_id` tetap terbaca oleh `authenticated` non-admin sebagai risiko yang diterima sementara: kelompok ini hanya admin nonaktif atau admin yang sesinya lewat satu jam (signup publik mati, D08), dan `member_id` hanya UUID tanpa data pribadi. Ditutup lewat RPC/view admin saat mutasi admin konten dibangun.
+- **Dampak:** tidak ada perubahan grant `member_id` untuk `authenticated`. anon tetap tidak bisa membaca `member_id`.
+- **Menunggu:** konfirmasi PM dan review Jordan (#31).
+
 ## D. Isu terbuka
 
 | ID | Pertanyaan | Asal | Catatan |
@@ -170,3 +177,4 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 | T03 | Apakah alumni punya field pekerjaan/perusahaan saat ini? | Q16, §28 | Kolom belum ada di `members`. |
 | T04 | Apakah diperlukan newsletter? | Q18 | Tidak ada di cakupan MVP. |
 | T05 | Field registration tambahan PRD §22.2 (gender, semester, interest, persetujuan data) disimpan atau tidak? | Q3 | Perlu diputuskan sebelum #28. |
+| T06 | Apakah lifecycle competition dan event dihitung dari tanggal, dan kapan admin boleh menimpanya? | Sisa U06 | Saat ini lifecycle disimpan dan diisi admin. |
