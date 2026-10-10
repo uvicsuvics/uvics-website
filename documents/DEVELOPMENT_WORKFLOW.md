@@ -94,6 +94,7 @@ npm run typecheck
 npm test
 npm run test:db
 npm run build
+npm run check:migrations
 ```
 
 `npm run test:db` membutuhkan binary PostgreSQL 17 atau 18 lokal (dideteksi otomatis di Windows; override dengan `PG_BIN`). Detail di [README](../README.md#verifikasi).
@@ -103,7 +104,11 @@ npm run build
 - **Base:** `development`. PR ke `main` hanya untuk rilis (bagian 8).
 - **Judul:** format commit, mis. `feat(membership): implement membership data foundation (#8)`.
 - **Draft** bila belum siap review atau masih menunggu PR lain. Tulis dependency di deskripsi: `Depends on #16`.
-- **CI wajib hijau** (job `verify`: lint, typecheck, unit test, DB test, build, e2e subset).
+- **CI wajib hijau.** Check `verify` lulus bila semua job lulus:
+  - `static`: lint tanpa warning, typecheck, dan guard migration append-only (`npm run check:migrations`).
+  - `unit`: Vitest.
+  - `database`: `test:db` di PostgreSQL 17 dan 18, termasuk cek `types/database.ts` terhadap schema.
+  - `e2e`: build dan Playwright subset.
 - **Minimal satu reviewer** yang bukan author dan bukan penulis commit terakhir.
 - PR yang mengubah RLS, grants, audit, atau fungsi SQL berprivilege direview owner security (Jordan).
 - Satu PR fokus pada satu issue. Perubahan di luar cakupan issue dipisah ke PR lain.
@@ -176,6 +181,6 @@ Sebuah issue selesai jika:
 
 Dilakukan admin repository:
 
-- Branch protection untuk `main` dan `development`: wajib lewat PR, wajib status check `verify`, minimal satu approval, larang force push dan penghapusan branch.
+- Branch protection untuk `main` dan `development`: wajib lewat PR, wajib status check `verify` (agregat semua job CI; job lain tidak perlu didaftarkan satu per satu), minimal satu approval, larang force push dan penghapusan branch.
 - Default merge method untuk PR fitur: squash.
 - Hapus branch otomatis setelah merge.
