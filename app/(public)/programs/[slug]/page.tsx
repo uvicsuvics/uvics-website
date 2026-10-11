@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
-  Sparkles,
 } from "lucide-react";
 import { UVICS_PROGRAMS, ProgramItem } from "@/data/mock/programs";
 import { Button } from "@/components/ui/Button";
@@ -142,8 +141,7 @@ export default async function ProgramDetailPage({ params }: PageProps) {
         </div>
 
         <div className="p-8 rounded-3xl bg-primary-50/40 border border-primary-200 space-y-4">
-          <div className="flex items-center gap-2 text-primary font-bold text-base font-heading">
-            <Sparkles className="w-5 h-5 text-primary" />
+          <div className="text-primary font-bold text-base font-heading">
             <span>Cara Berpartisipasi</span>
           </div>
           <p className="text-sm text-gray-700 leading-relaxed">
