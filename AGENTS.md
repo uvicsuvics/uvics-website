@@ -36,7 +36,7 @@ Dokumen pendukung sesuai jenis pekerjaan:
 
 | Pekerjaan | Dokumen |
 | --- | --- |
-| Halaman publik | `documents/UVICS_Public_Website_Page_Specification.md` |
+| Halaman publik | `documents/UVICS_Public_Website_Page_Specification.md`, `documents/frontend-convention.md` |
 | Backend, database, auth, media | `documents/BACKEND_CONVENTIONS.md`, `documents/ARCHITECTURE.md` |
 | Migration dan operasi hosted | `documents/BACKEND_OPERATIONS.md` |
 | Branch, commit, PR, rilis | `documents/DEVELOPMENT_WORKFLOW.md` |
@@ -126,6 +126,7 @@ Ukuran Button: sm | md | lg | xl
     backend/                Error, validasi Zod, rate limit, schema domain
     env/                    Pembacaan environment
     media/                  Upload dan publikasi media Cloudinary
+    services/               Fungsi pengambil data untuk halaman (mock sekarang, Supabase nanti)
     supabase/               Client browser, server, service
     utils.ts                cn()
   proxy.ts                  Cek origin mutasi + refresh cookie sesi
