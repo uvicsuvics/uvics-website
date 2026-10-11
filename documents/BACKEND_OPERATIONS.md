@@ -55,6 +55,16 @@ Cleanup memeriksa owner/ID/waktu database, menolak referensi aktif, dan menahan 
 
 HELD berarti jalankan kembali setelah deadline manifest; tidak perlu blocking sleep satu jam. Sebelum go-live: inventaris manifest, bersihkan aset eligible, lalu row upload sintetis, profil admin sintetis, dan Auth user sintetis berdasarkan UUID melalui Admin API. Pertahankan audit kecuali ada persetujuan operator khusus, juga schema/policy/preset/admin/konten final. Nonaktifkan/ban fixture usai pengujian. Cleanup go-live, backup/pemulihan, region/biaya rilis tetap pekerjaan persiapan production.
 
+Seed CMS dan konten (`scripts/seed-cms.sql`) menulis baris sintetis ber-ID tetap, termasuk konten `PUBLISHED` dan `featured`. Sebelum go-live, hapus baris berikut berdasarkan ID (prefiks `00000000-0000-4000-8000-000000000…`, slug berawalan `seed-`):
+
+| Tabel | ID |
+| --- | --- |
+| `pages` | `…0901`, `…0902` |
+| `programs` | `…0911`, `…0912` |
+| `competitions` | `…0921`, `…0922` |
+| `achievements` | `…0931`, `…0932` (anggota `…0941`–`…0943` ikut terhapus cascade) |
+| `projects` | `…0951`, `…0952` (anggota `…0961`, `…0962` ikut terhapus cascade) |
+
 ## Recovery dan portability tambahan
 
 Timeout respons finish bukan bukti rollback: adapter membaca ulang intent dan merekonsiliasi publication committed. Retry row PUBLIC memeriksa metadata/ACL provider; bila tertutup akibat kompensasi, izin diperiksa lagi dan ACL dipulihkan sebelum URL dikembalikan. Kegagalan rekonsiliasi tetap 503/log aman.

@@ -81,3 +81,32 @@ POST signature `{category:'poster',kind:'image'}`, lalu kirim file bersama selur
 Mutasi domain+audit dilakukan dalam **satu fungsi SQL**: periksa `private.has_active_admin_session()`, validasi state, UPDATE/INSERT, panggil `private.write_audit(auth.uid(),...)` dengan payload allowlist, return DTO. Cabut EXECUTE PUBLIC; audit bukan generic client RPC. Contoh runtime ada di `record_admin_login`/`complete_upload_intent`; rollback bersama dibuktikan `tests/db/foundation.sql`.
 
 `admins.password` pada contoh PRD dipetakan ke Supabase Auth, **bukan kolom aplikasi**. Migration fondasi milik #7, modul domain menambah migration sendiri. Frontend boleh mengganti UI minimum dengan kontrak route/auth yang sama; koordinasikan perubahan layout bersama #1/#6. Dokumen ini tidak menyatakan tim lain sudah mengintegrasikan/mereviewnya.
+
+## Kontrak konten #11
+
+Berlaku untuk `lib/backend/content.ts` (competition, achievement, project). Field DTO memakai snake_case sesuai kolom database.
+
+- **Tanggal:** `registration_deadline`, `competition_date`, `achievement_date`, `start_date`, dan `end_date` bertipe `date`, dikirim `YYYY-MM-DD` tanpa jam dan zona waktu.
+- **Level:** kode `content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` ([U17](DECISIONS.md#u17--nilai-baku-level)). Label tampilan menjadi urusan frontend. Filter `level` di luar kode ini menghasilkan `VALIDATION_ERROR`.
+- **Media:** `poster` (competition) dan `cover_image` (achievement, project) berisi referensi media, bukan URL, maksimal 500 karakter. Bentuk final ditetapkan alur upload #28/#29. Sertifikat ada di tabel `achievement_certificates` yang hanya terbaca admin aktif ([U18](DECISIONS.md#u18--data-privat-konten-untuk-authenticated-non-admin)).
+- **Anggota:** proyeksi publik `achievement_members`/`project_members` hanya `member_name` dan `role`. Anggota yang tertaut lewat `member_id` tampil dengan `member_name: null` sampai proyeksi D02 tersedia.
+- **Visibilitas:** query publik selalu memfilter `publication_status = 'PUBLISHED'` dan tidak mengirim field `publication_status`.
+- **Pencarian:** competition mencari `title` dan `organizer`, achievement mencari `title` dan `competition_name`, project mencari `title`. Karakter `, ( ) " ' \ * % _ :` dibuang dari kata kunci; hasil kosong berarti tanpa filter.
+- **Pagination:** page di luar total baris (PostgREST `PGRST103`) menghasilkan `NOT_FOUND` 404. Mapping ini ada di `databaseError()` sehingga berlaku untuk semua domain.
+
+Pemetaan DTO competition ke `types/competition.ts` (frontend #15), untuk issue integrasi frontend:
+
+| DTO backend | `Competition` frontend | Catatan |
+| --- | --- | --- |
+| `id` (UUID string) | `id` | Mock memakai `comp-1`; ganti ke UUID |
+| `title`, `slug`, `organizer`, `description` | sama | |
+| `category` (nullable) | `category` (wajib) | Tangani `null` |
+| `level` (`NASIONAL`, …; nullable) | `level` (`'Nasional'`, …) | Petakan kode ke label; `REGIONAL` belum ada di union frontend |
+| `registration_deadline` (`YYYY-MM-DD`) | `registrationDeadline` (datetime berjam) | Tanpa jam; aturan zona waktu WITA menunggu [T06](DECISIONS.md#d-isu-terbuka) |
+| `competition_date` (`YYYY-MM-DD`, nullable) | `competitionDate` (wajib) | Sama seperti di atas; tangani `null` |
+| `registration_url`, `guidebook_url` | `registrationUrl`, `guidebookUrl` | |
+| `poster` (referensi media) | `poster` (path gambar) | Diubah menjadi URL lewat alur media publik |
+| `team_size`, `eligibility` | `teamSize`, `eligibility` | |
+| `status` | `status` | Nilai sama (`UPCOMING` … `FINISHED`) |
+| `featured`, `created_at`, `updated_at` | `featured`, `createdAt`, `updatedAt` | |
+| Filter kosong (`status=`, `level=`) | Filter `'ALL'` | Kirim kosong atau hilangkan parameter; `ALL` ditolak |
