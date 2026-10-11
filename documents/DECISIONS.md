@@ -78,6 +78,9 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 | U16 | Bahasa | Bahasa Indonesia untuk MVP | Semua frontend |
 | U17 | Nilai baku level konten | Enum `content_level` dengan kode tetap | #36, integrasi frontend |
 | U18 | Data privat konten untuk `authenticated` non-admin | Sertifikat ke tabel admin; `member_id` diterima sementara | #36 |
+| U19 | Aturan duplikat registration sementara | Satu registration aktif per NIM tanpa entitas periode | #28 (diterapkan), U04 |
+| U20 | Persetujuan data pendaftar | Simpan `consent_at`; gender/semester/minat tidak disimpan | #28 (diterapkan), T05 |
+| U21 | Landing page `/join` | Issue frontend untuk Why Join, Benefits, Departments, Requirements, Process, Dates, FAQ | Recruitment (spesifikasi Page 15) |
 
 ### U01 — Pengurus inti tanpa departemen
 
@@ -167,6 +170,27 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 - **Rekomendasi:** `certificate_file` dipindah ke tabel `achievement_certificates` yang hanya terbaca admin aktif (sudah diterapkan di PR #36). `member_id` tetap terbaca oleh `authenticated` non-admin sebagai risiko yang diterima sementara: kelompok ini hanya admin nonaktif atau admin yang sesinya lewat satu jam (signup publik mati, D08), dan `member_id` hanya UUID tanpa data pribadi. Ditutup lewat RPC/view admin saat mutasi admin konten dibangun.
 - **Dampak:** tidak ada perubahan grant `member_id` untuk `authenticated`. anon tetap tidak bisa membaca `member_id`.
 - **Menunggu:** konfirmasi PM dan review Jordan (#31).
+
+### U19 — Aturan duplikat registration sementara
+
+- **Masalah:** PRD §22.3 meminta registration unik per periode pendaftaran, tetapi entitas periode (U04) belum diputuskan, sementara #28 harus mencegah duplikat sekarang.
+- **Rekomendasi:** unique index parsial `registrations_one_active_per_nim`: satu registration aktif per NIM, dengan aktif = `SUBMITTED`, `UNDER_REVIEW`, atau `ACCEPTED` yang belum dikonversi. Pendaftar `REJECTED` boleh mendaftar ulang. NIM yang sudah ada di `members` ditolak dengan respons yang sama dengan duplikat agar status keanggotaan tidak terungkap (D02).
+- **Dampak:** ditegakkan database (aman terhadap request bersamaan). Bila U04 diterima, index diganti dengan keunikan `(periode, nim)` lewat migration lanjutan tanpa memindahkan data.
+- **Menunggu:** konfirmasi PM. Sudah diterapkan di #28 atas keputusan PIC.
+
+### U20 — Persetujuan data pendaftar
+
+- **Masalah:** PRD §22.2 meminta persetujuan penggunaan data dan konfirmasi kebenaran data; T05 belum memutuskan field tambahan.
+- **Rekomendasi:** kedua persetujuan wajib di server dan dicatat sebagai `registrations.consent_at` (waktu database). Gender, semester, dan minat tidak disimpan sampai ada pemakainya.
+- **Dampak:** `consent_at` nullable karena baris lama tidak punya persetujuan; `submit_registration` (satu-satunya jalur insert) selalu mengisinya. Menjawab sebagian T05.
+- **Menunggu:** konfirmasi PM. Sudah diterapkan di #28 atas keputusan PIC.
+
+### U21 — Landing page `/join`
+
+- **Masalah:** spesifikasi publik Page 15 menempatkan form pendaftaran di dalam landing page rekrutmen (Why Join, Benefits, Departments, Requirements, Recruitment Process, Important Dates, FAQ). Tidak ada issue frontend Sprint 2 (#24–#27) yang mencakupnya.
+- **Rekomendasi:** buat issue frontend terpisah untuk bagian landing. #28 hanya menyediakan form fungsional minimal dan state tertutup/berhasil agar MVP §74 butir 10 terpenuhi.
+- **Dampak:** `/join` saat ini berisi judul, deskripsi singkat, dan form atau pesan tertutup.
+- **Menunggu:** keputusan PM untuk membuat issue.
 
 ## D. Isu terbuka
 

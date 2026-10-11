@@ -79,3 +79,18 @@ for (const width of [390, 1280]) {
     expect(errors).toEqual([]);
   });
 }
+
+test("public navigation: /join shows closed registration when settings are unavailable", async ({
+  page,
+}) => {
+  await page.goto("/join");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Join UVICS" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Pendaftaran sedang ditutup. Ikuti media sosial UVICS untuk informasi rekrutmen berikutnya.",
+    ),
+  ).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "NIM" })).toHaveCount(0);
+});
