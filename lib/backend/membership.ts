@@ -5,7 +5,7 @@ import { httpUrlSchema } from "./validation";
 export const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
 // PostgREST mengembalikan timestamptz dengan offset (+00:00) dan mikrodetik.
 const timestampSchema = z.iso.datetime({ offset: true });
-// Referensi media, bukan URL (BACKEND_CONVENTIONS); bentuknya ditetapkan alur upload #28/#29.
+// Referensi media, bukan URL (BACKEND_CONVENTIONS); bentuknya ditetapkan alur upload #29 (#28 tidak menerima foto).
 const photoSchema = z.string().optional().nullable();
 
 export const memberSchema = z.object({
