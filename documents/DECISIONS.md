@@ -80,6 +80,7 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 | U18 | Data privat konten untuk `authenticated` non-admin | Sertifikat ke tabel admin; `member_id` diterima sementara | #36 |
 | U19 | Aturan duplikat registration sementara | Satu registration aktif per NIM tanpa entitas periode | #28 (diterapkan), U04 |
 | U20 | Persetujuan data pendaftar | Simpan `consent_at`; gender/semester/minat tidak disimpan | #28 (diterapkan), T05 |
+| U21 | Landing page `/join` | Issue frontend untuk Why Join, Benefits, Departments, Requirements, Process, Dates, FAQ | Recruitment (spesifikasi Page 15) |
 
 ### U01 — Pengurus inti tanpa departemen
 
@@ -183,6 +184,13 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 - **Rekomendasi:** kedua persetujuan wajib di server dan dicatat sebagai `registrations.consent_at` (waktu database). Gender, semester, dan minat tidak disimpan sampai ada pemakainya.
 - **Dampak:** `consent_at` nullable karena baris lama tidak punya persetujuan; `submit_registration` (satu-satunya jalur insert) selalu mengisinya. Menjawab sebagian T05.
 - **Menunggu:** konfirmasi PM. Sudah diterapkan di #28 atas keputusan PIC.
+
+### U21 — Landing page `/join`
+
+- **Masalah:** spesifikasi publik Page 15 menempatkan form pendaftaran di dalam landing page rekrutmen (Why Join, Benefits, Departments, Requirements, Recruitment Process, Important Dates, FAQ). Tidak ada issue frontend Sprint 2 (#24–#27) yang mencakupnya.
+- **Rekomendasi:** buat issue frontend terpisah untuk bagian landing. #28 hanya menyediakan form fungsional minimal dan state tertutup/berhasil agar MVP §74 butir 10 terpenuhi.
+- **Dampak:** `/join` saat ini berisi judul, deskripsi singkat, dan form atau pesan tertutup.
+- **Menunggu:** keputusan PM untuk membuat issue.
 
 ## D. Isu terbuka
 

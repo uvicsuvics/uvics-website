@@ -11,6 +11,10 @@ import {
 export const DUPLICATE_REGISTRATION_MESSAGE =
   "NIM ini sudah memiliki pendaftaran yang sedang diproses.";
 export const INACTIVE_DEPARTMENT_MESSAGE = "Departemen tidak tersedia.";
+export const REGISTRATION_CLOSED_MESSAGE =
+  "Pendaftaran sedang ditutup. Ikuti media sosial UVICS untuk informasi rekrutmen berikutnya.";
+export const REGISTRATION_SUCCESS_MESSAGE =
+  "Pendaftaran berhasil dikirim dan akan ditinjau oleh tim UVICS.";
 
 /** Identik dengan CHECK SQL `registrations.email` (`~*`); dijaga tests/unit/registration.test.ts. */
 export const REGISTRATION_EMAIL_PATTERN =
