@@ -233,8 +233,8 @@ begin
   begin
     delete from public.members where id = v_member_id;
     raise exception 'TEST 9A GAGAL: hard delete member harus ditolak ON DELETE RESTRICT';
-  exception when foreign_key_violation then
-    null; -- Benar: ON DELETE RESTRICT melindungi history
+  exception when foreign_key_violation or restrict_violation then
+    null; -- Benar: ON DELETE RESTRICT melindungi history (23503 di PG<=17, 23001 di PG>=18)
   end;
 
   -- ============================================================

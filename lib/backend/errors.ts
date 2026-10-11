@@ -81,6 +81,7 @@ export function databaseError(error: { code?: string } | null): never {
   if (
     error?.code === "23505" ||
     error?.code === "23514" ||
+    error?.code === "23001" ||
     error?.code === "P0001"
   )
     throw new AppError("CONFLICT");
