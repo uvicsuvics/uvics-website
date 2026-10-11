@@ -110,3 +110,18 @@ Pemetaan DTO competition ke `types/competition.ts` (frontend #15), untuk issue i
 | `status` | `status` | Nilai sama (`UPCOMING` … `FINISHED`) |
 | `featured`, `created_at`, `updated_at` | `featured`, `createdAt`, `updatedAt` | |
 | Filter kosong (`status=`, `level=`) | Filter `'ALL'` | Kirim kosong atau hilangkan parameter; `ALL` ditolak |
+ 
+## Kontrak review registrasi dan konversi anggota #29
+
+Berlaku untuk alur review admin dan konversi pendaftar ke anggota aktif (`lib/backend/registrations.ts`, migration `20261011120000_registration_review_conversion.sql`):
+
+- **Review status:** RPC `public.admin_review_registration(uuid, text, text)` memvalidasi transisi (`SUBMITTED`, `UNDER_REVIEW`, `ACCEPTED`, `REJECTED`), mengupdate status + timestamp (`accepted_at`/`rejected_at`), dan menyimpan `admin_notes` (internal admin, tidak masuk ke DTO publik).
+- **Konversi anggota:** RPC `public.admin_convert_registration_to_member(uuid, uuid, uuid, uuid, date)`:
+  - Memverifikasi sesi admin aktif (`private.has_active_admin_session()`).
+  - Mengunci baris registrasi dengan `FOR UPDATE` untuk mencegah race condition.
+  - Mensyaratkan status pendaftar harus `ACCEPTED` dan belum pernah dikonversi (`converted_member_id is null`, D12).
+  - Membuat record member baru dengan status `ACTIVE` dan record `membership_histories`.
+  - Mendukung `department_id` bernilai `null` untuk pengurus inti (U01).
+  - Menautkan `converted_member_id` ke member baru.
+  - Menulis log audit `MEMBER_CONVERTED` dalam satu transaksi atomik (D13).
+  - Preservasi histori keanggotaan dilindungi via `ON DELETE RESTRICT` dan soft delete (D14).

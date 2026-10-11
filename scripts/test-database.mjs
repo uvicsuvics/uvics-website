@@ -8,6 +8,8 @@ import { compareSchema, readCatalog, readTypes } from "./schema-types.mjs";
 const directory = mkdtempSync(join(tmpdir(), "uvics-db-"));
 const defaultWinBin =
   [
+    join(process.env.LOCALAPPDATA || "", "pgsql", "pgsql", "bin"),
+    join(process.env.LOCALAPPDATA || "", "pgsql", "bin"),
     "C:/Program Files/PostgreSQL/18/bin",
     "C:/Program Files/PostgreSQL/17/bin",
   ].find((p) => {
@@ -106,6 +108,7 @@ try {
     "tests/db/rate-limit.sql",
     "tests/db/organization.sql",
     "tests/db/membership.sql",
+    "tests/db/registration-conversion.sql",
     "tests/db/content.sql",
     "tests/db/cms.sql",
     "tests/db/seeder-organization.sql",

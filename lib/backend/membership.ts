@@ -34,7 +34,7 @@ export const membershipHistorySchema = z.object({
   id: z.string().uuid(),
   member_id: z.string().uuid(),
   organization_period_id: z.string().uuid(),
-  department_id: z.string().uuid(),
+  department_id: z.string().uuid().nullable(),
   position_id: z.string().uuid(),
   start_date: z.string().optional().nullable(),
   end_date: z.string().optional().nullable(),
