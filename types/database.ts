@@ -287,11 +287,128 @@ export type Database = {
         };
         Relationships: [];
       };
+      pages: {
+        Row: {
+          id: string;
+          title: string;
+          slug: string;
+          content: string;
+          meta_title: string | null;
+          meta_description: string | null;
+          status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+          published_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          slug: string;
+          content?: string;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+          published_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          slug?: string;
+          content?: string;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+          published_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      programs: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          short_description: string | null;
+          description: string;
+          image: string | null;
+          status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+          display_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          short_description?: string | null;
+          description?: string;
+          image?: string | null;
+          status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          short_description?: string | null;
+          description?: string;
+          image?: string | null;
+          status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      website_settings: {
+        Row: {
+          key: string;
+          value: Json;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          key: string;
+          value?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          key?: string;
+          value?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      log_cms_audit: {
+        Args: {
+          p_action: string;
+          p_entity_type: string;
+          p_entity_id: string;
+          p_old: Json;
+          p_new: Json;
+        };
+        Returns: undefined;
+      };
+      publish_page: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
+      publish_program: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
       begin_media_publication: {
         Args: {
           p_actor: string;
