@@ -109,6 +109,7 @@ try {
     "tests/db/content.sql",
     "tests/db/cms.sql",
     "tests/db/security.sql", // sebelum seeder: asersi jumlah baris absolut
+    "tests/db/registration.sql",
     "tests/db/seeder-organization.sql",
   ])
     await step(file, () => client.query(readFileSync(file, "utf8")));

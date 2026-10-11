@@ -40,6 +40,16 @@ describe("schema vs types/database.ts", () => {
     expect(compareSchema(catalog(), readTypes(source))).toEqual([]);
   });
 
+  it("maps text-returning functions to string, including optional defaulted args", () => {
+    const withText = source.replace(
+      "Functions: { ping: { Args: { p_id: string }; Returns: boolean } };",
+      "Functions: { ping: { Args: { p_id: string }; Returns: boolean }; submit: { Args: { p_nim: string; p_note?: string }; Returns: string } };",
+    );
+    const db = catalog();
+    db.functions.push({ proname: "submit", res: "text", args: "p_nim:text,p_note:text" });
+    expect(compareSchema(db, readTypes(withText))).toEqual([]);
+  });
+
   it("compares runtime Constants, which Zod validators are built from, with the enum labels", () => {
     const stale = source.replace('kind: ["A", "B"]', 'kind: ["A"]');
     expect(compareSchema(catalog(), readTypes(stale)).some((d) => d.includes("Constants kind"))).toBe(true);
