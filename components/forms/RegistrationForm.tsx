@@ -11,14 +11,15 @@ import {
   REGISTRATION_CLOSED_MESSAGE,
   REGISTRATION_SUCCESS_MESSAGE,
   registrationErrorMap,
+  registrationFailureView,
   registrationSubmissionSchema,
   type RegistrationSubmissionInput,
 } from "@/lib/backend/registration";
 
 type FieldName = keyof RegistrationSubmissionInput;
 
-// preferred_department_id belum dirender: daftar departemen publik menunggu U02.
-const RENDERED_FIELDS: ReadonlySet<string> = new Set<FieldName>([
+// Urutan tampil (atas ke bawah); preferred_department_id belum dirender karena menunggu U02.
+const RENDERED_FIELDS: readonly FieldName[] = [
   "full_name",
   "nim",
   "email",
@@ -32,11 +33,7 @@ const RENDERED_FIELDS: ReadonlySet<string> = new Set<FieldName>([
   "portfolio_url",
   "consent_data",
   "consent_accuracy",
-]);
-
-function isRenderedField(key: string): key is FieldName {
-  return RENDERED_FIELDS.has(key);
-}
+];
 
 const TEXTAREA_CLASS =
   "flex w-full min-h-28 rounded-lg border border-primary-200 bg-white px-3 py-2 text-base text-gray-900 shadow-sm outline-none transition-colors placeholder:text-gray-600 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error";
@@ -79,17 +76,13 @@ export function RegistrationForm() {
     startTransition(async () => {
       const result = await submitRegistrationAction(values);
       if (result.ok) return setOutcome("success");
-      if (result.error.code === "FORBIDDEN") return setOutcome("closed");
-      let mapped = 0;
-      for (const [name, messages] of Object.entries(
-        result.error.field_errors ?? {},
-      )) {
-        if (!isRenderedField(name) || !messages.length) continue;
-        setError(name, { message: messages[0] });
-        mapped += 1;
-      }
-      // Pesan umum hanya bila tidak ada error field yang tampil (mis. CONFLICT pada NIM).
-      if (!mapped) setBanner(result.error.message);
+      const view = registrationFailureView(result.error, RENDERED_FIELDS);
+      if (view.kind === "closed") return setOutcome("closed");
+      if (view.kind === "banner") return setBanner(view.message);
+      // Field teratas difokus (dan digulir ke layar) agar error server terlihat di mobile.
+      view.fields.forEach(([name, message], index) =>
+        setError(name, { message }, { shouldFocus: index === 0 }),
+      );
     });
   });
 
@@ -121,15 +114,8 @@ export function RegistrationForm() {
       noValidate
       aria-busy={pending}
     >
-      {banner ? (
-        <p
-          role="alert"
-          className="px-4 py-3 text-sm text-error bg-error/5 rounded-lg border border-error/30"
-        >
-          {banner}
-        </p>
-      ) : null}
-      <fieldset disabled={pending} className="grid gap-5 md:grid-cols-2">
+      {/* Tidak disabled saat pending: input disabled tidak dapat menerima fokus error server. */}
+      <fieldset className="grid gap-5 md:grid-cols-2">
         <legend className="sr-only">Data pendaftar</legend>
         <div className="flex flex-col gap-2 md:col-span-2">
           <label htmlFor="full_name" className="text-sm font-semibold">
@@ -287,6 +273,14 @@ export function RegistrationForm() {
           </div>
         ))}
       </fieldset>
+      {banner ? (
+        <p
+          role="alert"
+          className="px-4 py-3 text-sm text-error bg-error/5 rounded-lg border border-error/30"
+        >
+          {banner}
+        </p>
+      ) : null}
       <Button type="submit" variant="primary" size="lg" disabled={pending}>
         {pending ? "Mengirim…" : "Kirim Pendaftaran"}
       </Button>

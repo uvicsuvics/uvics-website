@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AppError } from "@/lib/backend/errors";
+import { AppError, type OperationResult } from "@/lib/backend/errors";
 import {
   emailSchema,
   httpUrlSchema,
@@ -171,4 +171,30 @@ export async function submitRegistration(
         fieldErrors: { preferred_department_id: [INACTIVE_DEPARTMENT_MESSAGE] },
       });
   }
+}
+
+export type RegistrationFailureView<K extends string> =
+  | { kind: "closed" }
+  | { kind: "fields"; fields: Array<[K, string]> }
+  | { kind: "banner"; message: string };
+
+/**
+ * Menentukan tampilan form untuk hasil gagal dari server. Field dikembalikan sesuai urutan
+ * tampil agar field teratas menerima fokus; tanpa field yang dirender, pesan umum dipakai.
+ * @param error - Bagian `error` dari OperationResult gagal
+ * @param rendered - Nama field yang dirender form, berurutan dari atas
+ */
+export function registrationFailureView<K extends string>(
+  error: Extract<OperationResult<never>, { ok: false }>["error"],
+  rendered: readonly K[],
+): RegistrationFailureView<K> {
+  if (error.code === "FORBIDDEN") return { kind: "closed" };
+  const fields: Array<[K, string]> = [];
+  for (const name of rendered) {
+    const message = error.field_errors?.[name]?.[0];
+    if (message) fields.push([name, message]);
+  }
+  return fields.length
+    ? { kind: "fields", fields }
+    : { kind: "banner", message: error.message };
 }

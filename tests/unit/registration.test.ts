@@ -6,6 +6,7 @@ import {
   INACTIVE_DEPARTMENT_MESSAGE,
   REGISTRATION_EMAIL_PATTERN,
   REGISTRATION_FIELD_MESSAGES,
+  registrationFailureView,
   submitRegistration,
   type RegistrationOperations,
   type RegistrationStatus,
@@ -202,5 +203,54 @@ describe("public registration submission", () => {
     await expect(
       submitRegistration(valid, operations()),
     ).resolves.toBeUndefined();
+  });
+});
+
+describe("registration failure view", () => {
+  const rendered = ["full_name", "nim", "email"] as const;
+
+  it("shows the closed state for FORBIDDEN", () => {
+    expect(
+      registrationFailureView({ code: "FORBIDDEN", message: "x" }, rendered),
+    ).toEqual({ kind: "closed" });
+  });
+
+  it("returns rendered field errors in form order so the first can take focus", () => {
+    expect(
+      registrationFailureView(
+        {
+          code: "CONFLICT",
+          message: "Data telah berubah.",
+          field_errors: { email: ["e"], nim: [DUPLICATE_REGISTRATION_MESSAGE] },
+        },
+        rendered,
+      ),
+    ).toEqual({
+      kind: "fields",
+      fields: [
+        ["nim", DUPLICATE_REGISTRATION_MESSAGE],
+        ["email", "e"],
+      ],
+    });
+  });
+
+  it("falls back to a banner when no error maps to a rendered field", () => {
+    const cases: Array<Record<string, string[]> | undefined> = [
+      undefined,
+      {},
+      { preferred_department_id: [INACTIVE_DEPARTMENT_MESSAGE] },
+      { nim: [] },
+    ];
+    for (const field_errors of cases)
+      expect(
+        registrationFailureView(
+          {
+            code: "VALIDATION_ERROR",
+            message: "Periksa kembali.",
+            field_errors,
+          },
+          rendered,
+        ),
+      ).toEqual({ kind: "banner", message: "Periksa kembali." });
   });
 });
