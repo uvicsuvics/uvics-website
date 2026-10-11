@@ -28,5 +28,11 @@ begin
  perform private.claim_media_cleanup(i);
  begin perform public.begin_media_publication(u,s,i,'fixture',gen_random_uuid());raise check_violation;exception when raise_exception then null;end;
  if (select cleanup_status from private.upload_intents where id=i)<>'READY' then raise exception 'cleanup claim missing';end if;
+ -- Audit media service RPC membawa session terverifikasi.
+ r:=public.create_upload_intent(u,s,'gallery','image');i:=(r->>'id')::uuid;
+ perform public.complete_upload_intent(u,s,i,'session-asset',1,'png',100,10,10);
+ perform public.begin_media_publication(u,s,i,'fixture',gen_random_uuid());
+ perform public.finish_media_publication(u,s,i,'session-published',1);
+ if (select count(*) from public.audit_logs where entity_id=i and session_id=s and action in('MEDIA_COMPLETED','MEDIA_PUBLISHED'))<>2 then raise exception 'media audit session missing';end if;
 end$$;
 rollback;

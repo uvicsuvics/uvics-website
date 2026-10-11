@@ -854,6 +854,7 @@ export type Database = {
       has_active_admin_session: { Args: never; Returns: boolean };
       publish_page: { Args: { p_id: string }; Returns: undefined };
       publish_program: { Args: { p_id: string }; Returns: undefined };
+      read_public_settings: { Args: never; Returns: Json };
       read_upload_intent: {
         Args: { p_actor: string; p_intent: string; p_session: string };
         Returns: Json;
@@ -865,7 +866,8 @@ export type Database = {
       };
     };
     Enums: {
-      competition_status: "UPCOMING" | "OPEN" | "CLOSED" | "ONGOING" | "FINISHED";
+      competition_status:
+        "UPCOMING" | "OPEN" | "CLOSED" | "ONGOING" | "FINISHED";
       content_level: "INTERNAL" | "REGIONAL" | "NASIONAL" | "INTERNASIONAL";
       content_status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
       project_status: "PLANNED" | "ONGOING" | "COMPLETED" | "ARCHIVED";
