@@ -27,6 +27,29 @@ select set_config('request.jwt.claims',
     'session_id', '00000000-0000-4000-8000-000000000011'::uuid
   )::text, true);
 
+-- Trigger helpers untuk menguji rollback atomik saat history/audit gagal
+create function pg_temp.test_fail_history_insert() returns trigger language plpgsql as $$
+begin
+  if current_setting('test.fail_history', true) = 'on' then
+    raise exception 'simulated history insert failure' using errcode = 'check_violation';
+  end if;
+  return new;
+end;$$;
+
+create trigger trg_test_fail_history before insert on public.membership_histories
+  for each row execute function pg_temp.test_fail_history_insert();
+
+create function pg_temp.test_fail_audit_insert() returns trigger language plpgsql as $$
+begin
+  if current_setting('test.fail_audit', true) = 'on' then
+    raise exception 'simulated audit insert failure' using errcode = 'check_violation';
+  end if;
+  return new;
+end;$$;
+
+create trigger trg_test_fail_audit before insert on public.audit_logs
+  for each row execute function pg_temp.test_fail_audit_insert();
+
 do $$
 declare
   d uuid;
@@ -35,6 +58,8 @@ declare
   r uuid;
   r2 uuid;
   r3 uuid;
+  r_hist_fail uuid;
+  r_audit_fail uuid;
   result jsonb;
   v_member_id uuid;
   audit_count int;
@@ -186,14 +211,87 @@ begin
   end if;
 
   -- ============================================================
-  -- TEST 9: History preservation (D14)
+  -- TEST 9A: History preservation (D14)
   --   Mengubah status member tidak menghapus membership_histories
   -- ============================================================
   update public.members set status = 'ALUMNI' where id = v_member_id;
   if not exists (
     select 1 from public.membership_histories where membership_histories.member_id = v_member_id
   ) then
-    raise exception 'TEST 9 GAGAL: membership history harus tetap ada setelah perubahan status (D14)';
+    raise exception 'TEST 9A GAGAL: membership history harus tetap ada setelah perubahan status (D14)';
+  end if;
+
+  -- Soft delete member tetap mempertahankan membership history
+  update public.members set deleted_at = statement_timestamp() where id = v_member_id;
+  if not exists (
+    select 1 from public.membership_histories where membership_histories.member_id = v_member_id
+  ) then
+    raise exception 'TEST 9A GAGAL: membership history harus tetap ada setelah soft delete (D14)';
+  end if;
+
+  -- Hard delete member DITOLAK oleh ON DELETE RESTRICT (D14)
+  begin
+    delete from public.members where id = v_member_id;
+    raise exception 'TEST 9A GAGAL: hard delete member harus ditolak ON DELETE RESTRICT';
+  exception when foreign_key_violation then
+    null; -- Benar: ON DELETE RESTRICT melindungi history
+  end;
+
+  -- ============================================================
+  -- TEST 9B: Rollback on history failure (Scope 5, transactional)
+  -- ============================================================
+  insert into public.registrations (
+    full_name, nim, email, phone, faculty, study_program, batch, status
+  ) values (
+    'Calon History Fail', '10502181091', 'calon_hf@student.unklab.ac.id',
+    '+6281234567895', 'FIK', 'Informatika', 2025, 'ACCEPTED'
+  ) returning id into r_hist_fail;
+
+  perform set_config('test.fail_history', 'on', true);
+  begin
+    perform public.admin_convert_registration_to_member(r_hist_fail, o, d, p, '2025-08-15');
+    raise exception 'TEST 9B GAGAL: seharusnya gagal saat insert membership history';
+  exception when check_violation then
+    null; -- Benar: gagal di trigger history
+  end;
+  perform set_config('test.fail_history', 'off', true);
+
+  -- Verifikasi rollback: member tidak terbuat, registrasi belum dikonversi, audit tidak tercatat
+  if exists (select 1 from public.members where nim = '10502181091') then
+    raise exception 'TEST 9B GAGAL: rollback gagal, member terbuat padahal history gagal';
+  end if;
+  if (select converted_member_id from public.registrations where id = r_hist_fail) is not null then
+    raise exception 'TEST 9B GAGAL: rollback gagal, converted_member_id terisi padahal history gagal';
+  end if;
+  if exists (select 1 from public.audit_logs where entity_id = r_hist_fail and action = 'APPLICANT_CONVERTED') then
+    raise exception 'TEST 9B GAGAL: rollback gagal, audit APPLICANT_CONVERTED tercatat padahal history gagal';
+  end if;
+
+  -- ============================================================
+  -- TEST 9C: Rollback on audit failure (Scope 5, atomic audit)
+  -- ============================================================
+  insert into public.registrations (
+    full_name, nim, email, phone, faculty, study_program, batch, status
+  ) values (
+    'Calon Audit Fail', '10502181092', 'calon_af@student.unklab.ac.id',
+    '+6281234567896', 'FIK', 'Informatika', 2025, 'ACCEPTED'
+  ) returning id into r_audit_fail;
+
+  perform set_config('test.fail_audit', 'on', true);
+  begin
+    perform public.admin_convert_registration_to_member(r_audit_fail, o, d, p, '2025-08-15');
+    raise exception 'TEST 9C GAGAL: seharusnya gagal saat insert audit';
+  exception when check_violation then
+    null; -- Benar: gagal di trigger audit
+  end;
+  perform set_config('test.fail_audit', 'off', true);
+
+  -- Verifikasi rollback: member tidak terbuat, history tidak terbuat, registrasi belum dikonversi
+  if exists (select 1 from public.members where nim = '10502181092') then
+    raise exception 'TEST 9C GAGAL: rollback gagal, member terbuat padahal audit gagal';
+  end if;
+  if (select converted_member_id from public.registrations where id = r_audit_fail) is not null then
+    raise exception 'TEST 9C GAGAL: rollback gagal, converted_member_id terisi padahal audit gagal';
   end if;
 
 end$$;

@@ -115,13 +115,14 @@ Pemetaan DTO competition ke `types/competition.ts` (frontend #15), untuk issue i
 
 Berlaku untuk alur review admin dan konversi pendaftar ke anggota aktif (`lib/backend/registrations.ts`, migration `20261011120000_registration_review_conversion.sql`):
 
-- **Review status:** RPC `public.admin_review_registration(uuid, text, text)` memvalidasi transisi (`SUBMITTED`, `UNDER_REVIEW`, `ACCEPTED`, `REJECTED`), mengupdate status + timestamp (`accepted_at`/`rejected_at`), dan menyimpan `admin_notes` (internal admin, tidak masuk ke DTO publik).
-- **Konversi anggota:** RPC `public.admin_convert_registration_to_member(uuid, uuid, uuid, uuid, date)`:
+- **Query admin:** `listAdminRegistrations` melayani listing dengan filter status, search nama/NIM (`normalizeSearch`), order `created_at DESC, id DESC`, dan paginasi standar. `getAdminRegistrationById` mengambil detail pendaftaran lengkap secara privat (khusus admin).
+- **Review status:** RPC `public.admin_review_registration(uuid, text, text)` (dan helper `reviewRegistration`, `acceptRegistration`, `rejectRegistration`) memvalidasi transisi (`SUBMITTED`, `UNDER_REVIEW`, `ACCEPTED`, `REJECTED`), mengupdate status + timestamp (`accepted_at`/`rejected_at`), dan menyimpan `admin_notes` (internal admin, tidak masuk ke DTO publik).
+- **Konversi anggota:** RPC `public.admin_convert_registration_to_member(uuid, uuid, uuid, uuid, text)` (dan helper `convertRegistrationToMember`):
   - Memverifikasi sesi admin aktif (`private.has_active_admin_session()`).
   - Mengunci baris registrasi dengan `FOR UPDATE` untuk mencegah race condition.
   - Mensyaratkan status pendaftar harus `ACCEPTED` dan belum pernah dikonversi (`converted_member_id is null`, D12).
   - Membuat record member baru dengan status `ACTIVE` dan record `membership_histories`.
   - Mendukung `department_id` bernilai `null` untuk pengurus inti (U01).
   - Menautkan `converted_member_id` ke member baru.
-  - Menulis log audit `MEMBER_CONVERTED` dalam satu transaksi atomik (D13).
+  - Menulis log audit `APPLICANT_CONVERTED` dalam satu transaksi atomik (D13).
   - Preservasi histori keanggotaan dilindungi via `ON DELETE RESTRICT` dan soft delete (D14).
