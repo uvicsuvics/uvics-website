@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     ".runtime/**",
     "test-results/**",
     "playwright-report/**",
+    // Artefak plugin agent lokal (di-ignore Git), bukan source.
+    ".remember/**",
   ]),
 ]);
 

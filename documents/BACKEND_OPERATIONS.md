@@ -13,6 +13,8 @@ npm run admin:provision
 
 Runner migration memakai psql/TLS, transaksi, advisory lock, checksum, dan riwayat `supabase_migrations.schema_migrations`. Migration terapan tidak diedit; tambahkan migration lanjutan. Jangan menjalankan reset hosted atau baseline tool lain atas riwayat ini. `PSQL_BIN` boleh menunjuk binary lokal. Untuk generator pada jaringan IPv4, isi `SUPABASE_DB_POOLER_HOST` dari **session pooler resmi Dashboard Connect**. Password tidak masuk history shell/log. Migration/provisioning tidak berjalan saat build/request.
 
+Types dari schema yang sama dengan `test:db`: `supabase gen types --db-url` menjalankan pg-meta di **container** (Docker/Podman), sehingga Postgres disposable harus terjangkau dari container. Jalankan Postgres di runtime container yang sama dengan port yang di-publish ke loopback (mis. `podman run --rm -p 127.0.0.1:<port>:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17-alpine`), terapkan `tests/db/bootstrap.sql` lalu semua migration, kemudian `SUPABASE_DB_URL=postgresql://postgres@127.0.0.1:<port>/postgres npm run db:types` dan `npx prettier --write types/database.ts`. Postgres yang listen di loopback host Windows tidak terjangkau dari container pg-meta.
+
 Verifikasi Dashboard/API Auth: signup OFF, anonymous OFF, email/password ON, single-session OFF, JWT expiry 3600, refresh rotation ON. SQL tidak mengubah Dashboard Auth. Selaraskan site URL/callback dengan origin saat rilis. SMTP/reset email tidak dibangun. Provisioning menerima identitas operator dan password tersembunyi, memakai Auth Admin API dengan email_confirm, lalu profil admin. Akun existing tidak direset/dipromosikan. Kegagalan profil menyebut UUID untuk rekonsiliasi; jangan membuat duplikat.
 
 Untuk provisioning noninteraktif yang telah diotorisasi operator, simpan JSON lokal berisi `name`, `email`, dan `password` dalam `.runtime/`, kemudian jalankan `npm run admin:provision -- --from-file .runtime/<identity>.json --project <project-ref-terverifikasi>`. Nilai credential tidak menjadi argumen command atau log; konfirmasi target eksplisit wajib. File ini tidak masuk Git dan tidak boleh dipakai sebagai fixture tes rutin. Mode tanpa argumen tetap memakai prompt password tersembunyi.
@@ -37,7 +39,7 @@ PUBLISHING menolak publisher kedua (409). Jika proses terputus, operator memasti
 npm run verify:auth -- <project-ref-terverifikasi>
 ```
 
-Server uji memakai namespace `RATE_LIMIT_NAMESPACE=issue7_<run>`. Kemudian set `RUN_HOSTED_TESTS=1` dan jalankan `npm run test:e2e -- tests/e2e/auth.spec.ts tests/e2e/media.spec.ts`. Tes ini memutasi fixture hosted; jangan jalankan setelah data live masuk. CI hanya memakai unit dan DB disposable tanpa credential hosted. `test:db` menguji batas waktu dengan Auth tiruan lokal, tanpa mengubah clock/row hosted.
+Server uji memakai namespace `RATE_LIMIT_NAMESPACE=issue7_<run>`. Kemudian set `RUN_HOSTED_TESTS=1` dan jalankan `npm run test:e2e -- tests/e2e/auth.spec.ts tests/e2e/media.spec.ts`. Tes ini memutasi fixture hosted; jangan jalankan setelah data live masuk. CI hanya memakai unit dan DB disposable tanpa credential hosted. `test:db` menguji batas waktu dengan Auth tiruan lokal, tanpa mengubah clock/row hosted. Suite `tests/db/security.sql` (#31) membuktikan allow/deny CMS/settings, penutupan DML langsung, context audit, dan rollback audit; setiap migration security baru wajib lulus suite ini sebelum `db:types`.
 
 Identitas fixture pada `.runtime/auth-fixtures.json`; credential terpisah di `.runtime/auth-credentials.json`. Keduanya ignored; jangan cetak/upload. Manifest media ditulis sebelum upload dan menyimpan ID/deadline cleanup. Publikasi sample dapat diuji dengan `node --conditions=react-server --import tsx scripts/verify-publication.mts <project-ref> <media-manifest>`.
 
@@ -54,6 +56,16 @@ node scripts/cleanup-media.mjs <project-ref> <cloud-name> .runtime/media-<run>.j
 Cleanup memeriksa owner/ID/waktu database, menolak referensi aktif, dan menahan slot sampai **issued_at + 65 menit**. Claim READY dikomit sebelum delete provider; RPC menolak reuse. Script menginventaris exact ID pada image/raw/video dan authenticated/upload, menyimpan asset ID, delete berdasarkan asset ID, memverifikasi 404, lalu menandai CLEANED. Retry melanjutkan READY; tidak delete global prefix/reset DB.
 
 HELD berarti jalankan kembali setelah deadline manifest; tidak perlu blocking sleep satu jam. Sebelum go-live: inventaris manifest, bersihkan aset eligible, lalu row upload sintetis, profil admin sintetis, dan Auth user sintetis berdasarkan UUID melalui Admin API. Pertahankan audit kecuali ada persetujuan operator khusus, juga schema/policy/preset/admin/konten final. Nonaktifkan/ban fixture usai pengujian. Cleanup go-live, backup/pemulihan, region/biaya rilis tetap pekerjaan persiapan production.
+
+Seed CMS dan konten (`scripts/seed-cms.sql`) menulis baris sintetis ber-ID tetap, termasuk konten `PUBLISHED` dan `featured`. Sebelum go-live, hapus baris berikut berdasarkan ID (prefiks `00000000-0000-4000-8000-000000000…`, slug berawalan `seed-`):
+
+| Tabel | ID |
+| --- | --- |
+| `pages` | `…0901`, `…0902` |
+| `programs` | `…0911`, `…0912` |
+| `competitions` | `…0921`, `…0922` |
+| `achievements` | `…0931`, `…0932` (anggota `…0941`–`…0943` ikut terhapus cascade) |
+| `projects` | `…0951`, `…0952` (anggota `…0961`, `…0962` ikut terhapus cascade) |
 
 ## Recovery dan portability tambahan
 
