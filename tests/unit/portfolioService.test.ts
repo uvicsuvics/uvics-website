@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { filterAchievements, getAchievementFilterFields } from '@/components/portfolio/achievementFilters';
+import { filterProjects, getProjectFilterFields } from '@/components/portfolio/projectFilters';
 import { MOCK_ACHIEVEMENTS } from '@/data/mock/portfolio';
 import {
   getAchievementDetail,
+  getProjectDetail,
+  getRelatedProjects,
+  listProjects,
   getRelatedAchievements,
   listAchievements,
 } from '@/lib/services/portfolioService';
@@ -53,5 +57,45 @@ describe('achievementFilters', () => {
     expect(filterAchievements(items, { year: '2026', ranking: 'Juara 1' })).toHaveLength(2);
     expect(filterAchievements(items, { year: '2024', ranking: 'Juara 1' })).toHaveLength(0);
     expect(filterAchievements(items, { level: 'INTERNASIONAL' })).toHaveLength(0);
+  });
+});
+
+describe('portfolioService (project)', () => {
+  it('mengurutkan project dari startDate terbaru', async () => {
+    const dates = (await listProjects()).map(({ project }) => project.startDate);
+    expect(dates).toEqual([...dates].sort().reverse());
+  });
+
+  it('menggabungkan tim dan prestasi terkait', async () => {
+    const detail = await getProjectDetail('nusantaravision-crop-ai');
+    expect(detail?.members.map((m) => m.role)).toContain('Project Lead');
+    expect(detail?.achievements.map(({ achievement }) => achievement.slug)).toEqual([
+      'juara-1-national-ai-hackathon-2026',
+    ]);
+    expect((await getProjectDetail('klabat-ctf-security-arena'))?.achievements).toEqual([]);
+  });
+
+  it('mengembalikan null untuk slug yang tidak ada', async () => {
+    expect(await getProjectDetail('tidak-ada')).toBeNull();
+    expect(await getRelatedProjects('tidak-ada')).toEqual([]);
+  });
+
+  it('project terkait tidak memuat dirinya, status sama didahulukan, dan limit dihormati', async () => {
+    const related = await getRelatedProjects('klabat-campus-superapp', 2);
+    expect(related).toHaveLength(2);
+    expect(related.every(({ project }) => project.slug !== 'klabat-campus-superapp')).toBe(true);
+    expect(related.every(({ project }) => project.status === 'COMPLETED')).toBe(true);
+  });
+});
+
+describe('projectFilters', () => {
+  it('menyusun opsi tahun dan menyaring per tahun/status', async () => {
+    const items = await listProjects();
+    const fields = getProjectFilterFields(items);
+    expect(fields.find((f) => f.id === 'year')?.options.map((o) => o.value)).toEqual(['2026', '2025']);
+    expect(filterProjects(items, {})).toHaveLength(items.length);
+    expect(filterProjects(items, { year: '2025' })).toHaveLength(2);
+    expect(filterProjects(items, { status: 'ONGOING' })).toHaveLength(1);
+    expect(filterProjects(items, { year: '2025', status: 'ONGOING' })).toHaveLength(0);
   });
 });

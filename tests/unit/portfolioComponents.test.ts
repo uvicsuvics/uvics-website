@@ -10,6 +10,7 @@ import {
   LEVEL_OPTIONS,
   PROJECT_STATUS_OPTIONS,
   formatPortfolioDate,
+  formatPortfolioPeriod,
   getYear,
 } from '@/components/portfolio/portfolioLabels';
 import { MOCK_ACHIEVEMENTS, MOCK_PROJECTS } from '@/data/mock/portfolio';
@@ -150,5 +151,13 @@ describe('EmptyState', () => {
     expect(html).toContain('Tidak ditemukan');
     expect(html).toContain('Belum ada prestasi untuk filter yang dipilih.');
     expect(html).toContain('Reset');
+  });
+});
+
+describe('formatPortfolioPeriod', () => {
+  it('memformat rentang, "sekarang" bila belum selesai, dan null bila kosong', () => {
+    expect(formatPortfolioPeriod('2025-08-01', '2026-03-31')).toMatch(/2025 – .*2026/);
+    expect(formatPortfolioPeriod('2026-05-01', null)).toMatch(/2026 – sekarang/);
+    expect(formatPortfolioPeriod(null, null)).toBeNull();
   });
 });

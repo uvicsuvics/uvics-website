@@ -44,3 +44,13 @@ export function formatPortfolioDate(isoDate: string): string {
     timeZone: 'UTC',
   }).format(new Date(isoDate));
 }
+
+const MONTH_YEAR = new Intl.DateTimeFormat('id-ID', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+
+/** "Agu 2025 – Mar 2026"; tanpa endDate menjadi "Agu 2025 – sekarang"; keduanya kosong menghasilkan null. */
+export function formatPortfolioPeriod(startDate: string | null, endDate: string | null): string | null {
+  if (!startDate && !endDate) return null;
+  if (!startDate) return MONTH_YEAR.format(new Date(endDate as string));
+  const start = MONTH_YEAR.format(new Date(startDate));
+  return `${start} – ${endDate ? MONTH_YEAR.format(new Date(endDate)) : 'sekarang'}`;
+}
