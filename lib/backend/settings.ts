@@ -1,112 +1,89 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Json } from "@/types/database";
+import type { Database } from "@/types/database";
+import { requireAdmin } from "@/lib/auth/admin";
+import { websiteSettingsSchema } from "./cms";
+import { toPublicSettings, type PublicSettings } from "./dto";
 import { AppError, databaseError } from "./errors";
+import { datetimeSchema } from "./validation";
 
-// Define schema for safe values if necessary
-export const settingValueSchema = z.any(); // Depending on setting, we could restrict this
-
-// Only these keys are allowed to be queried by the public
-export const PUBLIC_SETTINGS_KEYS = [
-  "site_name",
-  "site_description",
-  "contact_email",
-  "social_links",
-  "footer_text",
-] as const;
-
-export type PublicSettingKey = typeof PUBLIC_SETTINGS_KEYS[number];
+export { websiteSettingsSchema };
 
 export const adminSettingDto = z.object({
   key: z.string(),
-  value: z.any(),
-  updated_at: z.string(),
+  value: z.unknown(),
+  updated_at: datetimeSchema,
   updated_by: z.string().nullable(),
 });
 
-export type AdminSettingDto = z.infer<typeof adminSettingDto>;
+export type AdminSettingDto = z.output<typeof adminSettingDto>;
 
-export async function getPublicSetting(client: SupabaseClient<Database>, key: PublicSettingKey): Promise<unknown> {
-  if (!PUBLIC_SETTINGS_KEYS.includes(key)) {
-    throw new AppError("FORBIDDEN"); // Safe error mapping
-  }
-  const { data, error } = await client
-    .from("website_settings")
-    .select("value")
-    .eq("key", key)
-    .single();
-
-  if (error) {
-    if (error.code === "P0002") return null; // Default to null if not found
-    databaseError(error);
-  }
-  return data.value;
-}
-
-export async function getPublicSettings(client: SupabaseClient<Database>, keys: PublicSettingKey[]): Promise<Record<string, unknown>> {
-  const safeKeys = keys.filter(k => PUBLIC_SETTINGS_KEYS.includes(k));
-  if (safeKeys.length === 0) return {};
-
-  const { data, error } = await client
-    .from("website_settings")
-    .select("key, value")
-    .in("key", safeKeys);
-
+/**
+ * Membaca seluruh setting publik yang aman dan lolos validasi allowlist
+ * melalui reader SQL read_public_settings() dan DTO toPublicSettings().
+ */
+export async function getPublicSettings(
+  client: SupabaseClient<Database>,
+): Promise<PublicSettings> {
+  const { data, error } = await client.rpc("read_public_settings");
   if (error) databaseError(error);
-
-  const result: Record<string, unknown> = {};
-  if (data) {
-    data.forEach(row => {
-      result[row.key] = row.value;
-    });
-  }
-  return result;
+  return toPublicSettings(data);
 }
 
-export async function listAdminSettings(client: SupabaseClient<Database>): Promise<AdminSettingDto[]> {
+/**
+ * Membaca seluruh baris settings untuk admin aktif.
+ */
+export async function listAdminSettings(
+  client: SupabaseClient<Database>,
+): Promise<AdminSettingDto[]> {
+  await requireAdmin(client);
+
   const { data, error } = await client
     .from("website_settings")
-    .select("*")
+    .select("key, value, updated_at, updated_by")
     .order("key", { ascending: true });
 
   if (error) databaseError(error);
-  return data as AdminSettingDto[];
+
+  return (data ?? []).map((row) => {
+    const parsed = adminSettingDto.safeParse(row);
+    if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
+    return parsed.data;
+  });
 }
 
-export async function updateAdminSetting(client: SupabaseClient<Database>, key: string, value: unknown): Promise<AdminSettingDto> {
-  // Validate key format based on db constraint: check(key ~ '^[a-z_]+$')
-  if (!/^[a-z_]+$/.test(key)) {
-    throw new AppError("VALIDATION_ERROR", { fieldErrors: { key: ["Invalid key format"] } });
+/**
+ * Melakukan pembaruan settings website oleh admin aktif secara atomik
+ * melalui RPC update_website_settings().
+ */
+export async function updateWebsiteSettings(
+  client: SupabaseClient<Database>,
+  values: unknown,
+): Promise<AdminSettingDto[]> {
+  await requireAdmin(client);
+
+  if (!values || typeof values !== "object" || Object.keys(values).length === 0) {
+    throw new AppError("VALIDATION_ERROR");
   }
 
-  const { data: old, error: errOld } = await client.from("website_settings").select("value").eq("key", key).single();
-  if (errOld && errOld.code !== "P0002") databaseError(errOld);
-  // It's okay if not found initially, we use UPSERT (but actually the RPC we will just use update or insert)
-  // Let's use upsert for settings
-  
-  // Wait, the currently logged in admin's ID should be used for updated_by
-  // Supabase takes care of updated_by? No, we might need to set it, or let the database handle it if there is a trigger, wait, the trigger `touch_updated_at` only updates `updated_at`.
-  // To set `updated_by`, we can do it via the client or let it be handled by a trigger. Wait, `auth.uid()` isn't automatically linked unless we pass it.
-  
-  const { data: user, error: userError } = await client.auth.getUser();
-  if (userError || !user.user) throw new AppError("UNAUTHENTICATED");
+  const parsed = websiteSettingsSchema.safeParse(values);
+  if (!parsed.success) {
+    throw new AppError("VALIDATION_ERROR", {
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    });
+  }
 
-  const { data, error } = await client
-    .from("website_settings")
-    .upsert({ key, value: value as never, updated_by: user.user.id })
-    .select()
-    .single();
+  const { data, error } = await client.rpc("update_website_settings", {
+    p_values: parsed.data,
+  });
 
   if (error) databaseError(error);
 
-  const { error: auditError } = await client.rpc("log_cms_audit", {
-    p_action: "SETTING_UPDATED",
-    p_entity_type: "website_setting",
-    p_entity_id: user.user.id, // Using user ID since setting key is text, not uuid
-    p_old: old ? { value: old.value } : {},
-    p_new: { key, value: value as Json }
-  });
-  if (auditError) console.error("Failed to audit SETTING_UPDATED", auditError);
+  if (!Array.isArray(data)) throw new AppError("SERVICE_UNAVAILABLE");
 
-  return data as AdminSettingDto;
+  return data.map((row) => {
+    const result = adminSettingDto.safeParse(row);
+    if (!result.success) throw new AppError("SERVICE_UNAVAILABLE");
+    return result.data;
+  });
 }

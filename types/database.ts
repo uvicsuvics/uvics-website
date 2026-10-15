@@ -796,16 +796,8 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      log_cms_audit: {
-        Args: {
-          p_action: string;
-          p_entity_type: string;
-          p_entity_id: string;
-          p_old: Json;
-          p_new: Json;
-        };
-        Returns: undefined;
-      };
+      archive_page: { Args: { p_id: string }; Returns: Json };
+      archive_program: { Args: { p_id: string }; Returns: Json };
       begin_media_publication: {
         Args: {
           p_actor: string;
@@ -838,6 +830,8 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_page: { Args: { p_values: Json }; Returns: Json };
+      create_program: { Args: { p_values: Json }; Returns: Json };
       create_upload_intent: {
         Args: {
           p_actor: string;
@@ -874,6 +868,9 @@ export type Database = {
         Args: { p_actor: string; p_intent: string; p_session: string };
         Returns: undefined;
       };
+      update_page: { Args: { p_changes: Json; p_id: string }; Returns: Json };
+      update_program: { Args: { p_changes: Json; p_id: string }; Returns: Json };
+      update_website_settings: { Args: { p_values: Json }; Returns: Json };
     };
     Enums: {
       competition_status:

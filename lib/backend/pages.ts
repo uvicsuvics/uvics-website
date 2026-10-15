@@ -1,161 +1,225 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import { Constants, type Database } from "@/types/database";
+import { requireAdmin } from "@/lib/auth/admin";
+import { pageSchema } from "./cms";
 import { AppError, databaseError } from "./errors";
-import { slugSchema } from "./validation";
+import { datetimeSchema, paginationMeta, paginationSchema, slugSchema } from "./validation";
 
-export const pageSchema = z.object({
-  title: z.string().min(1).max(255),
-  slug: slugSchema,
-  content: z.string(),
-  meta_title: z.string().max(255).nullable().optional(),
-  meta_description: z.string().max(500).nullable().optional(),
-});
-
+export { pageSchema };
 export type PageInput = z.infer<typeof pageSchema>;
 
+const createPageSchema = z
+  .object({
+    title: z.string().trim().min(1).max(255),
+    slug: slugSchema,
+    content: z.string().default(""),
+    meta_title: z.string().max(255).nullable().optional(),
+    meta_description: z.string().max(500).nullable().optional(),
+  })
+  .strict();
+
+const updatePageSchema = z
+  .object({
+    title: z.string().trim().min(1).max(255),
+    slug: slugSchema,
+    content: z.string(),
+    meta_title: z.string().max(255).nullable(),
+    meta_description: z.string().max(500).nullable(),
+  })
+  .partial()
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, "No fields to update");
+
 export const adminPageDto = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   title: z.string(),
   slug: z.string(),
   content: z.string(),
   meta_title: z.string().nullable(),
   meta_description: z.string().nullable(),
-  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
-  published_at: z.string().nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
+  status: z.enum(Constants.public.Enums.content_status),
+  published_at: datetimeSchema.nullable(),
+  created_at: datetimeSchema,
+  updated_at: datetimeSchema,
 });
 
-export type AdminPageDto = z.infer<typeof adminPageDto>;
+export type AdminPageDto = z.output<typeof adminPageDto>;
 
-export const publicPageDto = adminPageDto.pick({
-  id: true,
-  title: true,
-  slug: true,
-  content: true,
-  meta_title: true,
-  meta_description: true,
-  published_at: true,
+export const publicPageDto = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  slug: z.string(),
+  content: z.string(),
+  meta_title: z.string().nullable(),
+  meta_description: z.string().nullable(),
+  published_at: datetimeSchema.nullable(),
 });
 
-export type PublicPageDto = z.infer<typeof publicPageDto>;
+export type PublicPageDto = z.output<typeof publicPageDto>;
+
+const PUBLIC_PAGE_FIELDS = "id, title, slug, content, meta_title, meta_description, published_at";
 
 export async function getPublicPages(client: SupabaseClient<Database>): Promise<PublicPageDto[]> {
-  const { data, error } = await client
-    .from("pages")
-    .select("id, title, slug, content, meta_title, meta_description, published_at")
-    .eq("status", "PUBLISHED")
-    .order("published_at", { ascending: false });
-
-  if (error) databaseError(error);
-  return data as PublicPageDto[];
+  const { items } = await listPublicPages(client, { page: 1, page_size: 100 });
+  return items;
 }
 
-export async function getPublicPageBySlug(client: SupabaseClient<Database>, slug: string): Promise<PublicPageDto> {
+export async function listPublicPages(
+  client: SupabaseClient<Database>,
+  raw: unknown,
+): Promise<{ items: PublicPageDto[]; pagination: ReturnType<typeof paginationMeta> }> {
+  const parsed = paginationSchema.safeParse(raw);
+  if (!parsed.success) throw new AppError("VALIDATION_ERROR");
+  const { page, page_size } = parsed.data;
+
+  const { data, error, count } = await client
+    .from("pages")
+    .select(PUBLIC_PAGE_FIELDS, { count: "exact" })
+    .eq("status", "PUBLISHED")
+    .order("published_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range((page - 1) * page_size, page * page_size - 1);
+
+  if (error) databaseError(error);
+
+  const items = (data ?? []).map((row) => {
+    const p = publicPageDto.safeParse(row);
+    if (!p.success) throw new AppError("SERVICE_UNAVAILABLE");
+    return p.data;
+  });
+
+  return { items, pagination: paginationMeta(page, page_size, count ?? 0) };
+}
+
+export async function getPublicPageBySlug(
+  client: SupabaseClient<Database>,
+  slug: string,
+): Promise<PublicPageDto> {
+  if (!slugSchema.safeParse(slug).success) throw new AppError("NOT_FOUND");
+
   const { data, error } = await client
     .from("pages")
-    .select("id, title, slug, content, meta_title, meta_description, published_at")
+    .select(PUBLIC_PAGE_FIELDS)
     .eq("slug", slug)
     .eq("status", "PUBLISHED")
-    .single();
+    .maybeSingle();
 
   if (error) databaseError(error);
   if (!data) throw new AppError("NOT_FOUND");
-  return data as PublicPageDto;
+
+  const parsed = publicPageDto.safeParse(data);
+  if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
+  return parsed.data;
 }
 
 export async function listAdminPages(client: SupabaseClient<Database>): Promise<AdminPageDto[]> {
+  await requireAdmin(client);
+
   const { data, error } = await client
     .from("pages")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (error) databaseError(error);
-  return data as AdminPageDto[];
+
+  return (data ?? []).map((row) => {
+    const parsed = adminPageDto.safeParse(row);
+    if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
+    return parsed.data;
+  });
 }
 
-export async function getAdminPageById(client: SupabaseClient<Database>, id: string): Promise<AdminPageDto> {
+export async function getAdminPage(
+  client: SupabaseClient<Database>,
+  id: string,
+): Promise<AdminPageDto> {
+  await requireAdmin(client);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+
   const { data, error } = await client
     .from("pages")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (error) databaseError(error);
   if (!data) throw new AppError("NOT_FOUND");
-  return data as AdminPageDto;
+
+  const parsed = adminPageDto.safeParse(data);
+  if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
+  return parsed.data;
 }
 
-export async function createPage(client: SupabaseClient<Database>, input: unknown): Promise<AdminPageDto> {
-  const parsed = pageSchema.safeParse(input);
+export const getAdminPageById = getAdminPage;
+
+export async function createPage(
+  client: SupabaseClient<Database>,
+  input: unknown,
+): Promise<AdminPageDto> {
+  await requireAdmin(client);
+
+  const parsed = createPageSchema.safeParse(input);
   if (!parsed.success) {
     throw new AppError("VALIDATION_ERROR", { fieldErrors: parsed.error.flatten().fieldErrors });
   }
 
-  const { data, error } = await client.from("pages").insert(parsed.data).select().single();
+  const { data, error } = await client.rpc("create_page", { p_values: parsed.data });
   if (error) databaseError(error);
 
-  const { error: auditError } = await client.rpc("log_cms_audit", {
-    p_action: "PAGE_CREATED",
-    p_entity_type: "page",
-    p_entity_id: data.id,
-    p_old: {},
-    p_new: { title: data.title, slug: data.slug }
-  });
-  if (auditError) console.error("Failed to audit PAGE_CREATED", auditError);
-
-  return data as AdminPageDto;
+  const result = adminPageDto.safeParse(data);
+  if (!result.success) throw new AppError("SERVICE_UNAVAILABLE");
+  return result.data;
 }
 
-export async function updatePage(client: SupabaseClient<Database>, id: string, input: unknown): Promise<AdminPageDto> {
-  const parsed = pageSchema.partial().safeParse(input);
+export async function updatePage(
+  client: SupabaseClient<Database>,
+  id: string,
+  input: unknown,
+): Promise<AdminPageDto> {
+  await requireAdmin(client);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+
+  const parsed = updatePageSchema.safeParse(input);
   if (!parsed.success) {
     throw new AppError("VALIDATION_ERROR", { fieldErrors: parsed.error.flatten().fieldErrors });
   }
 
-  const { data: old, error: errOld } = await client.from("pages").select("title, slug").eq("id", id).single();
-  if (errOld) databaseError(errOld);
-
-  const { data, error } = await client.from("pages").update(parsed.data).eq("id", id).select().single();
+  const { data, error } = await client.rpc("update_page", {
+    p_id: id,
+    p_changes: parsed.data,
+  });
   if (error) databaseError(error);
 
-  const { error: auditError } = await client.rpc("log_cms_audit", {
-    p_action: "PAGE_UPDATED",
-    p_entity_type: "page",
-    p_entity_id: data.id,
-    p_old: old || {},
-    p_new: { title: data.title, slug: data.slug }
-  });
-  if (auditError) console.error("Failed to audit PAGE_UPDATED", auditError);
-
-  return data as AdminPageDto;
+  const result = adminPageDto.safeParse(data);
+  if (!result.success) throw new AppError("SERVICE_UNAVAILABLE");
+  return result.data;
 }
 
-export async function publishPage(client: SupabaseClient<Database>, id: string): Promise<void> {
+export async function publishPage(
+  client: SupabaseClient<Database>,
+  id: string,
+): Promise<AdminPageDto> {
+  await requireAdmin(client);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+
   const { error } = await client.rpc("publish_page", { p_id: id });
   if (error) databaseError(error);
 
-  const { error: auditError } = await client.rpc("log_cms_audit", {
-    p_action: "PAGE_PUBLISHED",
-    p_entity_type: "page",
-    p_entity_id: id,
-    p_old: {},
-    p_new: { status: "PUBLISHED" }
-  });
-  if (auditError) console.error("Failed to audit PAGE_PUBLISHED", auditError);
+  return getAdminPage(client, id);
 }
 
-export async function archivePage(client: SupabaseClient<Database>, id: string): Promise<void> {
-  const { error } = await client.from("pages").update({ status: "ARCHIVED" }).eq("id", id);
+export async function archivePage(
+  client: SupabaseClient<Database>,
+  id: string,
+): Promise<AdminPageDto> {
+  await requireAdmin(client);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+
+  const { data, error } = await client.rpc("archive_page", { p_id: id });
   if (error) databaseError(error);
 
-  const { error: auditError } = await client.rpc("log_cms_audit", {
-    p_action: "PAGE_ARCHIVED",
-    p_entity_type: "page",
-    p_entity_id: id,
-    p_old: {},
-    p_new: { status: "ARCHIVED" }
-  });
-  if (auditError) console.error("Failed to audit PAGE_ARCHIVED", auditError);
+  const result = adminPageDto.safeParse(data);
+  if (!result.success) throw new AppError("SERVICE_UNAVAILABLE");
+  return result.data;
 }

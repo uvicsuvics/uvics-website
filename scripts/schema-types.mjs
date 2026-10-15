@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 
 const ts = createRequire(import.meta.url)("typescript");
 const SCALAR = { text: "string", uuid: "string", date: "string", timestamptz: "string", varchar: "string", bool: "boolean", int2: "number", int4: "number", int8: "number", numeric: "number", jsonb: "Json", json: "Json", inet: "unknown" };
-const ARG = { uuid: "string", text: "string", integer: "number", bigint: "number", boolean: "boolean" };
+const ARG = { uuid: "string", text: "string", integer: "number", bigint: "number", boolean: "boolean", json: "Json", jsonb: "Json" };
 const RETURNS = { void: "undefined", json: "Json", jsonb: "Json", boolean: "boolean" };
 
 const SQL = {
