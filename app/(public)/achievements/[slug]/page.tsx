@@ -62,7 +62,7 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
     <div className="pb-16 lg:pb-24">
       {/* Header */}
       <header className="bg-primary-50/60 border-b border-gray-200/90">
-        <div className="flex flex-col gap-5 mx-auto px-4 py-10 w-full max-w-7xl sm:px-6 lg:px-8 lg:py-14">
+        <div className="flex flex-col gap-5 mx-auto px-4 pt-28 pb-10 w-full max-w-7xl sm:px-6 lg:px-8 lg:pt-32 lg:pb-14">
           <Link
             href="/achievements"
             className="inline-flex items-center gap-1.5 w-fit text-sm font-medium text-primary transition-colors hover:text-primary-600"
@@ -83,7 +83,7 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
             {title}
           </h1>
 
-          <p className="flex items-center gap-2 text-sm text-gray-600 sm:text-base">
+          <p className="flex items-center gap-2 text-sm text-gray-600">
             <CalendarDays className="w-4 h-4 text-gray-400" aria-hidden="true" />
             <time dateTime={achievementDate}>{formatPortfolioDate(achievementDate)}</time>
           </p>
@@ -114,7 +114,7 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
             <h2 id="description-heading" className="font-heading text-xl font-bold text-gray-900 sm:text-2xl">
               Deskripsi
             </h2>
-            <p className="text-base leading-relaxed text-gray-700">{description}</p>
+            <p className="leading-relaxed text-gray-700">{description}</p>
           </section>
 
           <section aria-labelledby="team-heading" className="flex flex-col gap-4">

@@ -68,7 +68,7 @@ export function AchievementCard({ achievement, members = [], className }: Achiev
           <span className="line-clamp-1 text-xs font-medium text-gray-500">{competitionName}</span>
         </div>
 
-        <h3 className="font-heading text-base sm:text-lg font-bold leading-snug text-gray-900 line-clamp-2 transition-colors group-hover:text-primary">
+        <h3 className="font-heading sm:text-lg font-bold leading-snug text-gray-900 line-clamp-2 transition-colors group-hover:text-primary">
           <Link
             href={`/achievements/${slug}`}
             className="outline-none after:absolute after:inset-0 after:content-['']"

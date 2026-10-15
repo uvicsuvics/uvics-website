@@ -46,7 +46,8 @@ export function ProjectCard({ project, category, className }: ProjectCardProps) 
             <FolderGit2 className="w-12 h-12 text-primary-200" aria-hidden="true" />
           </div>
         )}
-        <Badge className={cn('absolute top-3 right-3 px-2.5 py-1 font-semibold shadow-xs', badgeClassName)}>
+        {/* bg-white terakhir agar badge tetap terbaca di atas foto (menimpa latar translusen dari config). */}
+        <Badge className={cn('absolute top-3 right-3 px-2.5 py-1 font-semibold shadow-xs', badgeClassName, 'bg-white')}>
           {statusLabel}
         </Badge>
       </div>
@@ -58,7 +59,7 @@ export function ProjectCard({ project, category, className }: ProjectCardProps) 
           </div>
         ) : null}
 
-        <h3 className="font-heading text-base sm:text-lg font-bold leading-snug text-gray-900 line-clamp-2 transition-colors group-hover:text-primary">
+        <h3 className="font-heading sm:text-lg font-bold leading-snug text-gray-900 line-clamp-2 transition-colors group-hover:text-primary">
           <Link
             href={`/projects/${slug}`}
             className="outline-none after:absolute after:inset-0 after:content-['']"

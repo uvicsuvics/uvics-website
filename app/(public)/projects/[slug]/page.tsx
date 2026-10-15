@@ -60,7 +60,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     <div className="pb-16 lg:pb-24">
       {/* Hero */}
       <header className="bg-primary-50/60 border-b border-gray-200/90">
-        <div className="flex flex-col gap-5 mx-auto px-4 py-10 w-full max-w-7xl sm:px-6 lg:px-8 lg:py-14">
+        <div className="flex flex-col gap-5 mx-auto px-4 pt-28 pb-10 w-full max-w-7xl sm:px-6 lg:px-8 lg:pt-32 lg:pb-14">
           <Link
             href="/projects"
             className="inline-flex items-center gap-1.5 w-fit text-sm font-medium text-primary transition-colors hover:text-primary-600"
@@ -76,10 +76,10 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
           <h1 className="max-w-4xl font-heading text-3xl font-bold leading-tight text-gray-900 text-balance sm:text-4xl lg:text-5xl">
             {title}
           </h1>
-          <p className="max-w-3xl text-base leading-relaxed text-gray-600 sm:text-lg">{summary}</p>
+          <p className="max-w-3xl leading-relaxed text-gray-600 sm:text-lg">{summary}</p>
 
           {period ? (
-            <p className="flex items-center gap-2 text-sm text-gray-600 sm:text-base">
+            <p className="flex items-center gap-2 text-sm text-gray-600">
               <CalendarDays className="w-4 h-4 text-gray-400" aria-hidden="true" />
               {period}
             </p>
@@ -111,7 +111,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             <h2 id="overview-heading" className="font-heading text-xl font-bold text-gray-900 sm:text-2xl">
               Ikhtisar
             </h2>
-            <p className="text-base leading-relaxed text-gray-700">{description}</p>
+            <p className="leading-relaxed text-gray-700">{description}</p>
           </section>
 
           <section aria-labelledby="team-heading" className="flex flex-col gap-4">

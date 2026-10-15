@@ -58,7 +58,7 @@ export function FeaturedAchievement({ achievement, className }: FeaturedAchievem
         </h3>
 
         <p className="text-sm font-medium text-gray-500">{competitionName}</p>
-        <p className="text-sm leading-relaxed text-gray-600 line-clamp-3 sm:text-base">{description}</p>
+        <p className="text-sm leading-relaxed text-gray-600 line-clamp-3 sm:text-[1rem]">{description}</p>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 mt-2 border-t border-gray-100">
           <span className="flex items-center gap-2 text-sm text-gray-600">
