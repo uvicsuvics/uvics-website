@@ -81,9 +81,10 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 
 ### U01 — Pengurus inti tanpa departemen
 
+- **Status:** Diterima (Diterapkan di #29).
 - **Masalah:** Presiden, Wakil, Sekretaris, dan Bendahara tidak berada di departemen, tetapi `membership_histories.department_id` bersifat `not null`.
 - **Bukti:** PRD §13 (contoh struktur) dan US-ORG-02 ("department dipilih jika applicable") · `20260922110000_organization_foundation.sql`.
-- **Rekomendasi:** Migration baru yang membuat `department_id` nullable. Validasi di RPC penempatan: posisi level inti boleh tanpa departemen, posisi lain wajib.
+- **Rekomendasi:** Migration baru yang membuat `department_id` nullable (`DROP NOT NULL`). Diterapkan di migration `20261011120000_registration_review_conversion.sql` bersama RPC konversi anggota.
 - **Owner:** Andi (#29).
 
 ### U02 — Akses publik data organisasi
