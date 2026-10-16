@@ -26,15 +26,15 @@ Penomoran: `D` untuk keputusan yang diterima atau berasal dari kontrak teknis, `
 
 ## A. Keputusan teknis D01–D05 (kontrak #31/#33)
 
-Nomor D01–D05 dipakai di PR #17 dan PR #33 (`BACKEND_CONVENTIONS.md` versi draf #33). Hanya sebagian isinya yang dapat ditelusuri.
+Nomor D01–D05 dipakai di PR #17 dan PR #33 (`BACKEND_CONVENTIONS.md` versi draf #33).
 
 | ID | Keputusan | Status | Dasar | Diterapkan di |
 | --- | --- | --- | --- | --- |
-| D01 | Isi tidak ditemukan di dokumen atau issue mana pun. | Perlu dilengkapi | — | Owner: Jordan (#31) |
+| D01 | #31 boleh memperbaiki RLS, grants, dan audit melalui migration **additive** baru. Struktur bisnis, CRUD, dan rekonsiliasi migration domain tetap milik owner (#29 Andi, #30 Jofan); migration yang sudah diterapkan tidak diedit. | Diterima | Keputusan pengguna saat wawancara #31 (8 Oktober 2026) | #33 (`20261008100000_backend_security_guardrails.sql`) |
 | D02 | Akses publik langsung ke tabel `members`, `registrations`, dan data alumni **ditutup**. Data member yang tampil publik hanya lewat DTO proyeksi field (`toPublicMember`: nama, foto berstatus PUBLIC, posisi, departemen). `public_profile` bukan bukti persetujuan. | Diterima | PRD §33, §47 · BACKEND_CONVENTIONS draf #33 | #17 (policy publik member dihapus) |
 | D03 | Settings publik hanya dibaca lewat `read_public_settings()` dengan allowlist key; nilai malformed tidak dikirim. | Usulan | BACKEND_CONVENTIONS draf #33 | #33 (draf) |
 | D04 | Nomor telepon disimpan ternormalisasi `+kodenegara` diikuti digit, total 8–15 digit (`^\+[1-9][0-9]{7,14}$`). Input `08…` dinormalisasi menjadi `+628…` sebelum disimpan. | Diterima | PRD §22.3 · `lib/backend/validation.ts` draf #33 | #17 (constraint SQL + Zod); normalisasi input menunggu #33 |
-| D05 | Isi tidak ditemukan di dokumen atau issue mana pun. | Perlu dilengkapi | — | Owner: Jordan (#31) |
+| D05 | Branch fitur dan PR integrasi #31 menuju `development`, bukan `main`. Kasus khusus dari aturan umum D16. | Diterima | Keputusan pengguna saat wawancara #31 (8 Oktober 2026) · D16 | #33 |
 
 ## B. Keputusan produk dan data yang diterima
 

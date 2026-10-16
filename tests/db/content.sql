@@ -167,12 +167,15 @@ begin
   ) then
     raise exception 'anon/authenticated must not have write privileges on content tables (D13)';
   end if;
+  -- D13/#31: service_role melewati RLS, jadi DML langsung = mutation tanpa audit. Hanya SELECT.
   if exists (
-    select from unnest(array['competitions','achievements','achievement_certificates','achievement_members','projects','project_members']) t,
-      unnest(array['SELECT','INSERT','UPDATE','DELETE']) p
-    where not has_table_privilege('service_role', format('public.%I', t), p)
+    select from unnest(array['competitions','achievements','achievement_certificates','achievement_members','projects','project_members']) t
+    where not has_table_privilege('service_role', format('public.%I', t), 'SELECT')
+      or has_table_privilege('service_role', format('public.%I', t), 'INSERT')
+      or has_table_privilege('service_role', format('public.%I', t), 'UPDATE')
+      or has_table_privilege('service_role', format('public.%I', t), 'DELETE')
   ) then
-    raise exception 'service_role must keep full access on content tables';
+    raise exception 'service_role must have SELECT only on content tables (D13)';
   end if;
   -- D02: tautan member tidak terbaca anon
   if has_column_privilege('anon', 'public.achievement_members', 'member_id', 'SELECT')
