@@ -677,6 +677,7 @@ export type Database = {
           accepted_at: string | null;
           admin_notes: string | null;
           batch: number;
+          consent_at: string | null;
           converted_member_id: string | null;
           created_at: string;
           email: string;
@@ -701,6 +702,7 @@ export type Database = {
           accepted_at?: string | null;
           admin_notes?: string | null;
           batch: number;
+          consent_at?: string | null;
           converted_member_id?: string | null;
           created_at?: string;
           email: string;
@@ -725,6 +727,7 @@ export type Database = {
           accepted_at?: string | null;
           admin_notes?: string | null;
           batch?: number;
+          consent_at?: string | null;
           converted_member_id?: string | null;
           created_at?: string;
           email?: string;
@@ -863,6 +866,23 @@ export type Database = {
       reject_upload_intent: {
         Args: { p_actor: string; p_intent: string; p_session: string };
         Returns: undefined;
+      };
+      submit_registration: {
+        Args: {
+          p_batch: number;
+          p_email: string;
+          p_experience?: string;
+          p_faculty: string;
+          p_full_name: string;
+          p_motivation?: string;
+          p_nim: string;
+          p_phone: string;
+          p_portfolio_url?: string;
+          p_preferred_department_id?: string;
+          p_skills?: string;
+          p_study_program: string;
+        };
+        Returns: string;
       };
     };
     Enums: {

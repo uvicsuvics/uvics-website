@@ -157,3 +157,17 @@ Pemetaan DTO competition ke `types/competition.ts` (frontend #15), untuk issue i
 | `status` | `status` | Nilai sama (`UPCOMING` … `FINISHED`) |
 | `featured`, `created_at`, `updated_at` | `featured`, `createdAt`, `updatedAt` | |
 | Filter kosong (`status=`, `level=`) | Filter `'ALL'` | Kirim kosong atau hilangkan parameter; `ALL` ditolak |
+
+## Registration publik #28
+
+Pendaftaran `/join` tidak membuat akun. Alur: Server Action `submitRegistrationAction` → `assertOrigin` (satu-satunya pengecekan origin aplikasi untuk `/join`; `proxy.ts` hanya mencakup `/admin` dan `/api/admin`) → `trustedIp` → `submitRegistration` di `lib/backend/registration.ts`: Zod `registrationSubmissionSchema` (strict, pesan Indonesia lewat `registrationErrorMap`) → `limitRegistration(email, ip)` → RPC `submit_registration`. Zod dijalankan sebelum limiter karena bucket email membutuhkan email ternormalisasi; input tidak valid tidak menyentuh database.
+
+| Status RPC | Hasil |
+| --- | --- |
+| `SUBMITTED` | `{ ok: true, data: null }` tanpa ID |
+| `CLOSED` (`registration_open` bukan JSON `true`) | `FORBIDDEN`; form menampilkan state tertutup |
+| `DUPLICATE` (registration aktif atau NIM sudah member) | `CONFLICT`, `field_errors.nim` = pesan duplikat; respons sama untuk kedua kasus (D02) |
+| `INVALID_DEPARTMENT` | `VALIDATION_ERROR`, `field_errors.preferred_department_id` |
+| error RPC/bentuk tak dikenal | `SERVICE_UNAVAILABLE` tanpa detail |
+
+Kuota `consume_rate_limit`: `registration_email_ip` 5/jam dan `registration_ip` 60/jam (NAT kampus); limiter gagal → 503. `submit_registration` hanya dapat dieksekusi `service_role` — pengecualian service client ketiga setelah limiter dan media; tidak ada grant DML langsung untuk role mana pun. Registration aktif per NIM ditegakkan index parsial `registrations_one_active_per_nim` (U19); `consent_at` diisi waktu database (U20). Membuka/menutup pendaftaran: toggle settings milik #30/#27; sebelum itu SQL operator di runbook.
