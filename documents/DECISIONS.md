@@ -1,6 +1,6 @@
 # Catatan Keputusan UVICS
 
-**Diperbarui:** 10 Oktober 2026
+**Diperbarui:** 21 Oktober 2026
 **Rujukan:** [PRD](PRD.md) · [Spesifikasi halaman publik](UVICS_Public_Website_Page_Specification.md) · [Tech stack](TECH_STACK.md) · [Kontrak backend](BACKEND_CONVENTIONS.md)
 
 Dokumen ini adalah satu-satunya tempat mencatat keputusan produk, data, dan teknis yang tidak tertulis jelas di PRD atau spesifikasi. Jika PRD, spesifikasi, dan dokumen ini berbeda, keputusan berstatus **Diterima** di sini yang berlaku sampai PRD diperbarui.
@@ -32,13 +32,13 @@ Nomor D01–D05 dipakai di PR #17 dan PR #33 (`BACKEND_CONVENTIONS.md` versi dra
 | --- | --- | --- | --- | --- |
 | D01 | #31 boleh memperbaiki RLS, grants, dan audit melalui migration **additive** baru. Struktur bisnis, CRUD, dan rekonsiliasi migration domain tetap milik owner (#29 Andi, #30 Jofan); migration yang sudah diterapkan tidak diedit. | Diterima | Keputusan pengguna saat wawancara #31 (8 Oktober 2026) | #33 (`20261008100000_backend_security_guardrails.sql`) |
 | D02 | Akses publik langsung ke tabel `members`, `registrations`, dan data alumni **ditutup**. Data member yang tampil publik hanya lewat DTO proyeksi field (`toPublicMember`: nama, foto berstatus PUBLIC, posisi, departemen). `public_profile` bukan bukti persetujuan. | Diterima | PRD §33, §47 · BACKEND_CONVENTIONS draf #33 | #17 (policy publik member dihapus) |
-| D03 | Settings publik hanya dibaca lewat `read_public_settings()` dengan allowlist key; nilai malformed tidak dikirim. | Usulan | BACKEND_CONVENTIONS draf #33 | #33 (draf) |
+| D03 | Settings publik hanya dibaca lewat `read_public_settings()` dengan allowlist key; nilai malformed tidak dikirim. | Diterima | BACKEND_CONVENTIONS draf #33 · diterima PM 21 Oktober 2026 (#12) | #33 (`20261008100000_backend_security_guardrails.sql`, `tests/db/security.sql`) |
 | D04 | Nomor telepon disimpan ternormalisasi `+kodenegara` diikuti digit, total 8–15 digit (`^\+[1-9][0-9]{7,14}$`). Input `08…` dinormalisasi menjadi `+628…` sebelum disimpan. | Diterima | PRD §22.3 · `lib/backend/validation.ts` draf #33 | #17 (constraint SQL + Zod); normalisasi input menunggu #33 |
 | D05 | Branch fitur dan PR integrasi #31 menuju `development`, bukan `main`. Kasus khusus dari aturan umum D16. | Diterima | Keputusan pengguna saat wawancara #31 (8 Oktober 2026) · D16 | #33 |
 
 ## B. Keputusan produk dan data yang diterima
 
-Keputusan berikut menjawab pertanyaan PRD §79 atau bagian PRD yang ambigu, dan sudah diterapkan di `development`.
+Keputusan berikut menjawab pertanyaan PRD §79 atau bagian PRD yang ambigu, dan sudah diterapkan di `development` kecuali kolom **Diterapkan di** menyebut lain.
 
 | ID | Keputusan | Menjawab | Diterapkan di |
 | --- | --- | --- | --- |
@@ -55,6 +55,9 @@ Keputusan berikut menjawab pertanyaan PRD §79 atau bagian PRD yang ambigu, dan 
 | D16 | `development` adalah branch integrasi; `main` adalah branch rilis. Detail di [workflow pengembangan](DEVELOPMENT_WORKFLOW.md). | — | Sejak 4 Oktober 2026 |
 | D17 | Visibilitas konten publik memakai `content_status` (`DRAFT/PUBLISHED/ARCHIVED`, default `DRAFT`), terpisah dari lifecycle. `competitions`, `achievements`, dan `projects` memakai kolom `publication_status`; lifecycle tetap kolom `status` (`competition_status`, `project_status`). `achievements.published` tidak dipakai. Lifecycle `ARCHIVED` pada project berarti proyek tidak lagi dikelola dan tetap tampil bila `PUBLISHED`. Lifecycle dihitung dari tanggal belum diputuskan (T06). | §17–19, §60 butir 12 (dari U06) | #20 |
 | D18 | `achievement_members` dan `project_members` memakai `member_id` nullable (FK ke `members`, `on delete restrict`) dan `member_name` nullable untuk peserta non-member; minimal salah satu terisi, satu member sekali per induk. Nama member tertaut tampil publik hanya lewat proyeksi D02. | §18, §19, Q10, Q11 (dari U07) | #20 |
+| D19 | Visi & Misi punya halaman sendiri `/vision-mission`. Navbar menautkan ke route ini, bukan `/about#visi-misi`. | Spesifikasi §6 (dari U10) | Belum: PR #18 (#3); tautan navbar di `config/public-navigation.ts` |
+| D20 | `competitions.level` dan `achievements.level` (nullable) memakai enum `public.content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL`. Label tampilan dipetakan di frontend. Setelah migration diterapkan ke hosted, perubahan nilai butuh migration baru. | Kontrak awal #11, review PR #20 M2 (dari U17) | #36 (`20261004080000_content_foundation.sql`); pemetaan label FE di #26 |
+| D21 | `certificate_file` disimpan di `achievement_certificates` yang hanya terbaca admin aktif. `member_id` pada konten `PUBLISHED` tetap terbaca `authenticated` non-admin sebagai risiko yang diterima sementara (UUID tanpa data pribadi; signup publik mati, D08) dan ditutup lewat RPC/view admin saat mutasi admin konten dibangun. `anon` tidak bisa membaca `member_id`. | Review PR #20 M4 (dari U18) | #36 |
 
 ## C. Usulan yang menunggu keputusan PM
 
@@ -69,15 +72,12 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 | U05 | Field Programs | Tambah kolom yang dipakai halaman | #25, #27, #30 |
 | U08 | Level posisi | `positions.level` jadi enum | #25 |
 | U09 | Route berita dan route template | `/news` kanonis, route template dihapus | #24 |
-| U10 | Halaman Visi & Misi | Halaman sendiri `/vision-mission` | #18 |
 | U11 | Default `public_profile` | `false` (opt-in) | Go-live |
 | U12 | Halaman `/members` dan `/alumni` | Tidak masuk MVP | #24 |
 | U13 | Form kontak | Tautan kontak resmi, tanpa penyimpanan | #24 |
 | U14 | Galeri | Album wajib dengan slug | Sprint berikut |
 | U15 | Homepage | Urutan tetap sesuai spesifikasi | Sprint berikut |
 | U16 | Bahasa | Bahasa Indonesia untuk MVP | Semua frontend |
-| U17 | Nilai baku level konten | Enum `content_level` dengan kode tetap | #36, integrasi frontend |
-| U18 | Data privat konten untuk `authenticated` non-admin | Sertifikat ke tabel admin; `member_id` diterima sementara | #36 |
 | U19 | Aturan duplikat registration sementara | Satu registration aktif per NIM tanpa entitas periode | #28 (diterapkan), U04 |
 | U20 | Persetujuan data pendaftar | Simpan `consent_at`; gender/semester/minat tidak disimpan | #28 (diterapkan), T05 |
 | U21 | Landing page `/join` | Issue frontend untuk Why Join, Benefits, Departments, Requirements, Process, Dates, FAQ | Recruitment (spesifikasi Page 15) |
@@ -123,11 +123,6 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 - **Masalah:** PRD dan spesifikasi memakai `/news`, kode memakai `/blog`. Ada route sisa template yang tidak ada di dokumen: `/pricing`, `/batch`, `/forgot-password`.
 - **Rekomendasi:** `/news` dan `/news/{slug}` kanonis; `/blog` diarahkan ke `/news`. `/pricing` dan `/forgot-password` dihapus (reset password lewat email di luar cakupan, lihat TECH_STACK). Nasib `/batch` diputuskan PM.
 
-### U10 — Halaman Visi & Misi
-
-- **Masalah:** Spesifikasi §6 meminta halaman `/vision-mission`; navbar menautkan `/about#visi-misi`.
-- **Rekomendasi:** Halaman sendiri `/vision-mission` (sudah dibangun di PR #18); navbar disesuaikan.
-
 ### U11 — Default `public_profile`
 
 - **Masalah:** `members.public_profile` default `true` (opt-out), padahal Q20 menanyakan opt-in dan D02 menyatakan flag ini bukan persetujuan.
@@ -154,22 +149,6 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 ### U16 — Bahasa
 
 - **Rekomendasi:** MVP hanya Bahasa Indonesia (menjawab Q13). Teks UI tetap dikumpulkan di config atau konstanta agar siap diterjemahkan, sesuai aturan AGENTS.md.
-
-### U17 — Nilai baku level
-
-- **Masalah:** `level` pada competition dan achievement semula teks bebas, sementara filter mencocokkan persis. Nilainya sudah beragam: contoh issue #11 memakai `National`, seed memakai `Nasional`, `types/competition.ts` mengharapkan `'Internal' | 'Nasional' | 'Internasional'`, dan mock beranda memakai `Regional`.
-- **Bukti:** issue #11 (kontrak awal), `types/competition.ts`, review PR #20 (M2).
-- **Rekomendasi:** enum `public.content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` untuk `competitions.level` dan `achievements.level` (nullable). Label tampilan menjadi urusan frontend.
-- **Dampak:** sudah diterapkan di migration `20261004080000_content_foundation.sql` (PR #36). Frontend perlu memetakan kode ke label dan menambah `REGIONAL`. Setelah migration diterapkan ke hosted, perubahan nilai butuh migration baru.
-- **Menunggu:** konfirmasi PM dan frontend.
-
-### U18 — Data privat konten untuk `authenticated` non-admin
-
-- **Masalah:** admin dan non-admin sama-sama memakai role `authenticated`, jadi column grant tidak bisa membedakan keduanya. Pada baris `PUBLISHED`, `certificate_file` (media privat) dan `member_id` terbaca oleh `authenticated` non-admin.
-- **Bukti:** review PR #20 (M4); `select certificate_file from public.achievements` dengan JWT non-admin berhasil.
-- **Rekomendasi:** `certificate_file` dipindah ke tabel `achievement_certificates` yang hanya terbaca admin aktif (sudah diterapkan di PR #36). `member_id` tetap terbaca oleh `authenticated` non-admin sebagai risiko yang diterima sementara: kelompok ini hanya admin nonaktif atau admin yang sesinya lewat satu jam (signup publik mati, D08), dan `member_id` hanya UUID tanpa data pribadi. Ditutup lewat RPC/view admin saat mutasi admin konten dibangun.
-- **Dampak:** tidak ada perubahan grant `member_id` untuk `authenticated`. anon tetap tidak bisa membaca `member_id`.
-- **Menunggu:** konfirmasi PM dan review Jordan (#31).
 
 ### U19 — Aturan duplikat registration sementara
 
