@@ -2130,7 +2130,7 @@ Recommended:
 >
 > - pendaftaran `/register` vs `/join` ([U03](DECISIONS.md#u03--route-pendaftaran));
 > - berita `/news` vs `/blog`, serta route template `/pricing`, `/batch`, `/forgot-password` ([U09](DECISIONS.md#u09--route-berita-dan-route-template));
-> - halaman Visi & Misi `/vision-mission` ([U10](DECISIONS.md#u10--halaman-visi--misi));
+> - halaman Visi & Misi `/vision-mission` ([D19](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
 > - detail galeri `/gallery/{slug}` ([U14](DECISIONS.md#u14--galeri));
 > - `/members` dan `/alumni` ([U12](DECISIONS.md#u12--halaman-members-dan-alumni)).
 

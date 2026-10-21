@@ -134,8 +134,8 @@ Semua tabel memakai RLS; `service_role` hanya SELECT pada seluruh tabel domain d
 Berlaku untuk `lib/backend/content.ts` (competition, achievement, project). Field DTO memakai snake_case sesuai kolom database.
 
 - **Tanggal:** `registration_deadline`, `competition_date`, `achievement_date`, `start_date`, dan `end_date` bertipe `date`, dikirim `YYYY-MM-DD` tanpa jam dan zona waktu.
-- **Level:** kode `content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` ([U17](DECISIONS.md#u17--nilai-baku-level)). Label tampilan menjadi urusan frontend. Filter `level` di luar kode ini menghasilkan `VALIDATION_ERROR`.
-- **Media:** `poster` (competition) dan `cover_image` (achievement, project) berisi referensi media, bukan URL, maksimal 500 karakter. Bentuk final ditetapkan alur upload #28/#29. Sertifikat ada di tabel `achievement_certificates` yang hanya terbaca admin aktif ([U18](DECISIONS.md#u18--data-privat-konten-untuk-authenticated-non-admin)).
+- **Level:** kode `content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` ([D20](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). Label tampilan menjadi urusan frontend. Filter `level` di luar kode ini menghasilkan `VALIDATION_ERROR`.
+- **Media:** `poster` (competition) dan `cover_image` (achievement, project) berisi referensi media, bukan URL, maksimal 500 karakter. Bentuk final ditetapkan alur upload #28/#29. Sertifikat ada di tabel `achievement_certificates` yang hanya terbaca admin aktif ([D21](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 - **Anggota:** proyeksi publik `achievement_members`/`project_members` hanya `member_name` dan `role`. Anggota yang tertaut lewat `member_id` tampil dengan `member_name: null` sampai proyeksi D02 tersedia.
 - **Visibilitas:** query publik selalu memfilter `publication_status = 'PUBLISHED'` dan tidak mengirim field `publication_status`.
 - **Pencarian:** competition mencari `title` dan `organizer`, achievement mencari `title` dan `competition_name`, project mencari `title`. Karakter `, ( ) " ' \ * % _ :` dibuang dari kata kunci; hasil kosong berarti tanpa filter.
