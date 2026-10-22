@@ -103,8 +103,11 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 | `MEDIA_PUBLISHED` | upload_intent | `reference_type`, `reference_id` |
 | `PAGE_PUBLISHED` / `PROGRAM_PUBLISHED` | page / program | `status` |
 | Settings (milik #30) | website_settings, `entity_id = null` | `key`; nilai hanya untuk flag publik boolean |
+| `COMPETITION_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | competition | `title`, `slug`, `publication_status` |
+| `ACHIEVEMENT_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | achievement | `title`, `slug`, `publication_status` |
+| `PROJECT_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | project | `title`, `slug`, `publication_status` |
 
-**Direct DML.** `authenticated` dan `service_role` hanya memiliki SELECT pada tabel domain: CMS (`pages`, `programs`, `website_settings`), organisasi/membership (`registrations`, `members`, `membership_histories`, `departments`, `positions`, `organization_periods`), dan content #36 (`competitions`, `achievements`, `achievement_members`, `achievement_certificates`, `projects`, `project_members`). `service_role` melewati RLS, sehingga DML langsung berarti mutation tanpa audit (D13). Admin membaca lewat policy SELECT `active_admin_read`; tidak ada policy write yang tersisa, sehingga grant baru tidak diam-diam membuka bypass. Tersedia: `publish_page`, `publish_program`. Belum tersedia dan tetap tertutup sampai owner menambah RPC ter-audit: CRUD page/program/settings (#30), organisasi/membership (#29), dan content (owner baru). Sampai saat itu, operator mengisi data lewat seeder/`psql` sebagai owner database, bukan service client.
+**Direct DML.** `authenticated` dan `service_role` hanya memiliki SELECT pada tabel domain: CMS (`pages`, `programs`, `website_settings`), organisasi/membership (`registrations`, `members`, `membership_histories`, `departments`, `positions`, `organization_periods`), dan content #36 (`competitions`, `achievements`, `achievement_members`, `achievement_certificates`, `projects`, `project_members`). `service_role` melewati RLS, sehingga DML langsung berarti mutation tanpa audit (D13). Admin membaca lewat policy SELECT `active_admin_read`; tidak ada policy write yang tersisa, sehingga grant baru tidak diam-diam membuka bypass. Tersedia: `publish_page`, `publish_program`, serta mutasi admin ter-audit untuk content #55 (`create_*`, `update_*`, `publish_*`, `delete_*` untuk `competition`, `achievement`, `project`, serta view/RPC detail admin). Belum tersedia dan tetap tertutup sampai owner menambah RPC ter-audit: CRUD page/program/settings (#30) dan organisasi/membership (#29). Sampai saat itu, operator mengisi data lewat seeder/`psql` sebagai owner database, bukan service client.
 
 **DTO dan privasi.** `lib/backend/dto.ts`:
 
@@ -126,8 +129,11 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 | website_settings | Hanya `read_public_settings()` | SELECT raw | Tertutup sampai RPC ter-audit #30 |
 | registrations, members, membership_histories | Tanpa grant anon; non-admin 0 baris (D02) | SELECT `active_admin_read` | Tertutup sampai RPC ter-audit #29 |
 | departments, positions, organization_periods | Tanpa grant anon (proyeksi publik menunggu U02); non-admin 0 baris | SELECT `active_admin_read` | Tertutup sampai RPC ter-audit #29 |
+| competitions, achievements, projects | SELECT row `PUBLISHED` | SELECT semua | RPC CRUD & publish ter-audit (#55); DML langsung ditutup |
+| achievement_members, project_members | Proyeksi kolom aman non-admin; member_id ditutup (D21) | SELECT via `admin_*_members` & RPC admin | Dikelola atomik oleh RPC achievement/project |
+| achievement_certificates | Tanpa grant anon/non-admin | SELECT `active_admin_read` / RPC admin | Dikelola atomik oleh RPC achievement |
 
-Semua tabel memakai RLS; `service_role` hanya SELECT pada seluruh tabel domain di atas dan tabel content #36. Matrix diperiksa dari katalog PostgreSQL schema gabungan, dibuktikan `tests/db/security.sql`.
+Semua tabel memakai RLS; `service_role` hanya SELECT pada seluruh tabel domain di atas dan tabel content #36. Matrix diperiksa dari katalog PostgreSQL schema gabungan, dibuktikan `tests/db/security.sql` dan `tests/db/content.sql`.
 
 ## Kontrak konten #11
 
