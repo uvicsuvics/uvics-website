@@ -1,67 +1,42 @@
 import Image from "next/image";
-import { Button } from "@/components/ui/Button";
 import type { PageHeroContent } from "@/data/mock/about";
-import { cn } from "@/lib/utils";
 
 interface PageHeroProps {
   hero: PageHeroContent;
 }
 
 /**
- * Hero halaman informasi publik dengan satu-satunya h1 halaman.
- * Latar terang dan offset `pt-28` karena navbar publik `fixed` dan transparan (pola hero #42).
- * @param hero - Eyebrow, judul, deskripsi, CTA, dan foto (opsional)
+ * Hero halaman informasi publik dengan pola hero /competitions: foto latar ber-overlay gelap,
+ * grid di setengah atas, dan teks di tengah dengan kata penutup judul berwarna biru.
+ * Berisi satu-satunya h1 halaman.
+ * @param hero - Judul, sorotan judul, deskripsi, dan foto latar
  */
 export function PageHero({ hero }: PageHeroProps) {
-  const { eyebrow, title, description, primaryCta, secondaryCta, image } = hero;
+  const { title, titleHighlight, description, image } = hero;
 
   return (
-    <section aria-labelledby="page-hero-heading" className="bg-primary-50/60 border-b border-gray-200">
+    <section
+      aria-labelledby="page-hero-heading"
+      className="relative flex items-center justify-center w-full min-h-[380px] overflow-hidden text-white bg-gray-950 md:min-h-[440px]"
+    >
+      <div className="absolute inset-0">
+        <Image src={image.src} alt={image.alt} fill priority sizes="100vw" className="object-cover object-center" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/80" />
+      </div>
       <div
-        className={cn(
-          "grid items-center gap-10 mx-auto px-6 pt-28 pb-16 w-full max-w-7xl md:px-8 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24",
-          image && "lg:grid-cols-2",
-        )}
-      >
-        <div className="flex flex-col gap-5">
-          <p className="flex items-center gap-3 text-sm font-semibold tracking-wide text-primary uppercase">
-            <span className="w-8 h-1 rounded-full bg-secondary" aria-hidden="true" />
-            {eyebrow}
-          </p>
-          <h1
-            id="page-hero-heading"
-            className="max-w-3xl font-heading text-3xl font-bold leading-tight text-gray-900 text-balance sm:text-5xl"
-          >
-            {title}
-          </h1>
-          <p className="max-w-2xl leading-relaxed text-gray-600 sm:text-lg">{description}</p>
-          {(primaryCta || secondaryCta) && (
-            <div className="flex flex-wrap gap-3 pt-2">
-              {primaryCta && (
-                <Button href={primaryCta.href} size="lg">
-                  {primaryCta.label}
-                </Button>
-              )}
-              {secondaryCta && (
-                <Button href={secondaryCta.href} variant="outline" size="lg">
-                  {secondaryCta.label}
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-        {image && (
-          <div className="relative w-full overflow-hidden aspect-4/3 rounded-2xl shadow-md">
-            <Image
-              src={image.src}
-              alt={image.alt}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
-            />
-          </div>
-        )}
+        className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-[linear-gradient(to_right,color-mix(in_srgb,white_14%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_srgb,white_14%,transparent)_1px,transparent_1px)] bg-[size:4rem_4rem] sm:bg-[size:5rem_5rem] [mask-image:linear-gradient(to_bottom,black,black_40%,transparent)]"
+        aria-hidden="true"
+      />
+
+      {/* pt-28 menjaga teks tetap di bawah navbar publik yang fixed. */}
+      <div className="relative flex flex-col items-center gap-5 mx-auto px-6 pt-28 pb-20 w-full max-w-4xl text-center md:pt-32 md:pb-24">
+        <h1
+          id="page-hero-heading"
+          className="font-heading text-3xl font-bold leading-tight text-balance drop-shadow-md sm:text-5xl md:text-6xl"
+        >
+          {title} <span className="block text-primary-300 sm:inline">{titleHighlight}</span>
+        </h1>
+        <p className="max-w-3xl text-sm leading-relaxed text-gray-200 drop-shadow-sm sm:text-lg">{description}</p>
       </div>
     </section>
   );

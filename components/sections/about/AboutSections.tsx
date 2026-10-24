@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Reveal } from "@/components/ui/Reveal";
 import { ContentSection } from "@/components/sections/about/ContentSection";
 import type { ActivityItem, AboutContent, CoreValueItem, VisionMissionContent } from "@/data/mock/about";
+import { cn } from "@/lib/utils";
 
 const VALUE_ICONS: Record<CoreValueItem["iconName"], LucideIcon> = {
   Shield,
@@ -48,7 +49,7 @@ export function AboutOverviewSection({ overview }: { overview: AboutContent["ove
           {overview.stats.map((stat) => (
             <div key={stat.label} className="flex flex-col gap-1 p-5 bg-white rounded-2xl border border-gray-200 sm:p-6">
               <dt className="order-2 text-sm font-semibold text-gray-900">{stat.label}</dt>
-              <dd className="order-1 font-heading text-3xl font-bold text-primary">{stat.value}</dd>
+              <dd className="order-1 text-3xl font-bold text-primary">{stat.value}</dd>
               <dd className="order-3 text-sm text-gray-600">{stat.description}</dd>
             </div>
           ))}
@@ -98,26 +99,33 @@ interface AboutVisionMissionSectionProps {
 export function AboutVisionMissionSection({ preview, vision, mission }: AboutVisionMissionSectionProps) {
   return (
     <ContentSection id="visi-misi" heading={preview}>
-      <Reveal className="grid gap-6 lg:grid-cols-2">
-        <article className="flex flex-col gap-4 p-6 text-white bg-primary rounded-2xl sm:p-8">
-          <h3 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-secondary uppercase">
-            <Eye className="w-4 h-4" aria-hidden="true" />
-            {preview.visionLabel}
-          </h3>
-          <p className="font-heading text-2xl font-semibold leading-snug">{vision.statement}</p>
+      <Reveal className="grid gap-5 lg:grid-cols-2">
+        <article className="flex flex-col gap-6 p-6 bg-white rounded-2xl border border-gray-200 sm:p-8">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center w-11 h-11 text-primary bg-primary-50 rounded-xl">
+              <Eye className="w-5 h-5" aria-hidden="true" />
+            </span>
+            <h3 className="font-heading text-xl font-bold text-gray-900">{preview.visionLabel}</h3>
+          </div>
+          <p className="pl-5 text-lg leading-relaxed text-gray-700 border-l-4 border-primary">{vision.statement}</p>
         </article>
-        <article className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 sm:p-8">
-          <h3 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-primary uppercase">
-            <Target className="w-4 h-4" aria-hidden="true" />
-            {preview.missionLabel}
-          </h3>
-          <ol className="flex flex-col gap-3">
+        <article className="flex flex-col gap-6 p-6 bg-white rounded-2xl border border-gray-200 sm:p-8">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center w-11 h-11 text-primary bg-primary-50 rounded-xl">
+              <Target className="w-5 h-5" aria-hidden="true" />
+            </span>
+            <h3 className="font-heading text-xl font-bold text-gray-900">{preview.missionLabel}</h3>
+          </div>
+          <ol className="flex flex-col gap-4">
             {mission.items.map((item) => (
-              <li key={item.number} className="flex gap-3 text-gray-700">
-                <span className="font-mono font-bold text-primary" aria-hidden="true">
-                  {item.number}
+              <li key={item.number} className="flex items-start gap-3 text-gray-700">
+                <span
+                  className="flex shrink-0 items-center justify-center w-7 h-7 text-sm font-semibold text-primary bg-primary-50 rounded-full"
+                  aria-hidden="true"
+                >
+                  {Number(item.number)}
                 </span>
-                {item.title}
+                <span className="pt-0.5 leading-snug">{item.title}</span>
               </li>
             ))}
           </ol>
@@ -126,10 +134,13 @@ export function AboutVisionMissionSection({ preview, vision, mission }: AboutVis
       <Reveal>
         <Link
           href={preview.link.href}
-          className="inline-flex items-center gap-2 font-semibold text-primary rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          className="group inline-flex items-center gap-2 font-semibold text-primary rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
         >
           {preview.link.label}
-          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          <ArrowRight
+            className="w-4 h-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
         </Link>
       </Reveal>
     </ContentSection>
@@ -197,30 +208,50 @@ export function AboutActivitiesSection({ activities }: { activities: AboutConten
   );
 }
 
-/** Linimasa vertikal perkembangan UVICS. */
+/** Linimasa perkembangan UVICS: zigzag kiri-kanan di md ke atas, satu kolom di mobile. */
 export function AboutMilestonesSection({ milestones }: { milestones: AboutContent["milestones"] }) {
   return (
     <ContentSection id="tonggak" heading={milestones} muted>
       <Reveal>
-        <ol className="flex flex-col gap-10 ml-2 pl-8 border-l-2 border-primary-100">
-          {milestones.items.map((item) => (
-            <li key={item.year} className="relative flex flex-col gap-2">
-              {/* Titik 16px di tengah garis 2px: 32px padding + 1px setengah garis + 8px setengah titik. */}
+        {/* Garis dan titik berbagi posisi: x = 8px di mobile, tengah di md ke atas. */}
+        <ol className="relative flex flex-col gap-8 md:gap-6">
+          <span
+            className="absolute inset-y-0 left-2 w-0.5 -translate-x-1/2 bg-primary-100 md:left-1/2"
+            aria-hidden="true"
+          />
+          {milestones.items.map((item, index) => (
+            <li
+              key={item.year}
+              className={cn(
+                "relative pl-10 md:grid md:grid-cols-2 md:gap-x-16 md:pl-0",
+                // Kartu kiri dan kanan saling bertumpang 40px agar sisi seberangnya tidak kosong.
+                index > 0 && "md:-mt-16",
+              )}
+            >
               <span
-                className="absolute top-1 -left-[41px] w-4 h-4 bg-primary rounded-full ring-4 ring-muted"
+                className="absolute top-7 left-2 w-4 h-4 -translate-x-1/2 bg-primary rounded-full ring-4 ring-muted md:left-1/2"
                 aria-hidden="true"
               />
-              <p className="font-mono text-sm font-bold text-primary">{item.year}</p>
-              <h3 className="font-heading text-xl font-bold text-gray-900">{item.title}</h3>
-              <p className="max-w-3xl leading-relaxed text-gray-600">{item.description}</p>
-              <ul className="flex flex-col gap-1.5 pt-1">
-                {item.achievements.map((achievement) => (
-                  <li key={achievement} className="flex items-start gap-2 text-sm text-gray-700">
-                    <CheckCircle2 className="shrink-0 mt-0.5 w-4 h-4 text-primary" aria-hidden="true" />
-                    {achievement}
-                  </li>
-                ))}
-              </ul>
+              <article
+                className={cn(
+                  "flex flex-col gap-3 p-6 bg-white rounded-2xl border border-gray-200",
+                  index % 2 === 1 && "md:col-start-2",
+                )}
+              >
+                <p className="self-start px-3 py-1 text-sm font-semibold text-primary bg-primary-50 rounded-full">
+                  {item.year}
+                </p>
+                <h3 className="font-heading text-xl font-bold text-gray-900">{item.title}</h3>
+                <p className="leading-relaxed text-gray-600">{item.description}</p>
+                <ul className="flex flex-col gap-1.5 pt-1">
+                  {item.achievements.map((achievement) => (
+                    <li key={achievement} className="flex items-start gap-2 text-sm text-gray-700">
+                      <CheckCircle2 className="shrink-0 mt-0.5 w-4 h-4 text-primary" aria-hidden="true" />
+                      {achievement}
+                    </li>
+                  ))}
+                </ul>
+              </article>
             </li>
           ))}
         </ol>

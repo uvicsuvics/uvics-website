@@ -10,7 +10,7 @@ export function VisionSection({ vision }: { vision: VisionMissionContent["vision
   return (
     <ContentSection id="visi" heading={vision}>
       <Reveal className="flex flex-col gap-8 p-6 bg-white rounded-2xl border border-gray-200 sm:p-12">
-        <blockquote className="pl-6 font-heading text-2xl font-semibold leading-snug text-gray-900 border-l-4 border-secondary sm:text-3xl">
+        <blockquote className="pl-6 font-[family-name:var(--font-heading)] text-2xl font-semibold leading-snug text-gray-900 border-l-4 border-accent sm:text-3xl">
           {vision.statement}
         </blockquote>
         <div className="grid gap-6 md:grid-cols-2">

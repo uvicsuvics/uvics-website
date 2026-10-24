@@ -1,6 +1,6 @@
 // Konten sementara untuk Admin → Pages → About UVICS dan Vision & Mission.
-// Angka statistik, tahun berdiri, sejarah, dan tonggak adalah placeholder yang belum
-// dikonfirmasi PM; ganti dengan data resmi sebelum rilis.
+// Tahun berdiri 2024 sudah dikonfirmasi. Angka statistik, narasi sejarah, dan isi tonggak
+// masih placeholder yang belum dikonfirmasi PM; ganti dengan data resmi sebelum rilis.
 
 export interface CtaLink {
   label: string;
@@ -19,18 +19,19 @@ export interface ImageContent {
 }
 
 export interface SectionHeading {
-  eyebrow: string;
   title: string;
+  /** Kata penutup judul yang diberi warna biru. */
+  titleHighlight: string;
   description?: string;
 }
 
 export interface PageHeroContent {
-  eyebrow: string;
   title: string;
+  /** Kata penutup judul yang diberi warna biru, mis. "UVICS". */
+  titleHighlight: string;
   description: string;
-  primaryCta?: CtaLink;
-  secondaryCta?: CtaLink;
-  image?: ImageContent;
+  /** Foto latar hero. */
+  image: ImageContent;
 }
 
 export interface ClosingCtaContent {
@@ -119,58 +120,56 @@ export const UVICS_ABOUT: AboutContent = {
       "Profil, sejarah, nilai, dan kegiatan UVICS, komunitas mahasiswa komputasi dan teknologi Universitas Klabat.",
   },
   hero: {
-    eyebrow: "Tentang UVICS",
-    title: "Membina Talenta Teknologi, Mengukir Prestasi, Berakar dalam Kebajikan",
+    title: "Talenta Teknologi, Berakar dalam",
+    titleHighlight: "Kebajikan",
     description:
       "UVICS adalah wadah kolaborasi komputasi dan teknologi bagi mahasiswa Universitas Klabat untuk mengasah kompetensi, membangun riset terapan, dan bersaing di tingkat nasional maupun internasional.",
-    primaryCta: { label: "Join UVICS", href: "/join" },
-    secondaryCta: { label: "Lihat Program", href: "/programs" },
     image: {
       src: "/images/img/foto-2.webp",
       alt: "Foto bersama anggota UVICS di ruang kelas Universitas Klabat",
     },
   },
   overview: {
-    eyebrow: "Profil",
-    title: "Komunitas mahasiswa komputasi Universitas Klabat",
+    title: "Komunitas mahasiswa komputasi",
+    titleHighlight: "Universitas Klabat",
     paragraphs: [
       "Unklab Virtue In Computer Science (UVICS) menghimpun mahasiswa Universitas Klabat yang menekuni rekayasa perangkat lunak, kecerdasan buatan, keamanan siber, dan desain sistem digital.",
       "Kami menyatukan talenta dari berbagai program studi dalam lingkungan yang memadukan keunggulan teknis, etika Kristiani, dan semangat berkompetisi secara sehat.",
       "Melalui pembinaan terstruktur, riset terarah, dan mentoring, UVICS mendampingi anggotanya mengikuti kompetisi seperti GEMASTIK dan hackathon serta membangun proyek digital yang bermanfaat.",
     ],
     stats: [
-      { value: "2021", label: "Tahun berdiri", description: "Dimulai dari kelompok belajar mahasiswa" },
+      { value: "2024", label: "Tahun berdiri", description: "Dimulai dari kelompok belajar mahasiswa" },
       { value: "24+", label: "Penghargaan", description: "Tingkat regional dan nasional" },
       { value: "120+", label: "Anggota dan alumni", description: "Lintas angkatan dan program studi" },
       { value: "18+", label: "Proyek terapan", description: "Untuk kampus dan masyarakat" },
     ],
   },
   history: {
-    eyebrow: "Sejarah",
-    title: "Perjalanan terbentuknya UVICS",
+    title: "Perjalanan terbentuknya",
+    titleHighlight: "UVICS",
     description: "Dari kelompok belajar mahasiswa menjadi organisasi dengan departemen dan program pembinaan.",
     paragraphs: [
-      "Pada awal 2021, sekelompok mahasiswa dan mentor di Fakultas Ilmu Komputer Universitas Klabat melihat perlunya wadah bagi mahasiswa yang ingin belajar melampaui kurikulum kelas reguler.",
+      "Pada 2024, sekelompok mahasiswa dan mentor di Fakultas Ilmu Komputer Universitas Klabat melihat perlunya wadah bagi mahasiswa yang ingin belajar melampaui kurikulum kelas reguler.",
       "Kompetisi nasional seperti GEMASTIK dan ICPC menuntut pemahaman algoritma lanjutan dan kerja sama tim lintas keahlian. Dari kelompok belajar kecil di laboratorium kampus, nama UVICS diresmikan dengan membawa filosofi 'Virtue' (kebajikan) sebagai landasan setiap karya.",
       "Seiring waktu, UVICS berkembang menjadi organisasi mandiri dengan struktur kepengurusan, departemen yang berfokus pada kompetisi, publikasi, dan riset internal, serta bimbingan bagi delegasi kampus.",
     ],
     turningPoint:
-      "Prestasi pertama di kompetisi nasional pada 2022 menjadi titik balik yang mengukuhkan UVICS sebagai wadah delegasi teknologi Universitas Klabat.",
+      "Keikutsertaan pertama delegasi UVICS di kompetisi nasional menjadi titik balik yang mengukuhkan UVICS sebagai wadah delegasi teknologi Universitas Klabat.",
     image: {
       src: "/images/img/foto-10.webp",
       alt: "Enam pengurus UVICS berseragam biru berpose di tangga kampus Universitas Klabat",
     },
   },
   visionMission: {
-    eyebrow: "Visi & Misi",
-    title: "Arah dan komitmen UVICS",
+    title: "Arah dan",
+    titleHighlight: "komitmen UVICS",
     visionLabel: "Visi",
     missionLabel: "Misi",
     link: { label: "Baca visi dan misi lengkap", href: "/vision-mission" },
   },
   values: {
-    eyebrow: "Nilai Inti",
-    title: "Enam nilai yang kami pegang",
+    title: "Enam nilai yang",
+    titleHighlight: "kami pegang",
     items: [
       {
         id: "val-integrity",
@@ -217,8 +216,8 @@ export const UVICS_ABOUT: AboutContent = {
     ],
   },
   activities: {
-    eyebrow: "Kegiatan",
-    title: "Apa yang kami kerjakan",
+    title: "Apa yang kami",
+    titleHighlight: "kerjakan",
     scheduleLabel: "Jadwal",
     outputLabel: "Hasil",
     items: [
@@ -265,59 +264,39 @@ export const UVICS_ABOUT: AboutContent = {
     ],
   },
   milestones: {
-    eyebrow: "Perjalanan",
-    title: "Tonggak perkembangan UVICS",
+    title: "Tonggak perkembangan",
+    titleHighlight: "UVICS",
     items: [
       {
-        year: "2021",
+        year: "2024",
         title: "Pembentukan komunitas",
         description:
-          "Didirikan oleh 12 mahasiswa Fakultas Ilmu Komputer sebagai wadah latihan algoritma dan persiapan kompetisi.",
+          "UVICS didirikan oleh mahasiswa Fakultas Ilmu Komputer sebagai wadah latihan algoritma dan persiapan kompetisi.",
         achievements: [
           "Kelompok belajar algoritma dan pemrograman",
           "Kurikulum internal angkatan pertama",
-          "Delegasi pertama di hackathon regional",
+          "Delegasi pertama di kompetisi teknologi",
         ],
       },
       {
-        year: "2022",
-        title: "Debut nasional",
-        description: "Delegasi UVICS menembus babak final GEMASTIK dan meraih juara di kompetisi perangkat lunak.",
-        achievements: [
-          "Finalis nasional GEMASTIK divisi Pengembangan Perangkat Lunak",
-          "Juara 1 hackathon kampus tingkat regional",
-          "Rekrutmen terbuka angkatan 2022",
-        ],
-      },
-      {
-        year: "2023",
+        year: "2025",
         title: "Pembentukan departemen",
         description:
-          "Struktur departemen diresmikan (Web Dev, Internal Dev, Editor, Competition Handler, PR) dan prestasi lomba bertambah.",
+          "Struktur departemen diresmikan (Web Dev, Internal Dev, Editor, Competition Handler, PR) dan delegasi mulai mengikuti kompetisi nasional.",
         achievements: [
-          "15+ penghargaan kompetisi regional dan nasional",
-          "8 prototipe sistem untuk kampus",
-          "Workshop teknologi dengan 250+ peserta",
+          "Kepengurusan dan departemen pertama",
+          "Delegasi di kompetisi nasional seperti GEMASTIK",
+          "Workshop teknologi untuk anggota",
         ],
       },
       {
-        year: "2024",
-        title: "Riset AI dan kemitraan",
-        description: "Fokus baru pada kecerdasan buatan dan arsitektur cloud, serta kemitraan dengan alumni di industri.",
-        achievements: [
-          "Juara 2 nasional kategori Data Mining & AI",
-          "Kerja sama dengan komunitas developer",
-          "Pengembangan portal web resmi UVICS",
-        ],
-      },
-      {
-        year: "2025/2026",
+        year: "2026",
         title: "Platform terpadu",
         description:
-          "UVICS memperkuat tata kelola organisasi, meluncurkan platform web terintegrasi, dan menyiapkan delegasi internasional.",
+          "UVICS memperkuat tata kelola organisasi dan membangun platform web terintegrasi untuk anggota dan publik.",
         achievements: [
           "Platform digital UVICS (CMS, registrasi, direktori)",
-          "Persiapan delegasi ICPC Asia Regional",
+          "Rekrutmen anggota angkatan berikutnya",
           "Inkubasi proyek berbasis open source",
         ],
       },
@@ -338,14 +317,18 @@ export const UVICS_VISION_MISSION: VisionMissionContent = {
     description: "Visi, lima misi, dan prinsip yang memandu program UVICS di Universitas Klabat.",
   },
   hero: {
-    eyebrow: "Visi & Misi",
-    title: "Visi dan Misi UVICS",
+    title: "Visi dan Misi",
+    titleHighlight: "UVICS",
     description:
       "Arah jangka panjang dan komitmen yang memandu setiap program UVICS dalam membina insan komputasi yang berdaya saing dan berlandaskan kebajikan.",
+    image: {
+      src: "/images/img/foto-16.webp",
+      alt: "Tujuh pengurus UVICS berseragam biru berpose di bangku taman kampus Universitas Klabat",
+    },
   },
   vision: {
-    eyebrow: "Visi",
-    title: "Visi UVICS",
+    title: "Visi",
+    titleHighlight: "UVICS",
     statement:
       "Menjadi pusat keunggulan talenta teknologi dan komputasi mahasiswa di Indonesia yang berdaya saing global, berkarakter luhur, dan menghasilkan inovasi digital yang berdampak bagi masyarakat.",
     elaboration: [
@@ -372,8 +355,8 @@ export const UVICS_VISION_MISSION: VisionMissionContent = {
     ],
   },
   mission: {
-    eyebrow: "Misi",
-    title: "Misi UVICS",
+    title: "Misi",
+    titleHighlight: "UVICS",
     description: "Lima langkah yang kami jalankan di setiap periode kepengurusan.",
     items: [
       {
@@ -439,8 +422,8 @@ export const UVICS_VISION_MISSION: VisionMissionContent = {
     ],
   },
   principles: {
-    eyebrow: "Prinsip",
-    title: "Prinsip yang menopang program kami",
+    title: "Prinsip yang menopang",
+    titleHighlight: "program kami",
     description: "Fondasi moral yang menjaga setiap program kerja tetap bernilai dan bermakna.",
     items: [
       {
