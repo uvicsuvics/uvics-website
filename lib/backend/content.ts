@@ -10,8 +10,8 @@ type Client = SupabaseClient<Database>;
 export const competitionStatusSchema = z.enum(Constants.public.Enums.competition_status);
 export const projectStatusSchema = z.enum(Constants.public.Enums.project_status);
 export const levelSchema = z.enum(Constants.public.Enums.content_level);
-// Referensi media, bukan URL; bentuk final ditetapkan alur upload #28/#29.
-const mediaSchema = z.string().trim().max(500).nullable().optional();
+// Referensi media = ID upload intent (UUID) dari alur upload; divalidasi ulang di RPC SQL.
+const mediaSchema = z.uuid().nullable().optional();
 
 export const competitionSchema = z
   .object({
@@ -53,7 +53,7 @@ export const achievementSchema = z.object({
 // U18: sertifikat adalah media privat, disimpan terpisah dari achievement publik.
 export const achievementCertificateSchema = z.object({
   achievement_id: z.string().uuid(),
-  certificate_file: z.string().trim().min(1).max(500),
+  certificate_file: z.uuid(),
 });
 
 export const projectSchema = z

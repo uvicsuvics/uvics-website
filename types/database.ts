@@ -796,7 +796,58 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      admin_achievement_members: {
+        Row: {
+          achievement_id: string | null;
+          created_at: string | null;
+          id: string | null;
+          member_id: string | null;
+          member_name: string | null;
+          role: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "achievement_members_achievement_id_fkey";
+            columns: ["achievement_id"];
+            isOneToOne: false;
+            referencedRelation: "achievements";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "achievement_members_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      admin_project_members: {
+        Row: {
+          created_at: string | null;
+          id: string | null;
+          member_id: string | null;
+          member_name: string | null;
+          project_id: string | null;
+          role: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_members_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_members_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
       begin_media_publication: {
@@ -831,6 +882,24 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_achievement: {
+        Args: {
+          p_values: Json;
+        };
+        Returns: Json;
+      };
+      create_competition: {
+        Args: {
+          p_values: Json;
+        };
+        Returns: Json;
+      };
+      create_project: {
+        Args: {
+          p_values: Json;
+        };
+        Returns: Json;
+      };
       create_upload_intent: {
         Args: {
           p_actor: string;
@@ -839,6 +908,24 @@ export type Database = {
           p_session: string;
         };
         Returns: Json;
+      };
+      delete_achievement: {
+        Args: {
+          p_id: string;
+        };
+        Returns: undefined;
+      };
+      delete_competition: {
+        Args: {
+          p_id: string;
+        };
+        Returns: undefined;
+      };
+      delete_project: {
+        Args: {
+          p_id: string;
+        };
+        Returns: undefined;
       };
       fail_media_publication: {
         Args: { p_actor: string; p_intent: string; p_session: string };
@@ -854,9 +941,39 @@ export type Database = {
         };
         Returns: Json;
       };
+      get_admin_achievement: {
+        Args: {
+          p_id: string;
+        };
+        Returns: Json;
+      };
+      get_admin_project: {
+        Args: {
+          p_id: string;
+        };
+        Returns: Json;
+      };
       has_active_admin_session: { Args: never; Returns: boolean };
+      publish_achievement: {
+        Args: {
+          p_id: string;
+        };
+        Returns: undefined;
+      };
+      publish_competition: {
+        Args: {
+          p_id: string;
+        };
+        Returns: undefined;
+      };
       publish_page: { Args: { p_id: string }; Returns: undefined };
       publish_program: { Args: { p_id: string }; Returns: undefined };
+      publish_project: {
+        Args: {
+          p_id: string;
+        };
+        Returns: undefined;
+      };
       read_public_settings: { Args: never; Returns: Json };
       read_upload_intent: {
         Args: { p_actor: string; p_intent: string; p_session: string };
@@ -883,6 +1000,27 @@ export type Database = {
           p_study_program: string;
         };
         Returns: string;
+      };
+      update_achievement: {
+        Args: {
+          p_changes: Json;
+          p_id: string;
+        };
+        Returns: Json;
+      };
+      update_competition: {
+        Args: {
+          p_changes: Json;
+          p_id: string;
+        };
+        Returns: Json;
+      };
+      update_project: {
+        Args: {
+          p_changes: Json;
+          p_id: string;
+        };
+        Returns: Json;
       };
     };
     Enums: {
