@@ -81,5 +81,7 @@ export function databaseError(error: { code?: string } | null): never {
   if (error?.code === "23505" || error?.code === "P0001")
     throw new AppError("CONFLICT");
   if (error?.code === "P0002") throw new AppError("NOT_FOUND");
+  // PostgREST 416: halaman di luar total baris.
+  if (error?.code === "PGRST103") throw new AppError("NOT_FOUND");
   throw new AppError("SERVICE_UNAVAILABLE");
 }

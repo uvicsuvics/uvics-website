@@ -1,14 +1,26 @@
 import pg from "pg";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import assert from "node:assert/strict";
+import { compareSchema, readCatalog, readTypes } from "./schema-types.mjs";
 const directory = mkdtempSync(join(tmpdir(), "uvics-db-"));
+const defaultWinBin =
+  [
+    "C:/Program Files/PostgreSQL/18/bin",
+    "C:/Program Files/PostgreSQL/17/bin",
+  ].find((p) => {
+    try {
+      return existsSync(p);
+    } catch {
+      return false;
+    }
+  }) || "C:/Program Files/PostgreSQL/17/bin";
 const bin =
   process.env.PG_BIN ||
   (process.platform === "win32"
-    ? "C:/Program Files/PostgreSQL/17/bin"
+    ? defaultWinBin
     : "/usr/lib/postgresql/17/bin");
 const port = Number(process.env.TEST_PG_PORT || 55437);
 const external = process.env.TEST_DATABASE_URL;
@@ -75,41 +87,63 @@ try {
     .filter((x) => x.endsWith(".sql"))
     .sort())
     await client.query(readFileSync(join("supabase/migrations", file), "utf8"));
-  await client.query(readFileSync("tests/db/foundation.sql", "utf8"));
-  await client.query(readFileSync("tests/db/media.sql", "utf8"));
-  await client.query(readFileSync("tests/db/rate-limit.sql", "utf8"));
-  const namespace = "concurrency-test";
-  const pool = new pg.Pool({
-    ...connection,
-    max: 12,
+  const failures = [];
+  // Satu langkah gagal tidak menghentikan langkah lain; rollback memulihkan koneksi dari transaksi yang batal.
+  const step = async (name, run) => {
+    const start = performance.now();
+    try {
+      await run();
+      console.log(`PASS ${name} (${Math.round(performance.now() - start)} ms)`);
+    } catch (error) {
+      failures.push(name);
+      console.error(`FAIL ${name}: ${error.message}`);
+      await client.query("rollback").catch(() => {});
+    }
+  };
+  for (const file of [
+    "tests/db/foundation.sql",
+    "tests/db/media.sql",
+    "tests/db/rate-limit.sql",
+    "tests/db/organization.sql",
+    "tests/db/membership.sql",
+    "tests/db/content.sql",
+    "tests/db/cms.sql",
+    "tests/db/security.sql", // sebelum seeder: asersi jumlah baris absolut
+    "tests/db/registration.sql",
+    "tests/db/seeder-organization.sql",
+  ])
+    await step(file, () => client.query(readFileSync(file, "utf8")));
+  await step("scripts/seed-cms.sql (2x) + tests/db/seeder-cms.sql", async () => {
+    const seedCms = readFileSync("scripts/seed-cms.sql", "utf8");
+    await client.query(seedCms);
+    await client.query(seedCms); // rerun harus idempotent
+    await client.query(readFileSync("tests/db/seeder-cms.sql", "utf8"));
   });
-  const start = performance.now();
-  const results = await Promise.all(
-    Array.from({ length: 20 }, () =>
-      pool.query("select public.consume_rate_limit($1,$2,$3) as result", [
-        namespace,
-        "login_email_ip",
-        "a".repeat(64),
-      ]),
-    ),
-  );
-  assert.equal(results.filter((r) => r.rows[0].result.allowed).length, 5);
-  const rows = await client.query(
-    "select count(*)::int as n from private.rate_limit_counters where namespace=$1",
-    [namespace],
-  );
-  assert.equal(rows.rows[0].n, 1);
-  console.log(
-    JSON.stringify({
-      database: "disposable",
-      session_rls_audit: "PASS",
-      concurrent_requests: 20,
-      allowed: 5,
-      counter_rows: 1,
-      elapsed_ms: Math.round(performance.now() - start),
-    }),
-  );
-  await pool.end();
+  let concurrency = {};
+  await step("rate limit concurrency", async () => {
+    const namespace = "concurrency-test";
+    const pool = new pg.Pool({ ...connection, max: 12 });
+    try {
+      const start = performance.now();
+      const results = await Promise.all(
+        Array.from({ length: 20 }, () =>
+          pool.query("select public.consume_rate_limit($1,$2,$3) as result", [namespace, "login_email_ip", "a".repeat(64)]),
+        ),
+      );
+      assert.equal(results.filter((r) => r.rows[0].result.allowed).length, 5);
+      const rows = await client.query("select count(*)::int as n from private.rate_limit_counters where namespace=$1", [namespace]);
+      assert.equal(rows.rows[0].n, 1);
+      concurrency = { concurrent_requests: 20, allowed: 5, counter_rows: 1, elapsed_ms: Math.round(performance.now() - start) };
+    } finally {
+      await pool.end();
+    }
+  });
+  await step("types/database.ts sesuai schema", async () => {
+    const diffs = compareSchema(await readCatalog(client), readTypes(readFileSync("types/database.ts", "utf8")));
+    if (diffs.length) throw Error(`${diffs.length} selisih\n${diffs.join("\n")}`);
+  });
+  console.log(JSON.stringify({ database: "disposable", session_rls_audit: failures.length ? "FAIL" : "PASS", failures, ...concurrency }));
+  if (failures.length) process.exitCode = 1;
 } finally {
   if (client) await client.end();
   if (started) run("pg_ctl", ["-D", directory, "-m", "fast", "-w", "stop"]);
