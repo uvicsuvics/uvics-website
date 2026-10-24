@@ -114,7 +114,7 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 
 **Validasi** (`lib/backend/validation.ts`): `emailSchema`, `phoneSchema`, `httpUrlSchema` (HTTP/S tanpa credential), `datetimeSchema` (offset wajib → UTC `Z`), `paginationSchema`, `slugSchema`, `calendarDateSchema` (`YYYY-MM-DD`, rollover seperti 2026-02-30 ditolak). UUID memakai `z.uuid()`. Enum memakai `z.enum` dengan nilai kanonis domain. Telepon: spasi/hyphen dibuang, `08…` → `+628…`, selain itu wajib `+kodenegara`; panjang dihitung dari digit setelah normalisasi tanpa `+`, 8–15 digit (`PHONE_MIN_DIGITS`/`PHONE_MAX_DIGITS`), sama dengan constraint SQL `registrations.phone`/`members.phone` (D04). Kesetaraan batas diuji di `tests/db/security.sql`; ubah keduanya bersamaan.
 
-**Error.** Reuse `AppError`, `toFailure`, `httpFailure`, `databaseError`: `42501` → FORBIDDEN, `23505`/`P0001` → CONFLICT, `P0002` → NOT_FOUND, lainnya → SERVICE_UNAVAILABLE tanpa detail SQL/provider.
+**Error.** Reuse `AppError`, `toFailure`, `httpFailure`, `databaseError`: `42501` → FORBIDDEN, `23503`/`23505`/`P0001` → CONFLICT, `23514` → VALIDATION_ERROR, `P0002` → NOT_FOUND, lainnya → SERVICE_UNAVAILABLE tanpa detail SQL/provider.
 
 **Types.** Urutan: migration → `npm run test:db` → `npm run db:types` → `npm run typecheck`, dari schema yang sama. Jangan menulis types manual untuk RPC/tabel baru.
 
