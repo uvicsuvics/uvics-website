@@ -1,21 +1,56 @@
+// Konten sementara untuk Admin → Pages → About UVICS dan Vision & Mission.
+// Angka statistik, tahun berdiri, sejarah, dan tonggak adalah placeholder yang belum
+// dikonfirmasi PM; ganti dengan data resmi sebelum rilis.
+
+export interface CtaLink {
+  label: string;
+  href: string;
+}
+
+/** meta_title dan meta_description halaman (spesifikasi §28). */
+export interface PageMeta {
+  title: string;
+  description: string;
+}
+
+export interface ImageContent {
+  src: string;
+  alt: string;
+}
+
+export interface SectionHeading {
+  eyebrow: string;
+  title: string;
+  description?: string;
+}
+
+export interface PageHeroContent {
+  eyebrow: string;
+  title: string;
+  description: string;
+  primaryCta?: CtaLink;
+  secondaryCta?: CtaLink;
+  image?: ImageContent;
+}
+
+export interface ClosingCtaContent {
+  title: string;
+  description: string;
+  primaryCta: CtaLink;
+  secondaryCta: CtaLink;
+}
+
+export interface AboutStatItem {
+  value: string;
+  label: string;
+  description: string;
+}
+
 export interface CoreValueItem {
   id: string;
   title: string;
-  tagline: string;
   description: string;
   iconName: "Shield" | "Trophy" | "Users" | "Sparkles" | "TrendingUp" | "HeartHandshake";
-  badge: string;
-}
-
-export interface MilestoneItem {
-  year: string;
-  period: string;
-  title: string;
-  tagline: string;
-  description: string;
-  achievements: string[];
-  image: string;
-  badge: string;
 }
 
 export interface ActivityItem {
@@ -25,13 +60,24 @@ export interface ActivityItem {
   description: string;
   schedule: string;
   output: string;
-  iconName: "Trophy" | "BookOpen" | "Cpu" | "Network" | "Share2";
+  iconName: "Trophy" | "BookOpen" | "Cpu" | "Share2";
+}
+
+export interface MilestoneItem {
+  year: string;
+  title: string;
+  description: string;
+  achievements: string[];
+}
+
+export interface VisionPillarItem {
+  title: string;
+  description: string;
 }
 
 export interface MissionItem {
   number: string;
   title: string;
-  tagline: string;
   description: string;
   points: string[];
   iconName: "Target" | "Cpu" | "GraduationCap" | "Scale" | "Network";
@@ -44,384 +90,387 @@ export interface PrincipleItem {
   quote: string;
 }
 
-export interface AboutContentData {
-  identity: {
-    name: string;
-    fullName: string;
-    university: string;
-    location: string;
-    foundedYear: string;
-    tagline: string;
-    heroHeadline: string;
-    heroSubtitle: string;
-    overviewParagraphs: string[];
-    stats: {
-      label: string;
-      value: string;
-      description: string;
-    }[];
-  };
-  history: {
-    title: string;
-    subtitle: string;
-    originStory: string[];
-    turningPoint: string;
-  };
-  vision: {
-    statement: string;
-    elaboration: string[];
-    pillars: {
-      title: string;
-      description: string;
-    }[];
-  };
-  missions: MissionItem[];
-  coreValues: CoreValueItem[];
-  activities: ActivityItem[];
-  milestones: MilestoneItem[];
-  principles: PrincipleItem[];
-  cta: {
-    title: string;
-    description: string;
-    primaryBtnText: string;
-    primaryBtnLink: string;
-    secondaryBtnText: string;
-    secondaryBtnLink: string;
-  };
+export interface AboutContent {
+  meta: PageMeta;
+  hero: PageHeroContent;
+  overview: SectionHeading & { paragraphs: string[]; stats: AboutStatItem[] };
+  history: SectionHeading & { paragraphs: string[]; turningPoint: string; image: ImageContent };
+  /** Pratinjau; pernyataan visi dan daftar misi dibaca dari UVICS_VISION_MISSION. */
+  visionMission: SectionHeading & { visionLabel: string; missionLabel: string; link: CtaLink };
+  values: SectionHeading & { items: CoreValueItem[] };
+  activities: SectionHeading & { scheduleLabel: string; outputLabel: string; items: ActivityItem[] };
+  milestones: SectionHeading & { items: MilestoneItem[] };
+  cta: ClosingCtaContent;
 }
 
-export const ABOUT_DATA: AboutContentData = {
-  identity: {
-    name: "UVICS",
-    fullName: "Unklab Virtue In Computer Science",
-    university: "Universitas Klabat (UNKLAB)",
-    location: "Airmadidi, Minahasa Utara, Sulawesi Utara",
-    foundedYear: "2021",
-    tagline: "Empowering Tech Talents, Fostering Innovation, Competing Globally",
-    heroHeadline: "Membina Talenta Teknologi, Mengukir Prestasi, Berakar dalam Kebajikan",
-    heroSubtitle:
-      "UVICS adalah wadah kolaborasi komputasi dan teknologi bagi mahasiswa berprestasi Universitas Klabat untuk mengasah kompetensi, membangun riset terapan, dan bersaing di panggung nasional serta global.",
-    overviewParagraphs: [
-      "Unklab Virtue In Computer Science (UVICS) berdiri sebagai katalisator potensi mahasiswa Universitas Klabat yang memiliki gairah mendalam di bidang rekayasa perangkat lunak, kecerdasan buatan, keamanan siber, dan desain sistem digital.",
-      "Kami menyatukan talenta dari berbagai program studi dalam satu lingkungan yang memadukan keunggulan teknis, etika Kristiani yang berintegritas, serta mentalitas juara dalam menghadapi kompetisi sains dan teknologi terkemuka di tanah air.",
-      "Melalui program pembinaan terstruktur, riset terarah, dan mentoring intensif, UVICS telah membuktikan eksistensinya dengan puluhan pencapaian di kompetisi bergengsi seperti GEMASTIK, Pagelaran Mahasiswa Nasional, Hackathon, serta proyek digital yang berdampak nyata.",
+export interface VisionMissionContent {
+  meta: PageMeta;
+  hero: PageHeroContent;
+  vision: SectionHeading & { statement: string; elaboration: string[]; pillars: VisionPillarItem[] };
+  mission: SectionHeading & { items: MissionItem[] };
+  principles: SectionHeading & { items: PrincipleItem[] };
+  cta: ClosingCtaContent;
+}
+
+export const UVICS_ABOUT: AboutContent = {
+  meta: {
+    title: "Tentang UVICS",
+    description:
+      "Profil, sejarah, nilai, dan kegiatan UVICS, komunitas mahasiswa komputasi dan teknologi Universitas Klabat.",
+  },
+  hero: {
+    eyebrow: "Tentang UVICS",
+    title: "Membina Talenta Teknologi, Mengukir Prestasi, Berakar dalam Kebajikan",
+    description:
+      "UVICS adalah wadah kolaborasi komputasi dan teknologi bagi mahasiswa Universitas Klabat untuk mengasah kompetensi, membangun riset terapan, dan bersaing di tingkat nasional maupun internasional.",
+    primaryCta: { label: "Join UVICS", href: "/join" },
+    secondaryCta: { label: "Lihat Program", href: "/programs" },
+    image: {
+      src: "/images/img/foto-2.webp",
+      alt: "Foto bersama anggota UVICS di ruang kelas Universitas Klabat",
+    },
+  },
+  overview: {
+    eyebrow: "Profil",
+    title: "Komunitas mahasiswa komputasi Universitas Klabat",
+    paragraphs: [
+      "Unklab Virtue In Computer Science (UVICS) menghimpun mahasiswa Universitas Klabat yang menekuni rekayasa perangkat lunak, kecerdasan buatan, keamanan siber, dan desain sistem digital.",
+      "Kami menyatukan talenta dari berbagai program studi dalam lingkungan yang memadukan keunggulan teknis, etika Kristiani, dan semangat berkompetisi secara sehat.",
+      "Melalui pembinaan terstruktur, riset terarah, dan mentoring, UVICS mendampingi anggotanya mengikuti kompetisi seperti GEMASTIK dan hackathon serta membangun proyek digital yang bermanfaat.",
     ],
     stats: [
-      { label: "Tahun Berdiri", value: "2021", description: "Perjalanan inovasi berkelanjutan" },
-      { label: "Piala & Penghargaan", value: "24+", description: "Prestasi tingkat nasional & regional" },
-      { label: "Anggota & Alumni", value: "120+", description: "Talenta aktif dan alumni berkarir" },
-      { label: "Proyek Terapan", value: "18+", description: "Solusi digital untuk kampus & publik" },
+      { value: "2021", label: "Tahun berdiri", description: "Dimulai dari kelompok belajar mahasiswa" },
+      { value: "24+", label: "Penghargaan", description: "Tingkat regional dan nasional" },
+      { value: "120+", label: "Anggota dan alumni", description: "Lintas angkatan dan program studi" },
+      { value: "18+", label: "Proyek terapan", description: "Untuk kampus dan masyarakat" },
     ],
   },
   history: {
-    title: "Perjalanan Terbentuknya UVICS",
-    subtitle: "Dari Inisiatif Mahasiswa Menjadi Pusat Keunggulan Komputasi Kampus",
-    originStory: [
-      "Pada awal tahun 2021, sekelompok mahasiswa dan mentor di Fakultas Ilmu Komputer Universitas Klabat melihat adanya kebutuhan wadah akselerasi terpadu bagi mahasiswa yang ingin melangkah lebih jauh dari kurikulum kelas reguler.",
-      "Tantangan kompetisi nasional seperti GEMASTIK dan ICPC menuntut kecepatan iterasi, pemahaman algoritma lanjutan, serta kerja sama tim lintas keahlian. Berawal dari kelompok belajar kecil yang berlatih hingga larut malam di laboratorium kampus, nama UVICS diresmikan dengan membawa filosofi 'Virtue' (kebajikan) sebagai landasan moral setiap karya cipta.",
-      "Seiring waktu, UVICS berkembang menjadi organisasi mandiri dengan struktur kepengurusan profesional, departemen khusus yang fokus pada kompetisi, publikasi, riset internal, serta bimbingan intensif bagi delegasi kampus.",
+    eyebrow: "Sejarah",
+    title: "Perjalanan terbentuknya UVICS",
+    description: "Dari kelompok belajar mahasiswa menjadi organisasi dengan departemen dan program pembinaan.",
+    paragraphs: [
+      "Pada awal 2021, sekelompok mahasiswa dan mentor di Fakultas Ilmu Komputer Universitas Klabat melihat perlunya wadah bagi mahasiswa yang ingin belajar melampaui kurikulum kelas reguler.",
+      "Kompetisi nasional seperti GEMASTIK dan ICPC menuntut pemahaman algoritma lanjutan dan kerja sama tim lintas keahlian. Dari kelompok belajar kecil di laboratorium kampus, nama UVICS diresmikan dengan membawa filosofi 'Virtue' (kebajikan) sebagai landasan setiap karya.",
+      "Seiring waktu, UVICS berkembang menjadi organisasi mandiri dengan struktur kepengurusan, departemen yang berfokus pada kompetisi, publikasi, dan riset internal, serta bimbingan bagi delegasi kampus.",
     ],
     turningPoint:
-      "Kemenangan pertama di kompetisi nasional pada tahun 2022 menjadi titik balik krusial yang mengukuhkan posisi UVICS sebagai garda terdepan delegasi teknologi Universitas Klabat.",
+      "Prestasi pertama di kompetisi nasional pada 2022 menjadi titik balik yang mengukuhkan UVICS sebagai wadah delegasi teknologi Universitas Klabat.",
+    image: {
+      src: "/images/img/foto-10.webp",
+      alt: "Enam pengurus UVICS berseragam biru berpose di tangga kampus Universitas Klabat",
+    },
+  },
+  visionMission: {
+    eyebrow: "Visi & Misi",
+    title: "Arah dan komitmen UVICS",
+    visionLabel: "Visi",
+    missionLabel: "Misi",
+    link: { label: "Baca visi dan misi lengkap", href: "/vision-mission" },
+  },
+  values: {
+    eyebrow: "Nilai Inti",
+    title: "Enam nilai yang kami pegang",
+    items: [
+      {
+        id: "val-integrity",
+        title: "Kebajikan & Integritas",
+        description:
+          "Kejujuran intelektual dan etika adalah fondasi. Setiap baris kode, penelitian, dan capaian harus mencerminkan kejujuran.",
+        iconName: "Shield",
+      },
+      {
+        id: "val-excellence",
+        title: "Keunggulan & Daya Saing",
+        description:
+          "Kami terus melatih diri dan menetapkan standar tinggi agar siap bersaing di setiap kompetisi.",
+        iconName: "Trophy",
+      },
+      {
+        id: "val-collaboration",
+        title: "Kolaborasi",
+        description:
+          "Karya terbaik lahir ketika developer, desainer, dan problem solver bekerja sama dan saling melengkapi.",
+        iconName: "Users",
+      },
+      {
+        id: "val-innovation",
+        title: "Inovasi",
+        description:
+          "Kami berani menguji ide baru dan menjadikan kegagalan sebagai bahan belajar dalam riset teknologi.",
+        iconName: "Sparkles",
+      },
+      {
+        id: "val-growth",
+        title: "Pertumbuhan Berkelanjutan",
+        description:
+          "Belajar tidak pernah selesai. Kami saling membimbing, termasuk adik tingkat, dan berkembang bersama.",
+        iconName: "TrendingUp",
+      },
+      {
+        id: "val-impact",
+        title: "Karya yang Berdampak",
+        description:
+          "Teknologi yang kami bangun diarahkan untuk memuliakan Tuhan dan memberi manfaat nyata bagi sesama.",
+        iconName: "HeartHandshake",
+      },
+    ],
+  },
+  activities: {
+    eyebrow: "Kegiatan",
+    title: "Apa yang kami kerjakan",
+    scheduleLabel: "Jadwal",
+    outputLabel: "Hasil",
+    items: [
+      {
+        id: "act-mentoring",
+        title: "Pendampingan Kompetisi",
+        category: "Kompetisi",
+        description:
+          "Pendampingan dari mentor dan alumni untuk mematangkan proposal, algoritma pemecahan masalah, prototipe, dan presentasi.",
+        schedule: "Mingguan dan menjelang lomba",
+        output: "Delegasi lomba yang siap bertanding",
+        iconName: "Trophy",
+      },
+      {
+        id: "act-workshops",
+        title: "Workshop Teknologi",
+        category: "Pelatihan",
+        description:
+          "Sesi praktik tentang framework web modern, arsitektur cloud, dan machine learning yang relevan dengan kebutuhan industri.",
+        schedule: "Dua minggu sekali",
+        output: "Penguasaan teknologi terkini",
+        iconName: "BookOpen",
+      },
+      {
+        id: "act-incubation",
+        title: "Inkubasi Proyek & Hackathon Internal",
+        category: "Proyek",
+        description:
+          "Tim merancang perangkat lunak dari awal hingga siap didemokan untuk melatih kecepatan eksekusi dan komunikasi.",
+        schedule: "Setiap semester",
+        output: "Prototipe yang siap diuji",
+        iconName: "Cpu",
+      },
+      {
+        id: "act-sharing",
+        title: "Berbagi Pengetahuan",
+        category: "Komunitas",
+        description:
+          "Diskusi terbuka bersama praktisi industri dan alumni, serta sesi berbagi hasil lomba untuk anggota dan publik.",
+        schedule: "Bulanan",
+        output: "Wawasan industri terkini",
+        iconName: "Share2",
+      },
+    ],
+  },
+  milestones: {
+    eyebrow: "Perjalanan",
+    title: "Tonggak perkembangan UVICS",
+    items: [
+      {
+        year: "2021",
+        title: "Pembentukan komunitas",
+        description:
+          "Didirikan oleh 12 mahasiswa Fakultas Ilmu Komputer sebagai wadah latihan algoritma dan persiapan kompetisi.",
+        achievements: [
+          "Kelompok belajar algoritma dan pemrograman",
+          "Kurikulum internal angkatan pertama",
+          "Delegasi pertama di hackathon regional",
+        ],
+      },
+      {
+        year: "2022",
+        title: "Debut nasional",
+        description: "Delegasi UVICS menembus babak final GEMASTIK dan meraih juara di kompetisi perangkat lunak.",
+        achievements: [
+          "Finalis nasional GEMASTIK divisi Pengembangan Perangkat Lunak",
+          "Juara 1 hackathon kampus tingkat regional",
+          "Rekrutmen terbuka angkatan 2022",
+        ],
+      },
+      {
+        year: "2023",
+        title: "Pembentukan departemen",
+        description:
+          "Struktur departemen diresmikan (Web Dev, Internal Dev, Editor, Competition Handler, PR) dan prestasi lomba bertambah.",
+        achievements: [
+          "15+ penghargaan kompetisi regional dan nasional",
+          "8 prototipe sistem untuk kampus",
+          "Workshop teknologi dengan 250+ peserta",
+        ],
+      },
+      {
+        year: "2024",
+        title: "Riset AI dan kemitraan",
+        description: "Fokus baru pada kecerdasan buatan dan arsitektur cloud, serta kemitraan dengan alumni di industri.",
+        achievements: [
+          "Juara 2 nasional kategori Data Mining & AI",
+          "Kerja sama dengan komunitas developer",
+          "Pengembangan portal web resmi UVICS",
+        ],
+      },
+      {
+        year: "2025/2026",
+        title: "Platform terpadu",
+        description:
+          "UVICS memperkuat tata kelola organisasi, meluncurkan platform web terintegrasi, dan menyiapkan delegasi internasional.",
+        achievements: [
+          "Platform digital UVICS (CMS, registrasi, direktori)",
+          "Persiapan delegasi ICPC Asia Regional",
+          "Inkubasi proyek berbasis open source",
+        ],
+      },
+    ],
+  },
+  cta: {
+    title: "Siap bergabung dengan UVICS?",
+    description:
+      "Kembangkan kemampuan komputasimu, ikuti kompetisi, dan belajar bersama komunitas mahasiswa teknologi Universitas Klabat.",
+    primaryCta: { label: "Join UVICS", href: "/join" },
+    secondaryCta: { label: "Lihat Departemen", href: "/departments" },
+  },
+};
+
+export const UVICS_VISION_MISSION: VisionMissionContent = {
+  meta: {
+    title: "Visi & Misi | UVICS",
+    description: "Visi, lima misi, dan prinsip yang memandu program UVICS di Universitas Klabat.",
+  },
+  hero: {
+    eyebrow: "Visi & Misi",
+    title: "Visi dan Misi UVICS",
+    description:
+      "Arah jangka panjang dan komitmen yang memandu setiap program UVICS dalam membina insan komputasi yang berdaya saing dan berlandaskan kebajikan.",
   },
   vision: {
+    eyebrow: "Visi",
+    title: "Visi UVICS",
     statement:
-      "Menjadi pusat keunggulan talenta teknologi dan komputasi mahasiswa di Indonesia yang berdaya saing global, berkarakter luhur, dan menghasilkan inovasi digital berdampak nyata bagi kemajuan masyarakat.",
+      "Menjadi pusat keunggulan talenta teknologi dan komputasi mahasiswa di Indonesia yang berdaya saing global, berkarakter luhur, dan menghasilkan inovasi digital yang berdampak bagi masyarakat.",
     elaboration: [
-      "Kami memandang teknologi bukan hanya sebagai instrumen teknis semata, melainkan sarana pengabdian untuk memecahkan persoalan riil kehidupan dengan berlandaskan moral dan etika yang teguh.",
-      "Visi ini diterjemahkan ke dalam kurikulum internal yang menantang anggota untuk melampaui batas kemampuan teoritis, berani bereksperimen dengan teknologi mutakhir, dan berkompetisi secara sportif di panggung tertinggi.",
+      "Kami memandang teknologi bukan sekadar alat teknis, melainkan sarana pengabdian untuk memecahkan persoalan nyata dengan berlandaskan moral dan etika.",
+      "Visi ini diterjemahkan ke dalam kurikulum internal yang mendorong anggota melampaui teori, bereksperimen dengan teknologi baru, dan berkompetisi secara sportif.",
     ],
     pillars: [
       {
-        title: "Competitive Rigor",
-        description: "Standar teknis tinggi dan disiplin latihan intensif untuk mencetak delegasi berdaya saing juara.",
+        title: "Daya Saing",
+        description: "Standar teknis tinggi dan latihan rutin untuk menyiapkan delegasi kompetisi.",
       },
       {
-        title: "Moral Integrity & Virtue",
-        description: "Menjunjung integritas akademik, kejujuran intelektual, dan etika Kristiani dalam setiap pencapaian.",
+        title: "Integritas & Kebajikan",
+        description: "Menjunjung kejujuran akademik dan etika Kristiani dalam setiap pencapaian.",
       },
       {
-        title: "Impactful Engineering",
-        description: "Mengarahkan ide dan riset pada solusi perangkat lunak terapan yang nyata dirasakan manfaatnya.",
+        title: "Rekayasa yang Berdampak",
+        description: "Mengarahkan ide dan riset pada perangkat lunak yang manfaatnya dirasakan pengguna.",
       },
       {
-        title: "Inclusive Mentorship",
-        description: "Ekosistem saling mengasah, berbagi ilmu tanpa sekat, dan membimbing anggota baru menuju potensi puncaknya.",
+        title: "Pembinaan Inklusif",
+        description: "Saling berbagi ilmu dan membimbing anggota baru hingga berkembang optimal.",
       },
     ],
   },
-  missions: [
-    {
-      number: "01",
-      title: "Akselerasi Delegasi Kompetisi Nasional & Internasional",
-      tagline: "Mempersiapkan Mentalitas dan Keunggulan Teknis Juara",
-      description:
-        "Menyelenggarakan proses kurasi bakat, simulasi kompetisi, bimbingan intensif berkala, dan pendampingan mentor untuk mengantarkan mahasiswa Universitas Klabat meraih podium tertinggi pada ajang sains dan teknologi bergengsi.",
-      points: [
-        "Simulasi berkala setara standar GEMASTIK, ICPC, dan LIDM",
-        "Pendampingan langsung oleh alumni pemenang lomba dan dosen pembimbing",
-        "Penyediaan bank soal, kajian studi kasus, dan workshop algoritma tingkat lanjut",
-      ],
-      iconName: "Target",
-    },
-    {
-      number: "02",
-      title: "Inkubasi Produk Digital dan Rekayasa Terapan",
-      tagline: "Dari Ide Konseptual Menjadi Perangkat Lunak Berdaya Guna",
-      description:
-        "Memfasilitasi anggota dalam merancang, mengembangkan, dan meluncurkan produk digital yang dapat diuji coba oleh masyarakat kampus maupun publik luas sebagai portofolio engineering berstandar industri.",
-      points: [
-        "Kolaborasi tim lintas divisi (Software Engineer, UI/UX, QA, dan Project Manager)",
-        "Penerapan teknologi modern (Next.js, Tailwind, TypeScript, Supabase, Cloud)",
-        "Penyelarasan arsitektur sistem dengan best-practice clean code dan keamanan data",
-      ],
-      iconName: "Cpu",
-    },
-    {
-      number: "03",
-      title: "Budaya Belajar Berkelanjutan dan Transfer Pengetahuan",
-      tagline: "Ekosistem Kolaboratif Tanpa Sekat Angkatan",
-      description:
-        "Menyelenggarakan lokakarya teknologi berkala, sesi 'Tech Talk', peer-mentoring mingguan, serta dokumentasi pengetahuan yang dapat diakses secara berkesinambungan oleh generasi kepengurusan berikutnya.",
-      points: [
-        "Internal workshops dwi-mingguan yang membahas topik mutakhir",
-        "Program 'Buddy Mentoring' untuk anggota baru agar cepat beradaptasi",
-        "Repositori riset internal dan dokumentasi proyek yang terbuka",
-      ],
-      iconName: "GraduationCap",
-    },
-    {
-      number: "04",
-      title: "Penguatan Karakter, Integritas, dan Etika Kebajikan",
-      tagline: "Menempatkan Virtue sebagai Kompas Moral Setiap Karya",
-      description:
-        "Menanamkan nilai-nilai kejujuran, sportivitas, kerendahan hati, dan komitmen pelayanan Kristiani dalam setiap aktivitas kepengurusan, perlombaan, maupun karya rekayasa komputasi.",
-      points: [
-        "Penerapan kode etik ketat terhadap orisinalitas karya dan anti-plagiarisme",
-        "Refleksi berkala dan persekutuan doa sebagai bagian integral kehidupan berorganisasi",
-        "Komitmen melayani almamater Universitas Klabat dengan integritas tanpa kompromi",
-      ],
-      iconName: "Scale",
-    },
-    {
-      number: "05",
-      title: "Kemitraan Strategis dengan Industri dan Komunitas",
-      tagline: "Menghubungkan Kampus dengan Ekosistem Teknologi Global",
-      description:
-        "Membangun hubungan kolaboratif dengan perusahaan teknologi, startup, komunitas open-source, dan jaringan alumni untuk membuka peluang magang, karier, dan pembinaan industri.",
-      points: [
-        "Kunjungan industri dan sesi sharing eksklusif bersama praktisi",
-        "Kolaborasi acara bersama komunitas developer regional Sulawesi Utara",
-        "Jejaring rujukan karier terpercaya bagi alumni yang telah lulus",
-      ],
-      iconName: "Network",
-    },
-  ],
-  coreValues: [
-    {
-      id: "val-integrity",
-      title: "Virtue & Integrity",
-      tagline: "Kebajikan & Integritas",
-      description:
-        "Kejujuran intelektual dan etika adalah fondasi mutlak. Setiap baris kode, penelitian, dan capaian kami harus mencerminkan nilai kejujuran yang tidak goyah.",
-      iconName: "Shield",
-      badge: "Nilai Utama",
-    },
-    {
-      id: "val-excellence",
-      title: "Competitive Rigor",
-      tagline: "Keunggulan & Daya Saing",
-      description:
-        "Kami menolak kepuasan instan. Semangat untuk terus melatih diri dan menetapkan standar tinggi menjadi motor penggerak setiap delegasi juara.",
-      iconName: "Trophy",
-      badge: "Pondasi Juara",
-    },
-    {
-      id: "val-collaboration",
-      title: "Synergy in Diversity",
-      tagline: "Kolaborasi & Kebersamaan",
-      description:
-        "Karya terbaik lahir ketika developer, designer, dan problem solver bersatu dengan empati dan saling melengkapi kekuatan masing-masing.",
-      iconName: "Users",
-      badge: "Kerja Tim",
-    },
-    {
-      id: "val-innovation",
-      title: "Fearless Innovation",
-      tagline: "Inovasi & Eksplorasi",
-      description:
-        "Keberanian menguji ide-ide baru dan merangkul kegagalan sebagai bahan bakar riset menuju penemuan terobosan teknologi terkini.",
-      iconName: "Sparkles",
-      badge: "Daya Cipta",
-    },
-    {
-      id: "val-growth",
-      title: "Continuous Growth",
-      tagline: "Pertumbuhan Berkelanjutan",
-      description:
-        "Proses belajar tidak pernah usai. Kami berkomitmen untuk saling mengangkat, membimbing adik tingkat, dan terus berkembang bersama.",
-      iconName: "TrendingUp",
-      badge: "Pembinaan",
-    },
-    {
-      id: "val-impact",
-      title: "Purposeful Impact",
-      tagline: "Karya Berdampak Nyata",
-      description:
-        "Teknologi yang kami bangun diarahkan untuk memuliakan Tuhan dan memberi kemudahan nyata bagi sesama serta lingkungan sekitar.",
-      iconName: "HeartHandshake",
-      badge: "Pengabdian",
-    },
-  ],
-  activities: [
-    {
-      id: "act-mentoring",
-      title: "Competition Mentoring & Intensive Prep",
-      category: "Kompetisi",
-      description:
-        "Pendampingan terarah dari mentor berpengalaman dan alumni juara untuk mematangkan konsep proposal, algoritma pemecahan masalah, prototipe, dan pitching.",
-      schedule: "Mingguan & Menjelang Lomba",
-      output: "Delegasi Tangguh & Juara Nasional",
-      iconName: "Trophy",
-    },
-    {
-      id: "act-workshops",
-      title: "Tech Workshops & Hands-on Lab",
-      category: "Pelatihan",
-      description:
-        "Sesi praktis mengupas framework web modern, distributed systems, arsitektur cloud, dan machine learning praktis yang relevan dengan standar industri.",
-      schedule: "Dwi-Mingguan",
-      output: "Penguasaan Tech Stack Modern",
-      iconName: "BookOpen",
-    },
-    {
-      id: "act-incubation",
-      title: "Software Incubation & Internal Hackathons",
-      category: "Inovasi",
-      description:
-        "Ajang kolaborasi intensif merancang perangkat lunak dari awal hingga siap demo dalam hitungan hari untuk melatih kecepatan eksekusi dan komunikasi tim.",
-      schedule: "Semesteran",
-      output: "Prototipe Produk Siap Rilis",
-      iconName: "Cpu",
-    },
-    {
-      id: "act-sharing",
-      title: "Knowledge Sharing & Tech Talks",
-      category: "Komunitas",
-      description:
-        "Webinar dan diskusi terbuka bersama pakar industri, alumni yang bekerja di unicorn/multinasional, serta sesi diseminasi hasil lomba bagi publik.",
-      schedule: "Bulanan",
-      output: "Wawasan Industri Terkini",
-      iconName: "Share2",
-    },
-  ],
-  milestones: [
-    {
-      year: "2021",
-      period: "Chapter I: Genesis",
-      title: "Pondasi Awal & Pembentukan Komunitas",
-      tagline: "Lahirnya Komunitas Inovator Muda UNKLAB",
-      description:
-        "Didirikan oleh 12 mahasiswa perintis di Fakultas Ilmu Komputer yang berkomitmen menciptakan wadah latihan algoritma dan persiapan kompetisi terstruktur.",
-      achievements: [
-        "Inisiasi kelompok belajar intensif algoritma & pemrograman",
-        "Penyusunan blueprint kurikulum internal angkatan pertama",
-        "Partisipasi perdana delegasi pada hackathon regional",
-      ],
-      image: "/images/img/foto-1.webp",
-      badge: "Pendirian",
-    },
-    {
-      year: "2022",
-      period: "Chapter II: Trailblazers",
-      title: "Debut Nasional & Prestasi Pertama",
-      tagline: "Menembus Panggung Nasional GEMASTIK",
-      description:
-        "Tahun bersejarah di mana delegasi UVICS berhasil menembus babak finalis nasional GEMASTIK dan meraih juara di berbagai kompetisi inovasi perangkat lunak.",
-      achievements: [
-        "Finalis Nasional GEMASTIK Divisi Pengembangan Perangkat Lunak",
-        "Juara 1 Hackathon Teknologi Kampus Regional",
-        "Perekrutan terbuka Batch 2022 dengan peminat meningkat 300%",
-      ],
-      image: "/images/img/foto-2.webp",
-      badge: "Pencapaian Pertama",
-    },
-    {
-      year: "2023",
-      period: "Chapter III: Innovators",
-      title: "Ekspansi Divisi & Rekor Juara",
-      tagline: "Pertumbuhan Pesat Menjangkau Lintas Fakultas",
-      description:
-        "Formalisasi struktur departemen (Web Dev, Internal Dev, Editor, Competition Handler, PR) dan perolehan 15+ piala kompetisi sepanjang tahun.",
-      achievements: [
-        "15+ Penghargaan Kompetisi Nasional & Regional",
-        "Peluncuran 8 prototipe sistem terapan kampus",
-        "Penyelenggaraan workshop teknologi dengan 250+ partisipan",
-      ],
-      image: "/images/img/foto-10.webp",
-      badge: "Tahun Ekspansi",
-    },
-    {
-      year: "2024",
-      period: "Chapter IV: Vanguard",
-      title: "Penguatan Riset AI & Kemitraan Eksternal",
-      tagline: "Mengadopsi AI, Cloud, dan Kolaborasi Industri",
-      description:
-        "Integrasi fokus baru pada artificial intelligence, cloud architecture, dan pembentukan jejaring kemitraan dengan alumni industri teknologi ternama.",
-      achievements: [
-        "Juara 2 Nasional Kategori Data Mining & AI Solution",
-        "Kemitraan strategis dengan beberapa komunitas developer",
-        "Inkubasi portal web resmi dan sistem organisasi terpadu",
-      ],
-      image: "/images/img/foto-14.webp",
-      badge: "Akselerasi AI",
-    },
-    {
-      year: "2025/2026",
-      period: "Chapter V: Sinergi Virtu",
-      title: "Era Baru: Platform Terpadu & Standar Global",
-      tagline: "Menuju Reputasi Internasional yang Berkelanjutan",
-      description:
-        "Di bawah Kabinet Sinergi Virtu, UVICS memantapkan tata kelola organisasi modern, peluncuran web platform terintegrasi, dan persiapan delegasi internasional.",
-      achievements: [
-        "Pembangunan UVICS Digital Platform (CMS, Registrasi, Direktori)",
-        "Target ekspansi delegasi kompetisi ICPC Asia Regional",
-        "Ekosistem inkubasi proyek berkelanjutan berbasis open-source",
-      ],
-      image: "/images/img/foto-16.webp",
-      badge: "Masa Kini & Masa Depan",
-    },
-  ],
-  principles: [
-    {
-      id: "pr-1",
-      title: "Virtue Before Algorithm",
-      description:
-        "Keahlian teknis adalah alat, namun karakter kebajikan adalah kompas yang menentukan apakah alat tersebut membawa kebaikan atau kehancuran.",
-      quote: "Bukan hanya menjadi programmer yang mahir, tetapi menjadi insan komputasi yang berakhlak mulia.",
-    },
-    {
-      id: "pr-2",
-      title: "Relentless Preparation",
-      description:
-        "Kemenangan di atas panggung adalah hasil dari ratusan jam pemecahan masalah dalam hening, iterasi tanpa henti, dan kedisiplinan diri.",
-      quote: "Keberuntungan dalam kompetisi hanyalah ketika persiapan matang bertemu dengan peluang yang terbuka.",
-    },
-    {
-      id: "pr-3",
-      title: "Servant Leadership in Tech",
-      description:
-        "Semakin tinggi ilmu dan kemampuan teknis yang diraih, semakin besar tanggung jawab kami untuk melayani kampus dan masyarakat.",
-      quote: "Karya terbesar kami adalah karya yang meringankan beban orang lain.",
-    },
-  ],
+  mission: {
+    eyebrow: "Misi",
+    title: "Misi UVICS",
+    description: "Lima langkah yang kami jalankan di setiap periode kepengurusan.",
+    items: [
+      {
+        number: "01",
+        title: "Menyiapkan delegasi kompetisi nasional dan internasional",
+        description:
+          "Menyelenggarakan seleksi, simulasi kompetisi, bimbingan berkala, dan pendampingan mentor agar mahasiswa Universitas Klabat berprestasi di ajang sains dan teknologi.",
+        points: [
+          "Simulasi berkala dengan standar GEMASTIK, ICPC, dan LIDM",
+          "Pendampingan oleh alumni pemenang lomba dan dosen pembimbing",
+          "Bank soal, studi kasus, dan workshop algoritma lanjutan",
+        ],
+        iconName: "Target",
+      },
+      {
+        number: "02",
+        title: "Mengembangkan produk digital dan rekayasa terapan",
+        description:
+          "Memfasilitasi anggota merancang, membangun, dan merilis produk digital yang dapat diuji oleh warga kampus maupun publik sebagai portofolio.",
+        points: [
+          "Kolaborasi lintas peran: software engineer, UI/UX, QA, dan project manager",
+          "Penerapan teknologi modern seperti Next.js, TypeScript, dan Supabase",
+          "Praktik clean code dan keamanan data",
+        ],
+        iconName: "Cpu",
+      },
+      {
+        number: "03",
+        title: "Membangun budaya belajar berkelanjutan",
+        description:
+          "Menyelenggarakan workshop berkala, tech talk, peer mentoring mingguan, dan dokumentasi pengetahuan untuk kepengurusan berikutnya.",
+        points: [
+          "Workshop internal dua minggu sekali",
+          "Program pendampingan anggota baru",
+          "Repositori riset dan dokumentasi proyek yang terbuka",
+        ],
+        iconName: "GraduationCap",
+      },
+      {
+        number: "04",
+        title: "Menguatkan karakter, integritas, dan etika",
+        description:
+          "Menanamkan kejujuran, sportivitas, kerendahan hati, dan semangat pelayanan Kristiani dalam kepengurusan, perlombaan, dan karya.",
+        points: [
+          "Kode etik tentang orisinalitas karya dan anti-plagiarisme",
+          "Refleksi berkala dan persekutuan doa",
+          "Melayani almamater Universitas Klabat dengan integritas",
+        ],
+        iconName: "Scale",
+      },
+      {
+        number: "05",
+        title: "Menjalin kemitraan dengan industri dan komunitas",
+        description:
+          "Membangun kerja sama dengan perusahaan teknologi, startup, komunitas open source, dan alumni untuk membuka peluang magang dan karier.",
+        points: [
+          "Kunjungan industri dan sesi berbagi bersama praktisi",
+          "Acara bersama komunitas developer Sulawesi Utara",
+          "Jejaring karier bagi alumni",
+        ],
+        iconName: "Network",
+      },
+    ],
+  },
+  principles: {
+    eyebrow: "Prinsip",
+    title: "Prinsip yang menopang program kami",
+    description: "Fondasi moral yang menjaga setiap program kerja tetap bernilai dan bermakna.",
+    items: [
+      {
+        id: "pr-virtue",
+        title: "Kebajikan sebelum algoritma",
+        description:
+          "Keahlian teknis adalah alat, sedangkan karakter menentukan apakah alat itu membawa kebaikan.",
+        quote: "Bukan hanya menjadi programmer yang mahir, tetapi insan komputasi yang berakhlak.",
+      },
+      {
+        id: "pr-preparation",
+        title: "Persiapan yang tekun",
+        description:
+          "Kemenangan di kompetisi adalah hasil dari ratusan jam latihan, iterasi, dan disiplin diri.",
+        quote: "Keberuntungan datang ketika persiapan bertemu kesempatan.",
+      },
+      {
+        id: "pr-servant",
+        title: "Kepemimpinan yang melayani",
+        description:
+          "Semakin tinggi kemampuan teknis yang diraih, semakin besar tanggung jawab untuk melayani kampus dan masyarakat.",
+        quote: "Karya terbaik adalah karya yang meringankan beban orang lain.",
+      },
+    ],
+  },
   cta: {
-    title: "Siap Menjadi Bagian dari Perjalanan Juara UVICS?",
+    title: "Wujudkan visi ini bersama UVICS",
     description:
-      "Temukan potensi terbaikmu dalam rekayasa komputasi, asah mentalitas juara, dan bergabunglah bersama komunitas mahasiswa paling berdedikasi di Universitas Klabat.",
-    primaryBtnText: "Daftar Anggota Baru",
-    primaryBtnLink: "/join",
-    secondaryBtnText: "Lihat Departemen Kami",
-    secondaryBtnLink: "/departments",
+      "Bergabunglah dengan mahasiswa yang belajar, berkompetisi, dan berkarya dengan landasan kebajikan.",
+    primaryCta: { label: "Join UVICS", href: "/join" },
+    secondaryCta: { label: "Kembali ke Tentang UVICS", href: "/about" },
   },
 };
