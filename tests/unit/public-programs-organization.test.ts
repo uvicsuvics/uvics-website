@@ -3,7 +3,7 @@ import { UVICS_DEPARTMENTS } from "@/data/mock/departments";
 import { CURRENT_CABINET, UVICS_ORGANIZATION_PERIODS } from "@/data/mock/organization";
 import { getDepartmentBySlug, getDepartments } from "@/lib/services/departmentService";
 import { getActivePeriod, getOrganizationPeriods, getPeriodMembers } from "@/lib/services/organizationService";
-import { getPrograms } from "@/lib/services/programService";
+import { getProgramBySlug, getPrograms } from "@/lib/services/programService";
 
 describe("public programs, departments, and organization services (#25)", () => {
   it("exposes only fields that exist in the programs and departments tables", async () => {
@@ -15,6 +15,8 @@ describe("public programs, departments, and organization services (#25)", () => 
     }
     expect(await getDepartmentBySlug("software-engineering")).toMatchObject({ name: "Software Engineering" });
     expect(await getDepartmentBySlug("tidak-ada")).toBeNull();
+    expect(await getProgramBySlug("competition-mentoring")).toMatchObject({ slug: "competition-mentoring" });
+    expect(await getProgramBySlug("tidak-ada")).toBeNull();
   });
 
   it("defaults to the single ACTIVE period", async () => {

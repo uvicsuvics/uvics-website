@@ -84,6 +84,7 @@ const PROFILE_PAGES = [
   { path: "/about", title: "Tentang UVICS" },
   { path: "/vision-mission", title: "Visi & Misi | UVICS" },
   { path: "/programs", title: "Program | UVICS" },
+  { path: "/programs/competition-mentoring", title: "Competition Mentoring & Intensive Prep | Program UVICS" },
   { path: "/departments", title: "Departemen | UVICS" },
   { path: "/departments/software-engineering", title: "Software Engineering | Departemen UVICS" },
   { path: "/organization", title: "Struktur Organisasi | UVICS" },

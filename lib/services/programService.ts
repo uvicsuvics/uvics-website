@@ -4,7 +4,10 @@ import {
   type ProgramItem,
   type ProgramsPageContent,
 } from "@/data/mock/programs";
-import { applyLimit, type ListOptions } from "@/lib/services/shared";
+import { applyLimit, findBySlug, type ListOptions } from "@/lib/services/shared";
+
+export type { ProgramItem, ProgramsPageContent };
+
 
 // Sumber data sementara: mock. Lihat competitionService.ts.
 
@@ -21,6 +24,11 @@ export async function getPrograms(options: ListOptions = {}): Promise<PublicProg
   }));
 }
 
+export async function getProgramBySlug(slug: string): Promise<ProgramItem | null> {
+  return findBySlug(UVICS_PROGRAMS, slug);
+}
+
 export async function getProgramsPage(): Promise<ProgramsPageContent> {
   return UVICS_PROGRAMS_PAGE;
 }
+

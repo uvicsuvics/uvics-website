@@ -13,7 +13,7 @@ interface ProgramCardProps {
  */
 export function ProgramCard({ program, linkLabel }: ProgramCardProps) {
   return (
-    <article className="flex flex-col h-full overflow-hidden bg-white rounded-2xl border border-gray-200">
+    <article className="flex flex-col h-full overflow-hidden bg-white rounded-xl border border-gray-200">
       <div className="relative aspect-video">
         <Image
           src={program.image}

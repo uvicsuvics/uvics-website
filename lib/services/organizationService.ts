@@ -7,6 +7,8 @@ import {
 } from "@/data/mock/organization";
 import { toPublicMember, type PublicMember } from "@/lib/backend/dto";
 
+export type { OrganizationPageContent, OrganizationPeriodItem };
+
 // Sumber data sementara: mock. Lihat competitionService.ts.
 
 export async function getOrganizationPeriods(): Promise<OrganizationPeriodItem[]> {

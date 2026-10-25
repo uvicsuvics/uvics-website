@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { MemberCard } from "@/components/organization/MemberCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import type { OrganizationPeriodItem } from "@/data/mock/organization";
 import type { PublicMember } from "@/lib/backend/dto";
+import type { OrganizationPeriodItem } from "@/lib/services/organizationService";
 import { cn } from "@/lib/utils";
 
 interface OrganizationStructureProps {

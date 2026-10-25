@@ -17,7 +17,7 @@ export function MemberCard({ member }: MemberCardProps) {
     .join("");
 
   return (
-    <div className="flex items-center gap-4 h-full p-5 bg-white rounded-2xl border border-gray-200">
+    <div className="flex items-center gap-4 h-full p-5 bg-white rounded-xl border border-gray-200">
       <div className="flex shrink-0 items-center justify-center overflow-hidden w-12 h-12 font-semibold text-primary bg-primary-50 rounded-full">
         {member.photo ? (
           <CloudinaryImage asset={member.photo} alt={`Foto ${member.name}`} width={48} height={48} sizes="48px" />

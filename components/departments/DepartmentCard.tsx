@@ -37,7 +37,7 @@ export function DepartmentCard({ department, coordinator, coordinatorLabel, link
   const Icon = DEPARTMENT_ICONS[department.slug] ?? Users;
 
   return (
-    <article className="flex flex-col gap-4 h-full p-6 bg-white rounded-2xl border border-gray-200 sm:p-8">
+    <article className="flex flex-col gap-4 h-full p-6 bg-white rounded-xl border border-gray-200 sm:p-8">
       <span className="flex items-center justify-center w-11 h-11 text-primary bg-primary-50 rounded-xl">
         <Icon className="w-5 h-5" aria-hidden="true" />
       </span>

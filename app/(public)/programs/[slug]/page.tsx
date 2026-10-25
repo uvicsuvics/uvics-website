@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
@@ -13,7 +14,7 @@ import {
   CheckCircle2,
   Clock,
 } from "lucide-react";
-import { UVICS_PROGRAMS, ProgramItem } from "@/data/mock/programs";
+import { getProgramBySlug, getPrograms, type ProgramItem } from "@/lib/services/programService";
 import { Button } from "@/components/ui/Button";
 
 interface PageProps {
@@ -33,31 +34,32 @@ const PROGRAM_ICONS: Record<
 };
 
 export async function generateStaticParams() {
-  return UVICS_PROGRAMS.map((item) => ({
+  const programs = await getPrograms();
+  return programs.map((item) => ({
     slug: item.slug,
   }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const program = UVICS_PROGRAMS.find((p) => p.slug === slug);
+  const program = await getProgramBySlug(slug);
 
   if (!program) {
     return {
-      title: "Program Tidak Ditemukan | UVICS UNKLAB",
+      title: "Program Tidak Ditemukan | UVICS",
       description: "Informasi program kerja yang dicari tidak tersedia.",
     };
   }
 
   return {
-    title: `${program.title} | Program Kerja UVICS UNKLAB`,
+    title: `${program.title} | Program UVICS`,
     description: program.description,
   };
 }
 
 export default async function ProgramDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const program = UVICS_PROGRAMS.find((p) => p.slug === slug);
+  const program = await getProgramBySlug(slug);
 
   if (!program) {
     notFound();
@@ -71,7 +73,7 @@ export default async function ProgramDetailPage({ params }: PageProps) {
       <div className="mb-8">
         <Link
           href="/programs"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-primary transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-primary"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Kembali ke Semua Program</span>
@@ -79,15 +81,15 @@ export default async function ProgramDetailPage({ params }: PageProps) {
       </div>
 
       {/* Header Program */}
-      <div className="p-8 sm:p-12 rounded-3xl bg-linear-to-b from-gray-50 to-white border border-gray-200 space-y-6 mb-12 shadow-xs">
+      <div className="p-6 sm:p-10 rounded-2xl bg-white border border-gray-200 space-y-6 mb-10 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary text-white flex items-center justify-center shadow-primary shrink-0">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-primary text-white flex items-center justify-center shadow-primary shrink-0">
             <IconComp className="w-8 h-8 sm:w-10 sm:h-10" />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-primary uppercase tracking-wider">
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                 Fase {program.stepNumber} • {program.category}
               </span>
             </div>
@@ -101,9 +103,23 @@ export default async function ProgramDetailPage({ params }: PageProps) {
           {program.description}
         </p>
 
+        {/* Foto Kegiatan Program */}
+        {program.image && (
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-gray-100">
+            <Image
+              src={program.image}
+              alt={`Dokumentasi kegiatan ${program.title}`}
+              fill
+              sizes="(max-width: 1024px) 100vw, 896px"
+              className="object-cover"
+              priority
+            />
+          </div>
+        )}
+
         {/* Highlight Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-gray-200">
-          <div className="p-4 rounded-xl bg-white border border-gray-100 space-y-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-gray-100">
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-1">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Frekuensi Kegiatan
             </span>
@@ -113,7 +129,7 @@ export default async function ProgramDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-white border border-gray-100 space-y-1">
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-1">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Sasaran Peserta
             </span>
@@ -126,28 +142,28 @@ export default async function ProgramDetailPage({ params }: PageProps) {
       </div>
 
       {/* Target Capaian & Panduan Partisipasi */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        <div className="p-8 rounded-3xl bg-emerald-50/40 border border-emerald-200 space-y-4">
-          <div className="flex items-center gap-2 text-emerald-800 font-bold text-base font-heading">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div className="p-6 sm:p-8 rounded-xl bg-white border border-gray-200 space-y-4">
+          <div className="flex items-center gap-2 text-primary font-bold text-base font-heading">
+            <CheckCircle2 className="w-5 h-5 text-primary" />
             <span>Output & Tolok Ukur Keberhasilan</span>
           </div>
           <p className="text-sm text-gray-700 leading-relaxed font-medium">
             {program.keyOutput}
           </p>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-500">
             Setiap peserta yang menuntaskan program ini memperoleh rekam jejak portofolio terverifikasi dan sertifikasi kegiatan dari UVICS FIK UNKLAB.
           </p>
         </div>
 
-        <div className="p-8 rounded-3xl bg-primary-50/40 border border-primary-200 space-y-4">
+        <div className="p-6 sm:p-8 rounded-xl bg-primary-50/50 border border-primary-200 space-y-4">
           <div className="text-primary font-bold text-base font-heading">
             <span>Cara Berpartisipasi</span>
           </div>
           <p className="text-sm text-gray-700 leading-relaxed">
             Program ini terbuka untuk seluruh anggota aktif UVICS. Pendaftaran dan jadwal sesi rutin diumumkan berkala melalui Discord dan grup koordinasi resmi.
           </p>
-          <Button variant="primary" size="md" href="/join" className="w-full text-xs">
+          <Button variant="primary" size="md" href="/join" className="w-full">
             <span>Gabung UVICS Sekarang</span>
           </Button>
         </div>
