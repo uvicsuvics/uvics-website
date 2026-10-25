@@ -1,6 +1,6 @@
 # Catatan Keputusan UVICS
 
-**Diperbarui:** 21 Oktober 2026
+**Diperbarui:** 25 Oktober 2026
 **Rujukan:** [PRD](PRD.md) · [Spesifikasi halaman publik](UVICS_Public_Website_Page_Specification.md) · [Tech stack](TECH_STACK.md) · [Kontrak backend](BACKEND_CONVENTIONS.md)
 
 Dokumen ini adalah satu-satunya tempat mencatat keputusan produk, data, dan teknis yang tidak tertulis jelas di PRD atau spesifikasi. Jika PRD, spesifikasi, dan dokumen ini berbeda, keputusan berstatus **Diterima** di sini yang berlaku sampai PRD diperbarui.
@@ -55,9 +55,10 @@ Keputusan berikut menjawab pertanyaan PRD §79 atau bagian PRD yang ambigu, dan 
 | D16 | `development` adalah branch integrasi; `main` adalah branch rilis. Detail di [workflow pengembangan](DEVELOPMENT_WORKFLOW.md). | — | Sejak 4 Oktober 2026 |
 | D17 | Visibilitas konten publik memakai `content_status` (`DRAFT/PUBLISHED/ARCHIVED`, default `DRAFT`), terpisah dari lifecycle. `competitions`, `achievements`, dan `projects` memakai kolom `publication_status`; lifecycle tetap kolom `status` (`competition_status`, `project_status`). `achievements.published` tidak dipakai. Lifecycle `ARCHIVED` pada project berarti proyek tidak lagi dikelola dan tetap tampil bila `PUBLISHED`. Lifecycle dihitung dari tanggal belum diputuskan (T06). | §17–19, §60 butir 12 (dari U06) | #20 |
 | D18 | `achievement_members` dan `project_members` memakai `member_id` nullable (FK ke `members`, `on delete restrict`) dan `member_name` nullable untuk peserta non-member; minimal salah satu terisi, satu member sekali per induk. Nama member tertaut tampil publik hanya lewat proyeksi D02. | §18, §19, Q10, Q11 (dari U07) | #20 |
-| D19 | Visi & Misi punya halaman sendiri `/vision-mission`. Navbar menautkan ke route ini, bukan `/about#visi-misi`. | Spesifikasi §6 (dari U10) | Belum: PR #18 (#3); tautan navbar di `config/public-navigation.ts` |
+| D19 | Visi & Misi punya halaman sendiri `/vision-mission`. Navbar menautkan ke route ini, bukan `/about#visi-misi`. | Spesifikasi §6 (dari U10) | #18 (`config/public-navigation.ts`) |
 | D20 | `competitions.level` dan `achievements.level` (nullable) memakai enum `public.content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL`. Label tampilan dipetakan di frontend. Setelah migration diterapkan ke hosted, perubahan nilai butuh migration baru. | Kontrak awal #11, review PR #20 M2 (dari U17) | #36 (`20261004080000_content_foundation.sql`); pemetaan label FE di #26 |
 | D21 | `certificate_file` disimpan di `achievement_certificates` yang hanya terbaca admin aktif. `member_id` pada konten `PUBLISHED` tetap terbaca `authenticated` non-admin sebagai risiko yang diterima sementara (UUID tanpa data pribadi; signup publik mati, D08) dan ditutup lewat RPC/view admin saat mutasi admin konten dibangun. `anon` tidak bisa membaca `member_id`. | Review PR #20 M4 (dari U18) | #36 |
+| D22 | *Achievers Guidebook* 2026 (Main Rules Batch 3.5) adalah sumber resmi konten organisasi: identitas, visi, misi, culture & value, struktur, departemen, program, dan ketentuan keanggotaan. Ringkasannya ada di PRD §9.1, §12.1, §13, §14, §21A, dan §31. Konten lain (sejarah selain tahun berdiri 2024, tonggak, statistik) tidak boleh dikarang sampai ada data resmi. Aturan internal guidebook tidak dipublikasikan. | Guidebook diserahkan pengguna, 25 Oktober 2026 | Dokumen (PRD v1.2, spesifikasi). Mock data dan konten halaman publik belum diselaraskan. |
 
 ## C. Usulan yang menunggu keputusan PM
 
@@ -84,8 +85,8 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 
 ### U01 — Pengurus inti tanpa departemen
 
-- **Masalah:** Presiden, Wakil, Sekretaris, dan Bendahara tidak berada di departemen, tetapi `membership_histories.department_id` bersifat `not null`.
-- **Bukti:** PRD §13 (contoh struktur) dan US-ORG-02 ("department dipilih jika applicable") · `20260922110000_organization_foundation.sql`.
+- **Masalah:** President, Treasurer, dan Secretary (core team) tidak berada di departemen, tetapi `membership_histories.department_id` bersifat `not null`. Struktur resmi tidak punya posisi Wakil Ketua.
+- **Bukti:** PRD §13 (struktur resmi dari guidebook: core team di atas lima departemen) dan US-ORG-02 ("department dipilih jika applicable") · `20260922110000_organization_foundation.sql`.
 - **Rekomendasi:** Migration baru yang membuat `department_id` nullable. Validasi di RPC penempatan: posisi level inti boleh tanpa departemen, posisi lain wajib.
 - **Owner:** Andi (#29).
 
@@ -110,13 +111,14 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 ### U05 — Field Programs
 
 - **Masalah:** Programs ada di IA dan spesifikasi (§11 halaman Programs), tabel `programs` sudah ada, tetapi PRD tidak punya modulnya. Spesifikasi meminta kategori, ikon, dan relasi departemen yang tidak ada di tabel.
-- **Rekomendasi:** PRD v1.1 mendokumentasikan tabel yang ada (§21A). Tambahan kolom diputuskan berdasarkan elemen yang benar-benar dirender halaman #25, lalu dibuat lewat migration baru.
+- **Rekomendasi:** PRD v1.1 mendokumentasikan tabel yang ada (§21A). Tambahan kolom diputuskan berdasarkan elemen yang benar-benar dirender halaman #25, lalu dibuat lewat migration baru. Guidebook 2026 menetapkan pengelola tiap program per departemen (PRD §21A), jadi relasi program–departemen adalah kandidat kolom pertama.
 - **Owner:** Jofan (#30).
 
 ### U08 — Level posisi
 
 - **Masalah:** `positions.level` berupa teks bebas, sementara spesifikasi membedakan pengurus inti, koordinator, dan anggota.
-- **Rekomendasi:** Nilai tetap `CORE`, `COORDINATOR`, `MEMBER` dengan check constraint; urutan tampilan memakai `display_order`.
+- **Bukti:** Guidebook 2026 memakai hierarki Advisor → President → core team (Treasurer, Secretary) → Steering Helper → Koordinator → PIC → Anggota (PRD §31).
+- **Rekomendasi:** Nilai tetap dengan check constraint yang mengikuti hierarki itu, mis. `ADVISOR`, `CORE`, `STEERING_HELPER`, `COORDINATOR`, `PIC`, `MEMBER`; urutan tampilan memakai `display_order`.
 
 ### U09 — Route berita dan route template
 
@@ -181,3 +183,5 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 | T04 | Apakah diperlukan newsletter? | Q18 | Tidak ada di cakupan MVP. |
 | T05 | Field registration tambahan PRD §22.2 (gender, semester, interest, persetujuan data) disimpan atau tidak? | Q3 | Perlu diputuskan sebelum #28. |
 | T06 | Apakah lifecycle competition dan event dihitung dari tanggal, dan kapan admin boleh menimpanya? | Sisa U06 | Saat ini lifecycle disimpan dan diisi admin. |
+| T07 | Apa status **Internal Development** (KABEL, Bonding, Champion of Change) dan **Officer** (UVICS Impact, UVICS Vibes, Perlombaan)? Keduanya ada di halaman "Departemen & Program" guidebook, tetapi bagan struktur hanya memuat Public Relations, External Affairs, Web Development, Competition Handler, dan Editor. Apa program dan deskripsi External Affairs? Apakah Advisor ditampilkan di halaman publik? | Achievers Guidebook 2026 (D22) | Sampai diputuskan, halaman publik hanya menampilkan lima departemen di bagan dan tidak menampilkan Advisor. |
+| T08 | Apakah label Culture & Value ditampilkan dalam bahasa Inggris seperti di guidebook atau diterjemahkan (U16)? Ejaan "Transparant" dan "Willing to Learned" dikoreksi menjadi "Transparent" dan "Willing to Learn" di PRD §12.1; apakah koreksi ini disetujui? | Achievers Guidebook 2026 (D22) | PRD memakai ejaan terkoreksi. |
