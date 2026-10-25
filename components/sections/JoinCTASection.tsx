@@ -151,11 +151,11 @@ export function JoinCTASection({
             <ul className="text-xs text-gray-600 space-y-2">
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                Mahasiswa aktif Fakultas Ilmu Komputer (Informatika / SI)
+                Mahasiswa aktif Universitas Klabat dari semua jurusan
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                Memiliki komitmen belajar & mengikuti rangkaian kegiatan riset
+                Bersedia menjalani masa jabatan 2 semester atau 1 tahun
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />

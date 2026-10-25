@@ -18,18 +18,19 @@ export interface RecruitmentInfo {
 export const CURRENT_RECRUITMENT: RecruitmentInfo = {
   status: "open",
   batchName: "Batch 2026 / 2027",
-  headline: "Siap Menjadi Bagian dari Inovasi Teknologi UVICS?",
+  headline: "Be an Achiever, Carve Your Future",
   subheadline:
-    "Buka jalan menuju podium kompetisi nasional, riset berdampak, dan jaringan profesional komputasi terdepan di Universitas Klabat.",
-  targetAudience: "Terbuka bagi mahasiswa aktif Fakultas Ilmu Komputer UNKLAB",
+    "Bergabung dengan mahasiswa dari berbagai jurusan untuk bertumbuh, berkolaborasi, dan berprestasi bersama di perlombaan.",
+  targetAudience: "Terbuka bagi mahasiswa Universitas Klabat dari berbagai tingkat dan jurusan",
   deadlineText: "Pendaftaran ditutup pada 15 Oktober 2026",
   registrationUrl: "/join",
   guidebookUrl: "https://uvics.org/guidebook-recruitment-2026.pdf",
+  // Hak anggota menurut Achievers Guidebook 2026 (spesifikasi halaman Join, PRD §9.1).
   benefits: [
-    "Mentoring intensif persiapan kompetisi nasional (GEMASTIK, PKM, Hackathon)",
-    "Akses laboratorium riset & kolaborasi proyek riil berbasis portofolio",
-    "Jaringan alumni engineer di berbagai startup & tech corporate ternama",
-    "Sertifikasi dan pengakuan resmi aktivitas kemahasiswaan FIK UNKLAB",
+    "Sertifikat keanggotaan setelah menyelesaikan minimal satu proyek bersama UVICS",
+    "Prestasi lomba dapat diunggah di Instagram UVICS sebagai portofolio",
+    "Pendampingan lomba (Mentor Community) dan pencarian lomba (Competition Finder)",
+    "Bebas memilih ikut lomba atau tidak, dan tidak ada kegiatan organisasi pada masa ujian",
   ],
   steps: [
     {
