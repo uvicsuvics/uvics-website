@@ -83,6 +83,10 @@ for (const width of [390, 1280]) {
 const PROFILE_PAGES = [
   { path: "/about", title: "Tentang UVICS" },
   { path: "/vision-mission", title: "Visi & Misi | UVICS" },
+  { path: "/programs", title: "Program | UVICS" },
+  { path: "/departments", title: "Departemen | UVICS" },
+  { path: "/departments/software-engineering", title: "Software Engineering | Departemen UVICS" },
+  { path: "/organization", title: "Struktur Organisasi | UVICS" },
 ];
 
 for (const { path, title } of PROFILE_PAGES) {

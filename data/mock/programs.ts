@@ -1,3 +1,5 @@
+import type { ClosingCtaContent, PageHeroContent, PageMeta, SectionHeading } from "@/data/mock/about";
+
 export interface ProgramItem {
   id: string;
   slug: string;
@@ -11,6 +13,8 @@ export interface ProgramItem {
   targetAudience: string;
   badgeText?: string;
   stepNumber: string;
+  /** Kolom `programs.image`. */
+  image: string;
 }
 
 export const UVICS_PROGRAMS: ProgramItem[] = [
@@ -27,6 +31,7 @@ export const UVICS_PROGRAMS: ProgramItem[] = [
     targetAudience: "Delegasi Lomba & Anggota Tertarik Kompetisi",
     badgeText: "Program Unggulan",
     stepNumber: "01",
+    image: "/images/img/foto-1.webp",
   },
   {
     id: "prog-internal-workshops",
@@ -41,6 +46,7 @@ export const UVICS_PROGRAMS: ProgramItem[] = [
     targetAudience: "Seluruh Anggota Aktif Lintas Angkatan",
     badgeText: "Eksplorasi Skill",
     stepNumber: "02",
+    image: "/images/img/foto-3.webp",
   },
   {
     id: "prog-project-incubation",
@@ -55,6 +61,7 @@ export const UVICS_PROGRAMS: ProgramItem[] = [
     targetAudience: "Tim Multi-Disiplin Departemen",
     badgeText: "Produk Nyata",
     stepNumber: "03",
+    image: "/images/img/foto-5.webp",
   },
   {
     id: "prog-showcase-days",
@@ -69,6 +76,7 @@ export const UVICS_PROGRAMS: ProgramItem[] = [
     targetAudience: "Sivitas Akademika UNKLAB & Publik",
     badgeText: "Eksibisi Publik",
     stepNumber: "04",
+    image: "/images/img/foto-14.webp",
   },
   {
     id: "prog-comp-intelligence",
@@ -83,6 +91,7 @@ export const UVICS_PROGRAMS: ProgramItem[] = [
     targetAudience: "Seluruh Mahasiswa Fakultas Ilmu Komputer",
     badgeText: "Informasi Lomba",
     stepNumber: "05",
+    image: "/images/img/foto-10.webp",
   },
   {
     id: "prog-community-talks",
@@ -97,5 +106,45 @@ export const UVICS_PROGRAMS: ProgramItem[] = [
     targetAudience: "Anggota, Alumni, & Mahasiswa Baru",
     badgeText: "Jejaring & Karier",
     stepNumber: "06",
+    image: "/images/img/foto-13.webp",
   },
 ];
+
+export interface ProgramsPageContent {
+  meta: PageMeta;
+  hero: PageHeroContent;
+  list: SectionHeading & { linkLabel: string; emptyMessage: string };
+  cta: ClosingCtaContent;
+}
+
+export const UVICS_PROGRAMS_PAGE: ProgramsPageContent = {
+  meta: {
+    title: "Program | UVICS",
+    description:
+      "Program pembinaan UVICS: pendampingan kompetisi, workshop teknologi, inkubasi proyek, dan kegiatan komunitas.",
+  },
+  hero: {
+    title: "Program Kerja",
+    titleHighlight: "UVICS",
+    description:
+      "Kegiatan rutin yang membina kemampuan teknis, kolaborasi, dan kesiapan kompetisi anggota UVICS.",
+    image: {
+      src: "/images/img/foto-4.webp",
+      alt: "Anggota UVICS berfoto bersama di halaman rumput kampus Universitas Klabat",
+    },
+  },
+  list: {
+    title: "Program yang kami",
+    titleHighlight: "jalankan",
+    description:
+      "Setiap program berjalan berkesinambungan, dari penguatan dasar hingga persiapan kompetisi dan proyek nyata.",
+    linkLabel: "Lihat program",
+    emptyMessage: "Belum ada program yang tersedia saat ini.",
+  },
+  cta: {
+    title: "Ingin ikut program UVICS?",
+    description: "Bergabunglah sebagai anggota untuk mengikuti program pembinaan dan kegiatan departemen.",
+    primaryCta: { label: "Join UVICS", href: "/join" },
+    secondaryCta: { label: "Lihat departemen", href: "/departments" },
+  },
+};
