@@ -12,8 +12,17 @@ import { OrganizationPreviewSection } from "@/components/sections/OrganizationPr
 import { PartnersSection } from "@/components/sections/PartnersSection";
 import { GallerySection } from "@/components/sections/GallerySection";
 import { JoinCTASection } from "@/components/sections/JoinCTASection";
+import { getAchievements } from "@/lib/services/achievementService";
+import { getCompetitions } from "@/lib/services/competitionService";
+import { getProjects } from "@/lib/services/projectService";
 
-export default function Home() {
+export default async function Home() {
+  const [competitions, projects, achievements] = await Promise.all([
+    getCompetitions(),
+    getProjects(),
+    getAchievements(),
+  ]);
+
   return (
     <div className="min-h-screen">
       {/* Seksi 01: Hero Section */}
@@ -32,16 +41,16 @@ export default function Home() {
       <ProgramsSection />
 
       {/* Seksi 06: Featured Competitions */}
-      <CompetitionsSection />
+      <CompetitionsSection competitions={competitions} />
 
       {/* Seksi 07: Upcoming Events */}
       <EventsSection />
 
       {/* Seksi 08: Featured Projects */}
-      <ProjectsSection />
+      <ProjectsSection projects={projects} />
 
       {/* Seksi 09: Latest Achievements */}
-      <AchievementsSection />
+      <AchievementsSection achievements={achievements} />
 
       {/* Seksi 10: Latest News */}
       <NewsSection />

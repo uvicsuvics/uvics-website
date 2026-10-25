@@ -48,6 +48,7 @@ flowchart LR
 | `lib/supabase/` | Client `browser`, `server` (sesi pengguna), dan `service` (khusus operasi server tertentu) |
 | `lib/media/` | Kebijakan kategori, intent upload, integrasi Cloudinary, publikasi |
 | `lib/env/` | Pembacaan environment publik dan server |
+| `lib/services/` | Fungsi pengambil data untuk halaman publik; sumbernya mock sampai diganti Supabase ([konvensi frontend](frontend-convention.md)) |
 | `data/`, `lib/mock-data/` | Data mock sementara; diganti data Supabase selama Sprint 2 |
 | `supabase/migrations/` | Seluruh schema, RLS, dan fungsi SQL |
 | `scripts/` | Tooling operator: migrate, provisioning admin, generate types, seed, test DB |

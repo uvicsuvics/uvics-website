@@ -5,10 +5,37 @@ vi.mock("@/lib/env/server", () => ({
   rateNamespace: () => "test",
   serviceKey: () => "synthetic-hmac-key",
 }));
-import { consumeLimit, limitLogin } from "@/lib/backend/rate-limit";
+import {
+  consumeLimit,
+  limitLogin,
+  limitRegistration,
+} from "@/lib/backend/rate-limit";
 
 describe("limiter failure policy", () => {
   beforeEach(() => rpc.mockReset());
+  it("consumes both registration buckets without leaking identity", async () => {
+    rpc.mockResolvedValue({
+      data: { allowed: true, remaining: 4, retry_after_seconds: 10 },
+      error: null,
+    });
+    await limitRegistration("synthetic@example.invalid", "203.0.113.5");
+    const args = rpc.mock.calls.map((call) => call[1]);
+    expect(args.map((a) => a.p_operation).sort()).toEqual([
+      "registration_email_ip",
+      "registration_ip",
+    ]);
+    expect(JSON.stringify(args)).not.toContain("synthetic@example.invalid");
+  });
+  it("reports registration limiter outage as SERVICE_UNAVAILABLE", async () => {
+    rpc.mockResolvedValueOnce({
+      data: { allowed: false, remaining: 0, retry_after_seconds: 12 },
+      error: null,
+    });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: "timeout" } });
+    await expect(
+      limitRegistration("a@example.invalid", "local"),
+    ).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+  });
   it("consumes both independent login buckets without leaking identity into storage", async () => {
     rpc.mockResolvedValue({
       data: { allowed: true, remaining: 4, retry_after_seconds: 10 },

@@ -30,9 +30,11 @@ Dokumentasi design system resmi untuk website ini. Semua komponen, warna, tipogr
 | `--color-primary`   | `#0230a7` | `rgb(2, 48, 167)`    | CTA utama, tombol primer, link aktif, header      |
 | `--color-secondary` | `#ffd000` | `rgb(255, 208, 0)`   | Badge, highlight, elemen aksen pendukung          |
 | `--color-accent`    | `#0066ff` | `rgb(0, 102, 255)`   | Hover state, ikon interaktif, progress bar        |
-| `--color-base`      | `#ffffff` | `rgb(255, 255, 255)` | Background utama, teks pada background gelap      |
+| `--color-surface`   | `#ffffff` | `rgb(255, 255, 255)` | Background utama, teks pada background gelap      |
 | `--color-muted`     | `#f0f0f0` | `rgb(240, 240, 240)` | Background section alternatif, divider, input bg  |
 | `--color-card`      | `#ffffff` | `rgb(255, 255, 255)` | Background card, modal, dropdown                  |
+
+> Jangan beri nama token warna yang sama dengan skala font (`base`, `sm`, `lg`, `xl`, …). Di Tailwind v4, `--color-base` membuat `text-base` menjadi utilitas warna, bukan ukuran font.
 
 ### Color Shades (Tints & Shades)
 
@@ -435,7 +437,7 @@ Padding Y     : 64px - 96px
   --color-primary:   #0230a7;
   --color-secondary: #ffd000;
   --color-accent:    #0066ff;
-  --color-base:      #ffffff;
+  --color-surface:   #ffffff;
   --color-muted:     #f0f0f0;
   --color-card:      #ffffff;
 

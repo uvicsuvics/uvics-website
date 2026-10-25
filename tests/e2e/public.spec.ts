@@ -79,3 +79,52 @@ for (const width of [390, 1280]) {
     expect(errors).toEqual([]);
   });
 }
+
+const PROFILE_PAGES = [
+  { path: "/about", title: "Tentang UVICS" },
+  { path: "/vision-mission", title: "Visi & Misi | UVICS" },
+];
+
+for (const { path, title } of PROFILE_PAGES) {
+  for (const width of [390, 1280]) {
+    test(`${path} keeps its hero below the fixed navbar at ${width}px`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto(path);
+      await expect(page).toHaveTitle(title);
+      await expect(page.locator("main")).toHaveCount(1);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+      const navBottom = await page
+        .locator("header, nav")
+        .first()
+        .evaluate((element) => element.getBoundingClientRect().bottom);
+      // Teks pertama hero (badge/eyebrow) yang dulu tertutup navbar fixed.
+      const firstText = page.locator("main").locator("h1, p, span").first();
+      expect((await firstText.boundingBox())?.y).toBeGreaterThan(navBottom);
+      await expect(page.locator('a[href="/vision-mission"]').first()).toBeAttached();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true);
+      expect(errors).toEqual([]);
+    });
+  }
+}
+
+test("public navigation: /join shows closed registration when settings are unavailable", async ({
+  page,
+}) => {
+  await page.goto("/join");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Join UVICS" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Pendaftaran sedang ditutup. Ikuti media sosial UVICS untuk informasi rekrutmen berikutnya.",
+    ),
+  ).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "NIM" })).toHaveCount(0);
+});
