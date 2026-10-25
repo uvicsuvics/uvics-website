@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/components/sections/PageHero";
+import { CultureValueSection } from "@/components/sections/about/AboutSections";
 import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
-import {
-  MissionSection,
-  PrinciplesSection,
-  VisionSection,
-} from "@/components/sections/about/VisionMissionSections";
+import { MissionSection, VisionSection } from "@/components/sections/about/VisionMissionSections";
 import { getVisionMissionContent } from "@/lib/services/aboutService";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -21,7 +18,7 @@ export default async function VisionMissionPage() {
       <PageHero hero={content.hero} />
       <VisionSection vision={content.vision} />
       <MissionSection mission={content.mission} />
-      <PrinciplesSection principles={content.principles} />
+      <CultureValueSection content={content.principles} />
       <ClosingCtaSection cta={content.cta} />
     </div>
   );

@@ -14,14 +14,21 @@ import { GallerySection } from "@/components/sections/GallerySection";
 import { JoinCTASection } from "@/components/sections/JoinCTASection";
 import { getAchievements } from "@/lib/services/achievementService";
 import { getCompetitions } from "@/lib/services/competitionService";
+import { getDepartments } from "@/lib/services/departmentService";
+import { getActivePeriod, getCoreTeam } from "@/lib/services/organizationService";
+import { getPrograms } from "@/lib/services/programService";
 import { getProjects } from "@/lib/services/projectService";
 
 export default async function Home() {
-  const [competitions, projects, achievements] = await Promise.all([
+  const [competitions, projects, achievements, departments, programs, activePeriod] = await Promise.all([
     getCompetitions(),
     getProjects(),
     getAchievements(),
+    getDepartments(),
+    getPrograms({ limit: 6 }),
+    getActivePeriod(),
   ]);
+  const coreTeam = activePeriod ? await getCoreTeam(activePeriod.id) : [];
 
   return (
     <div className="min-h-screen">
@@ -35,10 +42,10 @@ export default async function Home() {
       <GlanceSection />
 
       {/* Seksi 04: Departments Preview */}
-      <DepartmentsSection />
+      <DepartmentsSection departments={departments} />
 
       {/* Seksi 05: Programs / What We Do */}
-      <ProgramsSection />
+      <ProgramsSection programs={programs} />
 
       {/* Seksi 06: Featured Competitions */}
       <CompetitionsSection competitions={competitions} />
@@ -56,7 +63,7 @@ export default async function Home() {
       <NewsSection />
 
       {/* Seksi 11: Current Organization Preview */}
-      <OrganizationPreviewSection />
+      <OrganizationPreviewSection periodName={activePeriod?.name} coreTeam={coreTeam} />
 
       {/* Seksi 12: Partners & Collaborator Network */}
       <PartnersSection />

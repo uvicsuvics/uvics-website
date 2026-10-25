@@ -3,10 +3,9 @@ import { PageHero } from "@/components/sections/PageHero";
 import {
   AboutActivitiesSection,
   AboutHistorySection,
-  AboutMilestonesSection,
   AboutOverviewSection,
-  AboutValuesSection,
   AboutVisionMissionSection,
+  CultureValueSection,
 } from "@/components/sections/about/AboutSections";
 import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
 import { getAboutContent, getVisionMissionContent } from "@/lib/services/aboutService";
@@ -29,9 +28,8 @@ export default async function AboutPage() {
         vision={visionMission.vision}
         mission={visionMission.mission}
       />
-      <AboutValuesSection values={about.values} />
+      <CultureValueSection content={about.values} muted />
       <AboutActivitiesSection activities={about.activities} />
-      <AboutMilestonesSection milestones={about.milestones} />
       <ClosingCtaSection cta={about.cta} />
     </div>
   );
