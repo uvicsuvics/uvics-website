@@ -57,6 +57,36 @@ describe("organization profile follows the Achievers Guidebook 2026 (D22)", () =
     ]);
   });
 
+  it("lists exactly the seventeen official programs, with the homepage six first (PRD §21A)", async () => {
+    const homepage = [
+      "Mentor Community",
+      "Competition Finder",
+      "KABEL (Kamar Belajar)",
+      "UVICS Vibes",
+      "UVICS Impact",
+      "DevHub",
+    ];
+    const titles = (await getPrograms()).map((program) => program.title);
+    expect(titles.slice(0, 6)).toEqual(homepage);
+    expect([...titles].sort()).toEqual(
+      [
+        ...homepage,
+        "UVICS Activity Content",
+        "Educational Content",
+        "Fun Trends Content",
+        "Interact with Followers",
+        "Content Summary",
+        "Template",
+        "Editing & Documentation",
+        "Website Building",
+        "Bonding",
+        "Champion of Change (CoC)",
+        "Perlombaan",
+      ].sort(),
+    );
+    expect((await getPrograms({ limit: 6 })).map((program) => program.title)).toEqual(homepage);
+  });
+
   it("uses official positions in order, with Ketua, Bendahara, and Sekretaris as the core team", async () => {
     const periodId = (await getActivePeriod())!.id;
     expect((await getCoreTeam(periodId)).map((member) => member.position)).toEqual([
