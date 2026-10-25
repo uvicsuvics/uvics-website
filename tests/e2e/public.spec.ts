@@ -20,14 +20,24 @@ for (const width of [390, 1280]) {
       await expect(page.locator("#mobile-navigation")).toHaveCount(0);
       await expect(toggle).toBeFocused();
     }
-    await page
-      .getByRole("heading", { name: "Our Memorable Moments" })
-      .scrollIntoViewIfNeeded();
-    const galleryImage = page.locator('img[alt^="UVICS Activity"]').first();
-    await expect(galleryImage).toBeVisible();
+    const primaryCta = page.getByRole("link", { name: "Jelajahi Profil Kami" });
+    const secondaryCta = page.getByRole("link", { name: "Gabung UVICS" });
+    await expect(primaryCta).toBeVisible();
+    await expect(primaryCta).toHaveAttribute("href", "#about");
+    await expect(secondaryCta).toBeVisible();
+    await expect(secondaryCta).toHaveAttribute("href", "/join");
+
+    await page.locator("#about").scrollIntoViewIfNeeded();
+    await expect(page.locator("#about")).toBeVisible();
+    const aboutBtn = page.getByRole("link", { name: "Lihat Prestasi Kami" });
+    await expect(aboutBtn).toBeVisible();
+    await expect(aboutBtn).toHaveAttribute("href", "/achievements");
+
+    const aboutImage = page.locator('img[alt="Uvics team collaboration"]').first();
+    await expect(aboutImage).toBeVisible();
     await expect
       .poll(() =>
-        galleryImage.evaluate((image: HTMLImageElement) => image.naturalWidth),
+        aboutImage.evaluate((image: HTMLImageElement) => image.naturalWidth),
       )
       .toBeGreaterThan(0);
     expect(
@@ -35,7 +45,7 @@ for (const width of [390, 1280]) {
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({ path: `.runtime/gallery-${width}.png` });
+    await page.screenshot({ path: `.runtime/homepage-${width}.png` });
 
     await page.goto("/batch?year=2024");
     await expect(

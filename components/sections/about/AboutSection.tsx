@@ -1,50 +1,49 @@
 import Image from "next/image";
 import React from "react";
 import { Button } from "@/components/ui/Button";
-import { Trophy, Users } from "lucide-react";
+import { Trophy, Users, ArrowRight } from "lucide-react";
 
 export function AboutSection() {
   return (
-    <section className="py-24 px-6 md:px-8 max-w-7xl mx-auto w-full overflow-x-clip bg-white text-gray-900">
+    <section id="about" className="py-24 px-6 md:px-8 max-w-7xl mx-auto w-full overflow-x-clip bg-white text-gray-900 scroll-mt-20">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
         {/* Left Column: Text */}
         <div className="space-y-6">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 leading-tight">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 leading-tight font-heading">
             Unklab Virtue In{" "}
             <span className="text-primary">Computer Science</span>
           </h2>
-          <p className="text-lg text-gray-600 leading-relaxed">
-            UVICS is an exclusive platform that gathers outstanding students
-            from all faculties at <strong>Universitas Klabat</strong>. Our
-            primary goal is to collaborate, innovate, and prepare the
-            campus&apos;s best talents to compete in various{" "}
-            <strong>National</strong> and <strong>International</strong> scale
-            competitions.
+          <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
+            UVICS adalah platform pengembangan talenta mahasiswa yang menghimpun
+            mahasiswa berprestasi dari seluruh program studi di <strong>Universitas Klabat</strong>.
+            Tujuan utama kami adalah berkolaborasi, berinovasi, dan mempersiapkan
+            talenta terbaik kampus untuk berkompetisi di berbagai ajang bergengsi
+            skala <strong>Nasional</strong> maupun <strong>Internasional</strong>.
           </p>
-          <ul className="space-y-4 text-gray-700 py-4">
+          <ul className="space-y-4 text-gray-700 py-2">
             <li className="flex items-start">
-              <span className="text-primary mr-3 mt-1">
+              <span className="text-primary mr-3 mt-1 shrink-0">
                 <Trophy size={20} />
               </span>
-              <span>
-                <strong>Champion Mindset:</strong> Preparing members to win
-                prestigious competitions and bring honor to our alma mater.
+              <span className="text-sm sm:text-base">
+                <strong>Mentalitas Juara:</strong> Pembinaan terstruktur dan intensif untuk
+                mencetak prestasi di kompetisi teknologi nasional dan internasional.
               </span>
             </li>
             <li className="flex items-start">
-              <span className="text-primary mr-3 mt-1">
+              <span className="text-primary mr-3 mt-1 shrink-0">
                 <Users size={20} />
               </span>
-              <span>
-                <strong>Cross-Faculty Collaboration:</strong> Uniting expertise
-                from various disciplines at Unklab to create impactful
-                solutions.
+              <span className="text-sm sm:text-base">
+                <strong>Kolaborasi Lintas Disiplin:</strong> Menyatukan ragam keahlian komputasi,
+                desain, dan logika analitis guna menghasilkan solusi digital yang berdampak nyata.
               </span>
             </li>
           </ul>
-          <div>
-            <Button variant="primary" size="lg">
-              View Our Achievements
+          <div className="pt-2">
+            <Button variant="primary" size="lg" href="/achievements" className="shadow-primary font-bold">
+              <span>Lihat Prestasi Kami</span>
+              <ArrowRight className="w-4 h-4 ml-1.5" />
             </Button>
           </div>
         </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import {
   ImageStreamHero,
   StreamImage,
@@ -11,7 +12,13 @@ interface HeroProps {
   eyebrow?: string;
   title?: string;
   subtitle?: string;
+  primaryCtaLabel?: string;
+  primaryCtaHref?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
+  /** @deprecated gunakan primaryCtaLabel */
   ctaLabel?: string;
+  /** @deprecated gunakan primaryCtaHref */
   ctaHref?: string;
 }
 
@@ -42,9 +49,15 @@ const ROTATING_PHRASES = [
 ];
 
 export function Hero({
-  ctaLabel = "Jelajahi Profil Kami",
-  ctaHref = "#about",
+  primaryCtaLabel,
+  primaryCtaHref,
+  secondaryCtaLabel = "Gabung UVICS",
+  secondaryCtaHref = "/join",
+  ctaLabel,
+  ctaHref,
 }: HeroProps) {
+  const resolvedPrimaryLabel = primaryCtaLabel ?? ctaLabel ?? "Jelajahi Profil Kami";
+  const resolvedPrimaryHref = primaryCtaHref ?? ctaHref ?? "#about";
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -108,14 +121,6 @@ export function Hero({
       {/* Background Gradient (Paling Belakang) */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_bottom,#ffffff,#ffffff_50%,var(--color-primary-50)_100%)]" />
 
-      {/* Grid BG (Di atas gradient, di bawah foto) */}
-      <div
-        className="absolute inset-0 z-[1] h-[600px] w-full 
-        bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] 
-        bg-[size:6rem_5rem] 
-        [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"
-      />
-
       {/* Animated Image Stream (Koridor tengah yang mengalir ke samping kiri dan kanan) */}
       <div className="absolute inset-0 z-10 pointer-events-none">
         <ImageStreamHero
@@ -140,22 +145,34 @@ export function Hero({
           <h1 className="text-3xl sm:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight min-h-[3rem] sm:min-h-[4rem] flex items-center justify-center flex-wrap">
             <span>{renderedPrefix}</span>
             {renderedHighlight && (
-              <span className="text-[#0230a7] ml-1">{renderedHighlight}</span>
+              <span className="text-primary ml-1">{renderedHighlight}</span>
             )}
-            <span className="inline-block w-[3px] sm:w-[4px] h-[0.85em] bg-[#0230a7] ml-1.5 align-middle animate-cursor-blink rounded-sm" />
+            <span className="inline-block w-[3px] sm:w-[4px] h-[0.85em] bg-primary ml-1.5 align-middle animate-cursor-blink rounded-sm" />
           </h1>
         </div>
       </div>
 
-      {/* Action Button (Di bagian bawah foto) */}
+      {/* Action Buttons (Di bagian bawah foto) */}
       <div className="absolute bottom-8 sm:bottom-12 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
-        <a
-          href={ctaHref}
-          className="pointer-events-auto inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold bg-[#0230a7] text-white shadow-lg shadow-[#0230a7]/25 hover:bg-[#022890] hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer border border-white/20"
-        >
-          <span>{ctaLabel}</span>
-          <ChevronRight size={15} />
-        </a>
+        <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-3">
+          <Button
+            variant="primary"
+            size="md"
+            href={resolvedPrimaryHref}
+            className="shadow-primary font-bold"
+          >
+            <span>{resolvedPrimaryLabel}</span>
+            <ArrowRight className="w-4 h-4 ml-1.5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="md"
+            href={secondaryCtaHref}
+            className="font-bold bg-white/80 backdrop-blur-xs hover:bg-white border-gray-200"
+          >
+            <span>{secondaryCtaLabel}</span>
+          </Button>
+        </div>
       </div>
     </section>
   );
