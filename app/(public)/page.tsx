@@ -10,7 +10,6 @@ import { AchievementsSection } from "@/components/sections/AchievementsSection";
 import { NewsSection } from "@/components/sections/NewsSection";
 import { OrganizationPreviewSection } from "@/components/sections/OrganizationPreviewSection";
 import { PartnersSection } from "@/components/sections/PartnersSection";
-import { GallerySection } from "@/components/sections/GallerySection";
 import { JoinCTASection } from "@/components/sections/JoinCTASection";
 import { getAchievements } from "@/lib/services/achievementService";
 import { getCompetitions } from "@/lib/services/competitionService";
@@ -60,9 +59,6 @@ export default async function Home() {
 
       {/* Seksi 12: Partners & Collaborator Network */}
       <PartnersSection />
-
-      {/* Galeri Interaktif Organisasi */}
-      <GallerySection />
 
       {/* Seksi 13: Join UVICS Final CTA */}
       <JoinCTASection />

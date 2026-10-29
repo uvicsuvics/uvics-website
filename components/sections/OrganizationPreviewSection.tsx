@@ -1,15 +1,11 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { motion } from "motion/react";
-import {
-  ArrowRight,
-} from "lucide-react";
-import { IconBrandLinkedin, IconBrandGithub } from "@tabler/icons-react";
+import { ArrowRight } from "lucide-react";
 import { CabinetPeriod, CURRENT_CABINET } from "@/data/mock/organization";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface OrganizationPreviewSectionProps {
   cabinet?: CabinetPeriod;
@@ -18,11 +14,13 @@ interface OrganizationPreviewSectionProps {
 /**
  * Seksi 11: Current Organization Preview (Executive Cabinet Leadership Cards)
  * Menampilkan 4 pilar pengurus harian (BPH: Ketua, Wakil, Sekretaris, Bendahara)
- * dengan banner periode kabinet resmi dan kartu profil kepemimpinan yang berwibawa.
+ * dengan kartu profil kepemimpinan yang berwibawa, patuh D02, dan ramah aksesibilitas.
  */
 export function OrganizationPreviewSection({
   cabinet = CURRENT_CABINET,
 }: OrganizationPreviewSectionProps) {
+  const officers = cabinet?.officers ?? [];
+
   return (
     <section className="py-24 px-6 md:px-8 max-w-7xl mx-auto w-full">
       {/* Header Seksi */}
@@ -32,7 +30,7 @@ export function OrganizationPreviewSection({
             Kepemimpinan <span className="text-primary">Periode Aktif</span>
           </h2>
           <p className="text-base text-gray-600 leading-relaxed">
-            Nakhoda {cabinet.cabinetName} ({cabinet.periodName}) yang mengawal visi riset,
+            Nakhoda {cabinet.cabinetName ? `${cabinet.cabinetName} ` : ""}({cabinet.periodName || "Periode Aktif"}) yang mengawal visi riset,
             pembinaan talenta, dan sinergi kolaborasi mahasiswa Ilmu Komputer Universitas Klabat.
           </p>
         </div>
@@ -45,88 +43,63 @@ export function OrganizationPreviewSection({
         </div>
       </div>
 
-      {/* Grid 4 Pengurus Inti (President, Vice, Secretary, Treasurer) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {cabinet.officers.map((officer, idx) => (
-          <motion.div
-            key={officer.id}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: idx * 0.1 }}
-            className="rounded-3xl bg-white border border-gray-200 overflow-hidden shadow-xs hover:shadow-lg hover:border-primary/40 transition-all duration-300 flex flex-col justify-between group"
-          >
-            <div>
-              {/* Foto Potret Pengurus */}
-              <div className="relative h-72 w-full overflow-hidden bg-gray-100">
-                <Image
-                  src={officer.image}
-                  alt={officer.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-700"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/20 to-transparent" />
+      {/* Grid 4 Pengurus Inti atau Empty State */}
+      {officers.length === 0 ? (
+        <EmptyState
+          title="Data Kepengurusan Belum Tersedia"
+          message="Informasi kepengurusan pimpinan aktif untuk periode ini belum dipublikasikan."
+          action={
+            <Button variant="outline" size="sm" href="/organization">
+              Lihat Arsip Periode Organisasi
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {officers.map((officer, idx) => {
+            const initials = officer.name
+              .split(" ")
+              .slice(0, 2)
+              .map((w) => w[0])
+              .join("");
 
-                {/* Badge Jabatan */}
-                <div className="absolute top-4 left-4">
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-secondary text-gray-950 shadow-xs">
-                    {officer.role}
-                  </span>
+            return (
+              <motion.div
+                key={officer.id}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                className="rounded-xl bg-white border border-gray-200 p-6 shadow-xs hover:shadow-md hover:border-primary/40 transition-all duration-300 flex flex-col justify-between group"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex shrink-0 items-center justify-center overflow-hidden w-12 h-12 font-bold text-base text-primary bg-primary-50 rounded-full border border-primary-100">
+                      <span aria-hidden="true">{initials}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-full bg-secondary text-gray-950 mb-1">
+                        {officer.role}
+                      </span>
+                      <h3 className="text-base font-bold text-gray-900 font-heading truncate">
+                        {officer.name}
+                      </h3>
+                      <p className="text-xs text-primary font-semibold">
+                        {officer.roleTitle}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="absolute bottom-4 left-4 right-4 text-white">
-                  <h3 className="text-lg font-bold font-heading leading-tight">
-                    {officer.name}
-                  </h3>
-                  <p className="text-xs text-gray-300 font-mono">
-                    {officer.major}
-                  </p>
+                <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 font-medium">
+                  <span>Badan Pengurus Harian</span>
+                  <span className="text-primary font-semibold">UVICS FIK</span>
                 </div>
-              </div>
-
-              {/* Kutipan Visi / Filosofi */}
-              <div className="p-5 space-y-3">
-                <p className="text-xs text-gray-600 italic leading-relaxed line-clamp-3">
-                  &ldquo;{officer.quote}&rdquo;
-                </p>
-              </div>
-            </div>
-
-            {/* Tautan Media Sosial Pengurus */}
-            <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
-                {officer.roleTitle}
-              </span>
-
-              <div className="flex items-center gap-2">
-                {officer.linkedinUrl && (
-                  <Link
-                    href={officer.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-50 transition-colors"
-                    aria-label={`LinkedIn ${officer.name}`}
-                  >
-                    <IconBrandLinkedin className="w-4 h-4" />
-                  </Link>
-                )}
-                {officer.githubUrl && (
-                  <Link
-                    href={officer.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                    aria-label={`GitHub ${officer.name}`}
-                  >
-                    <IconBrandGithub className="w-4 h-4" />
-                  </Link>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
