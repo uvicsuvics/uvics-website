@@ -1,3 +1,5 @@
+import type { ClosingCtaContent, PageHeroContent, PageMeta, SectionHeading } from "@/data/mock/about";
+
 export interface DepartmentItem {
   id: string;
   slug: string;
@@ -21,7 +23,7 @@ export const UVICS_DEPARTMENTS: DepartmentItem[] = [
     shortDescription: "Pengembangan web scalable, mobile apps, dan arsitektur backend modern berstandar industri.",
     description: "Departemen Software Engineering berfokus pada penguasaan siklus hidup pengembangan perangkat lunak modern, mulai dari fullstack web development, arsitektur microservices, hingga pengembangan aplikasi mobile native dan multiplatform.",
     iconName: "Code2",
-    coordinator: "Dave Sumampouw",
+    coordinator: "Bryan Wowor",
     coordinatorRole: "Head of Software Engineering",
     memberCount: 28,
     projectsCount: 14,
@@ -35,7 +37,7 @@ export const UVICS_DEPARTMENTS: DepartmentItem[] = [
     shortDescription: "Riset machine learning, NLP, computer vision, dan rekayasa data untuk solusi komputasi cerdas.",
     description: "Departemen AI & Data Science mengeksplorasi algoritma kecerdasan buatan terapan, deep learning, dan pengolahan data berskala besar untuk memecahkan tantangan nyata di bidang kesehatan, pendidikan, dan otomasi.",
     iconName: "BrainCircuit",
-    coordinator: "Sarah Manoppo",
+    coordinator: "Nathania Tampi",
     coordinatorRole: "Head of AI & Data",
     memberCount: 22,
     projectsCount: 9,
@@ -49,7 +51,7 @@ export const UVICS_DEPARTMENTS: DepartmentItem[] = [
     shortDescription: "Riset pengalaman pengguna, interaksi digital intuitif, dan implementasi design system presisi.",
     description: "Departemen UI/UX Design memadukan empati pengguna, riset interaksi, dan estetika visual tingkat tinggi untuk merancang antarmuka digital yang memikat, fungsional, dan memenuhi standar aksesibilitas internasional.",
     iconName: "Palette",
-    coordinator: "Kezia Sondakh",
+    coordinator: "Gabriella Polii",
     coordinatorRole: "Head of Product Design",
     memberCount: 16,
     projectsCount: 12,
@@ -63,7 +65,7 @@ export const UVICS_DEPARTMENTS: DepartmentItem[] = [
     shortDescription: "Pelatihan algoritma tingkat lanjut, struktur data kompleks, dan persiapan lomba komputasi nasional.",
     description: "Departemen Competitive Programming membina logika pemecahan masalah secara intensif untuk mempersiapkan delegasi UVICS di ajang bergengsi seperti ICPC, GEMASTIK, dan hackathon tingkat nasional.",
     iconName: "Trophy",
-    coordinator: "Matthew Tambuwun",
+    coordinator: "Michael Rondonuwu",
     coordinatorRole: "Head of Competitive Programming",
     memberCount: 18,
     projectsCount: 6,
@@ -99,3 +101,45 @@ export const UVICS_DEPARTMENTS: DepartmentItem[] = [
     featured: false,
   },
 ];
+
+export interface DepartmentsPageContent {
+  meta: PageMeta;
+  hero: PageHeroContent;
+  list: SectionHeading & { coordinatorLabel: string; linkLabel: string; emptyMessage: string };
+  /** Halaman /departments/{slug}; judul pengurus diakhiri nama periode aktif. */
+  detail: { membersTitle: string; membersEmptyMessage: string; cta: ClosingCtaContent };
+}
+
+export const UVICS_DEPARTMENTS_PAGE: DepartmentsPageContent = {
+  meta: {
+    title: "Departemen | UVICS",
+    description: "Departemen UVICS beserta bidang kajian dan pengurusnya di Universitas Klabat.",
+  },
+  hero: {
+    title: "Departemen",
+    titleHighlight: "UVICS",
+    description:
+      "Departemen menjadi wadah anggota mendalami bidang teknologi tertentu sekaligus menjalankan program organisasi.",
+    image: {
+      src: "/images/img/foto-14.webp",
+      alt: "Anggota UVICS berseragam biru berpose di bawah pepohonan kampus Universitas Klabat",
+    },
+  },
+  list: {
+    title: "Bidang yang bisa",
+    titleHighlight: "kamu tekuni",
+    coordinatorLabel: "Koordinator",
+    linkLabel: "Lihat departemen",
+    emptyMessage: "Belum ada departemen yang tersedia saat ini.",
+  },
+  detail: {
+    membersTitle: "Pengurus periode",
+    membersEmptyMessage: "Belum ada data pengurus untuk departemen ini.",
+    cta: {
+      title: "Tertarik bergabung dengan departemen ini?",
+      description: "Daftar sebagai anggota UVICS dan pilih departemen sesuai minatmu saat pendaftaran.",
+      primaryCta: { label: "Join UVICS", href: "/join" },
+      secondaryCta: { label: "Lihat semua departemen", href: "/departments" },
+    },
+  },
+};
