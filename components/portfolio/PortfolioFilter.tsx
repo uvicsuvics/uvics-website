@@ -44,7 +44,7 @@ export function PortfolioFilter({
   return (
     <div
       className={cn(
-        'flex flex-col gap-4 p-4 sm:p-5 bg-white rounded-2xl border border-gray-200/90 shadow-2xs',
+        'flex flex-col gap-4 p-4 sm:p-5 bg-white rounded-xl border border-gray-200/90 shadow-2xs',
         className
       )}
     >

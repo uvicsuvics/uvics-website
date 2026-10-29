@@ -51,11 +51,11 @@ export default async function AchievementsPage() {
         aria-label="Statistik prestasi"
         className="mx-auto px-4 -mt-8 w-full max-w-7xl relative sm:px-6 lg:px-8"
       >
-        <dl className="grid grid-cols-1 gap-px overflow-hidden bg-gray-200 rounded-2xl border border-gray-200 shadow-md sm:grid-cols-3">
+        <dl className="grid grid-cols-1 gap-px overflow-hidden bg-gray-200 rounded-xl border border-gray-200 shadow-md sm:grid-cols-3">
           {stats.map((stat) => (
             <div key={stat.label} className="flex flex-col gap-1 px-6 py-5 bg-white">
-              <dd className="order-2 text-sm text-gray-600">{stat.label}</dd>
-              <dt className="order-1 font-heading text-3xl font-bold text-primary">{stat.value}</dt>
+              <dt className="order-2 text-sm text-gray-600">{stat.label}</dt>
+              <dd className="order-1 font-heading text-3xl font-bold text-primary">{stat.value}</dd>
             </div>
           ))}
         </dl>

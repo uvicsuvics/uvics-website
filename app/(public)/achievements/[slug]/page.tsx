@@ -93,7 +93,7 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
       <div className="grid gap-8 mx-auto px-4 pt-10 w-full max-w-7xl sm:px-6 lg:grid-cols-3 lg:gap-10 lg:px-8 lg:pt-14">
         {/* Main column */}
         <div className="flex flex-col gap-10 lg:col-span-2">
-          <div className="relative w-full overflow-hidden aspect-video bg-primary-50 rounded-2xl border border-gray-200/90 shadow-sm">
+          <div className="relative w-full overflow-hidden aspect-video bg-primary-50 rounded-xl border border-gray-200/90 shadow-sm">
             {coverImage ? (
               <Image
                 src={coverImage}
@@ -148,7 +148,7 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
         <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
           <section
             aria-labelledby="result-heading"
-            className="flex flex-col gap-2 p-6 text-white bg-primary rounded-2xl shadow-primary"
+            className="flex flex-col gap-2 p-6 text-white bg-primary rounded-xl shadow-primary"
           >
             <h2 id="result-heading" className="text-xs font-semibold tracking-wide uppercase text-primary-100">
               Hasil
@@ -161,7 +161,7 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
 
           <section
             aria-labelledby="competition-info-heading"
-            className="flex flex-col gap-4 p-6 bg-card rounded-2xl border border-gray-200/90 shadow-2xs"
+            className="flex flex-col gap-4 p-6 bg-card rounded-xl border border-gray-200/90 shadow-2xs"
           >
             <h2 id="competition-info-heading" className="font-heading text-lg font-bold text-gray-900">
               Informasi Kompetisi

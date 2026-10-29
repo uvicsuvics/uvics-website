@@ -31,7 +31,7 @@ export function AchievementCard({ achievement, members = [], className }: Achiev
   return (
     <article
       className={cn(
-        'group relative flex flex-col w-full h-full overflow-hidden bg-card rounded-2xl border border-gray-200/90 shadow-2xs transition-all duration-200 ease-standard hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus-within:ring-2 focus-within:ring-primary/40 motion-reduce:transition-none motion-reduce:hover:translate-y-0',
+        'group relative flex flex-col w-full h-full overflow-hidden bg-card rounded-xl border border-gray-200/90 shadow-2xs transition-all duration-200 ease-standard hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus-within:ring-2 focus-within:ring-primary/40 motion-reduce:transition-none motion-reduce:hover:translate-y-0',
         className
       )}
     >

@@ -95,7 +95,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
       <div className="grid gap-8 mx-auto px-4 pt-10 w-full max-w-7xl sm:px-6 lg:grid-cols-3 lg:gap-10 lg:px-8 lg:pt-14">
         {/* Main column */}
         <div className="flex flex-col gap-10 lg:col-span-2">
-          <div className="relative w-full overflow-hidden aspect-video bg-primary-50 rounded-2xl border border-gray-200/90 shadow-sm">
+          <div className="relative w-full overflow-hidden aspect-video bg-primary-50 rounded-xl border border-gray-200/90 shadow-sm">
             {coverImage ? (
               <Image
                 src={coverImage}
@@ -150,7 +150,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
           <section
             aria-labelledby="links-heading"
-            className="flex flex-col gap-4 p-6 bg-card rounded-2xl border border-gray-200/90 shadow-2xs"
+            className="flex flex-col gap-4 p-6 bg-card rounded-xl border border-gray-200/90 shadow-2xs"
           >
             <h2 id="links-heading" className="font-heading text-lg font-bold text-gray-900">
               Tautan Project
