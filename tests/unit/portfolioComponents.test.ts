@@ -15,6 +15,7 @@ import {
   getRankTier,
   getYear,
 } from '@/components/portfolio/portfolioLabels';
+import { ProjectsSection } from '@/components/sections/ProjectsSection';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
@@ -22,6 +23,7 @@ import { UVICS_ACHIEVEMENTS } from '@/data/mock/achievements';
 import { UVICS_PROJECTS } from '@/data/mock/projects';
 import { getAchievementsPage } from '@/lib/services/achievementService';
 import { getProjectsPage } from '@/lib/services/projectService';
+import type { ProjectWithRelations } from '@/types/portfolio';
 
 // Halaman daftar diuji pada cabang data kosong; getter konten hero tetap asli.
 vi.mock('@/lib/services/achievementService', async (importOriginal) => ({
@@ -116,6 +118,46 @@ describe('ProjectCard', () => {
   it('tidak menampilkan tahun bila tanggal kosong', () => {
     const project = { ...UVICS_PROJECTS[0], startDate: null, endDate: null };
     expect(renderToStaticMarkup(createElement(ProjectCard, { project }))).not.toContain('<time');
+  });
+});
+
+describe('ProjectsSection', () => {
+  const toRelations = (project: (typeof UVICS_PROJECTS)[number]): ProjectWithRelations => ({
+    project,
+    members: [],
+    achievements: [],
+  });
+
+  it('menampilkan project unggulan saja walau ada project non-unggulan yang lebih baru', () => {
+    const newerNonFeatured = {
+      ...UVICS_PROJECTS[0],
+      id: 'proj-newer',
+      slug: 'proyek-terbaru',
+      title: 'Proyek Terbaru Non-Unggulan',
+      startDate: '2026-09-01',
+      featured: false,
+    };
+    const featured = UVICS_PROJECTS.filter(({ featured }) => featured);
+    expect(featured.length).toBeGreaterThan(0);
+
+    const html = renderToStaticMarkup(
+      createElement(ProjectsSection, { projects: [newerNonFeatured, ...featured].map(toRelations) }),
+    );
+
+    for (const { slug } of featured) expect(html).toContain(`href="/projects/${slug}"`);
+    expect(html).not.toContain(`href="/projects/${newerNonFeatured.slug}"`);
+  });
+
+  it('memakai semua project bila belum ada yang ditandai unggulan', () => {
+    const projects = UVICS_PROJECTS.map((project) => toRelations({ ...project, featured: false }));
+    const html = renderToStaticMarkup(createElement(ProjectsSection, { projects }));
+    expect(html).toContain(`href="/projects/${UVICS_PROJECTS[0].slug}"`);
+  });
+
+  it('membuka Live Demo di tab baru', () => {
+    const project = { ...UVICS_PROJECTS[0], projectUrl: 'https://demo.example.com/app' };
+    const html = renderToStaticMarkup(createElement(ProjectsSection, { projects: [toRelations(project)] }));
+    expect(html).toContain('<a href="https://demo.example.com/app" target="_blank" rel="noopener noreferrer"');
   });
 });
 

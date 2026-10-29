@@ -33,8 +33,9 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
     );
   }
 
-  // Tampilkan 3 proyek unggulan pertama
-  const displayProjects = projects.slice(0, 3);
+  // Utamakan proyek unggulan (maks. 3); bila belum ada yang ditandai, pakai proyek terbaru.
+  const featured = projects.filter(({ project }) => project.featured);
+  const displayProjects = (featured.length > 0 ? featured : projects).slice(0, 3);
 
   return (
     <section className="py-24 px-6 md:px-8 max-w-7xl mx-auto w-full">
@@ -134,6 +135,7 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
                         variant="primary"
                         size="sm"
                         href={project.projectUrl}
+                        external
                       >
                         <span>Live Demo</span>
                         <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
