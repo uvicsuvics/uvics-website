@@ -44,6 +44,8 @@ export const membershipHistorySchema = z.object({
   updated_at: timestampSchema,
 });
 
+export const registrationStatusSchema = z.enum(["SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"]);
+
 export const registrationSchema = z.object({
   id: z.string().uuid(),
   full_name: z.string().min(1).max(120),
@@ -59,7 +61,7 @@ export const registrationSchema = z.object({
   motivation: z.string().optional().nullable(),
   portfolio_url: httpUrlSchema.optional().nullable(),
   photo: photoSchema,
-  status: z.enum(["SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"]).default("SUBMITTED"),
+  status: registrationStatusSchema.default("SUBMITTED"),
   admin_notes: z.string().optional().nullable(),
   submitted_at: timestampSchema,
   accepted_at: timestampSchema.optional().nullable(),

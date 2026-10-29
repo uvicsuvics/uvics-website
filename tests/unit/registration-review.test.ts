@@ -7,12 +7,12 @@ import {
   getAdminRegistrationById,
   listAdminRegistrations,
   registrationFilterSchema,
-  registrationListInputSchema,
-  registrationStatusEnum,
   rejectRegistration,
   reviewRegistration,
   reviewRegistrationInputSchema,
-} from "@/lib/backend/registrations";
+} from "@/lib/backend/registration-review";
+import * as registrationReview from "@/lib/backend/registration-review";
+import { registrationStatusSchema } from "@/lib/backend/membership";
 import type { Database } from "@/types/database";
 
 function fakeClient(result: {
@@ -46,36 +46,15 @@ function fakeClient(result: {
 describe("registration schemas validation", () => {
   it("validates allowed registration statuses (Scope 2)", () => {
     for (const valid of ["SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"]) {
-      expect(registrationStatusEnum.safeParse(valid).success).toBe(true);
+      expect(registrationStatusSchema.safeParse(valid).success).toBe(true);
     }
     for (const invalid of ["PENDING", "APPROVED", "DRAFT", "active", ""]) {
-      expect(registrationStatusEnum.safeParse(invalid).success).toBe(false);
+      expect(registrationStatusSchema.safeParse(invalid).success).toBe(false);
     }
   });
 
-  it("validates registration list input schema (Scope 1)", () => {
-    expect(registrationListInputSchema.parse({})).toEqual({
-      page: 1,
-      page_size: 20,
-    });
-    expect(
-      registrationListInputSchema.safeParse({
-        page: 2,
-        page_size: 50,
-        status: "UNDER_REVIEW",
-        search: "Andi",
-      }).success,
-    ).toBe(true);
-
-    // Search harus minimal 2 karakter
-    expect(
-      registrationListInputSchema.safeParse({ search: "a" }).success,
-    ).toBe(false);
-
-    // Status tidak valid ditolak
-    expect(
-      registrationListInputSchema.safeParse({ status: "UNKNOWN" }).success,
-    ).toBe(false);
+  it("does not export an unused list input schema", () => {
+    expect("registrationListInputSchema" in registrationReview).toBe(false);
   });
 
   it("filters empty strings and normalizes search in filter schema", () => {
@@ -112,14 +91,17 @@ describe("registration schemas validation", () => {
     };
     expect(reviewRegistrationInputSchema.safeParse(valid).success).toBe(true);
 
-    // Notes opsional dan boleh null
+    // Notes opsional; string kosong berarti hapus catatan
     expect(
       reviewRegistrationInputSchema.safeParse({
         registration_id: valid.registration_id,
         status: "REJECTED",
-        admin_notes: null,
       }).success,
     ).toBe(true);
+    expect(
+      reviewRegistrationInputSchema.parse({ ...valid, admin_notes: "   " })
+        .admin_notes,
+    ).toBe("");
 
     // Non-UUID ditolak
     expect(
@@ -177,6 +159,14 @@ describe("admin registration queries", () => {
     });
 
     expect(calls).toContainEqual(["from", ["registrations"]]);
+    // Proyeksi listing kontrak #31: tanpa kontak, jawaban, atau catatan admin
+    expect(calls).toContainEqual([
+      "select",
+      [
+        "id,full_name,nim,study_program,batch,preferred_department_id,status,submitted_at",
+        { count: "exact" },
+      ],
+    ]);
     expect(calls).toContainEqual(["eq", ["status", "UNDER_REVIEW"]]);
     expect(calls).toContainEqual([
       "or",
@@ -219,6 +209,10 @@ describe("admin registration queries", () => {
     expect(calls).toContainEqual(["from", ["registrations"]]);
     expect(calls).toContainEqual(["eq", ["id", mockDetail.id]]);
     expect(calls).toContainEqual(["maybeSingle", []]);
+    const [, [fields]] = calls.find(([method]) => method === "select")!;
+    expect(String(fields).split(",")).toEqual(
+      expect.arrayContaining(["email", "phone", "admin_notes", "consent_at"]),
+    );
     expect(result).toEqual(mockDetail);
   });
 
@@ -274,6 +268,20 @@ describe("admin registration mutations", () => {
       ],
     ]);
     expect(result).toEqual({ id: regId, status: "UNDER_REVIEW" });
+  });
+
+  it("reviewRegistration omits admin notes when not provided so the RPC keeps them", async () => {
+    const { client, calls } = fakeClient({
+      data: { id: regId, status: "UNDER_REVIEW" },
+      error: null,
+      count: null,
+    });
+
+    await reviewRegistration(client, { registration_id: regId, status: "UNDER_REVIEW" });
+
+    const [, [, args]] = calls.find(([method]) => method === "rpc")!;
+    expect(args).toEqual({ p_registration_id: regId, p_status: "UNDER_REVIEW" });
+    expect(args).not.toHaveProperty("p_admin_notes", null);
   });
 
   it("acceptRegistration helper sets status ACCEPTED", async () => {
@@ -348,24 +356,41 @@ describe("admin registration mutations", () => {
         {
           p_registration_id: regId,
           p_organization_period_id: payload.organization_period_id,
-          p_department_id: null,
           p_position_id: payload.position_id,
           p_start_date: "2026-08-15",
         },
       ],
     ]);
+    // Departemen null tidak dikirim; RPC memakai default null (U01)
+    const [, [, args]] = calls.find(([method]) => method === "rpc")!;
+    expect(args).not.toHaveProperty("p_department_id", null);
     expect(result).toEqual(conversionResult);
   });
 
-  it("maps database errors from constraints (check_violation -> CONFLICT, 42501 -> FORBIDDEN)", async () => {
+  it("maps RPC errors (P0001 -> CONFLICT, P0002 -> NOT_FOUND, 42501 -> FORBIDDEN)", async () => {
     const { client: conflictClient } = fakeClient({
       data: null,
-      error: { code: "23514" },
+      error: { code: "P0001" },
       count: null,
     });
     await expect(
       acceptRegistration(conflictClient, regId),
     ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    const { client: notFoundClient } = fakeClient({
+      data: null,
+      error: { code: "P0002" },
+      count: null,
+    });
+    await expect(
+      convertRegistrationToMember(notFoundClient, {
+        registration_id: regId,
+        organization_period_id: regId,
+        department_id: null,
+        position_id: regId,
+        start_date: "2026-08-15",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     const { client: forbiddenClient } = fakeClient({
       data: null,

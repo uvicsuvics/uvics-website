@@ -11,7 +11,7 @@
  *
  * Privacy (BACKEND_CONVENTIONS §DTO):
  *   admin_notes, NIM, email, phone, motivation, experience
- *   TIDAK boleh masuk DTO publik.
+ *   TIDAK boleh masuk DTO publik. Listing admin hanya memakai proyeksi #31.
  *
  * Pola:
  *   Admin reads → SELECT langsung (RLS memfilter via has_active_admin_session)
@@ -22,8 +22,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import type { Database } from "@/types/database";
-import { normalizeSearch } from "./content";
+import { normalizeSearch, optional, parseQuery, rangeOf } from "./content";
 import { AppError, databaseError } from "./errors";
+import { registrationStatusSchema } from "./membership";
 import { calendarDateSchema, paginationMeta, paginationSchema } from "./validation";
 
 type Client = SupabaseClient<Database>;
@@ -31,17 +32,6 @@ type Client = SupabaseClient<Database>;
 // ============================================================
 // Zod Schemas — Input validation (Scope 1–6)
 // ============================================================
-
-/** Status yang valid untuk registrasi (Scope 2) */
-export const registrationStatusEnum = z.enum([
-  "SUBMITTED",
-  "UNDER_REVIEW",
-  "ACCEPTED",
-  "REJECTED",
-]);
-
-const optional = <T extends z.ZodType>(schema: T) =>
-  z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
 
 const searchFilterSchema = z.preprocess(
   (v) => (v === "" ? undefined : v),
@@ -57,33 +47,20 @@ const searchFilterSchema = z.preprocess(
 
 export const registrationFilterSchema = z.object({
   /** Filter berdasarkan status (opsional) */
-  status: optional(registrationStatusEnum),
+  status: optional(registrationStatusSchema),
   /** Search nama atau NIM (opsional, min 2 karakter setelah normalisasi) */
   search: searchFilterSchema,
 });
 
 /**
- * Input schema untuk listing registrations (Scope 1, 2, 3)
- * Admin mengirim query params yang divalidasi Zod sebelum query database.
- * Pagination mengikuti contract di BACKEND_CONVENTIONS: page=1, page_size=20, max 100.
- */
-export const registrationListInputSchema = paginationSchema.and(
-  z.object({
-    /** Filter berdasarkan status (opsional) */
-    status: registrationStatusEnum.optional(),
-    /** Search nama atau NIM (opsional, min 2 karakter) */
-    search: z.string().min(2).max(120).optional(),
-  }),
-);
-
-/**
  * Input schema untuk review registrasi (Scope 2, 3, 4)
  * Divalidasi sebelum memanggil admin_review_registration RPC.
+ * admin_notes tidak dikirim → catatan dipertahankan; string kosong → catatan dihapus.
  */
 export const reviewRegistrationInputSchema = z.object({
   registration_id: z.string().uuid(),
-  status: registrationStatusEnum,
-  admin_notes: z.string().max(2000).nullable().optional(),
+  status: registrationStatusSchema,
+  admin_notes: z.string().trim().max(2000).optional(),
 });
 
 /**
@@ -95,7 +72,7 @@ export const reviewRegistrationInputSchema = z.object({
 export const convertRegistrationInputSchema = z.object({
   registration_id: z.string().uuid(),
   organization_period_id: z.string().uuid(),
-  /** Nullable: pengurus inti (Presiden, Sekretaris, dll) tanpa departemen (U01) */
+  /** Nullable: core team (President, Treasurer, Secretary) tanpa departemen (U01) */
   department_id: z.string().uuid().nullable(),
   position_id: z.string().uuid(),
   start_date: calendarDateSchema,
@@ -105,10 +82,8 @@ export const convertRegistrationInputSchema = z.object({
 // Type exports
 // ============================================================
 
-export type RegistrationStatus = z.infer<typeof registrationStatusEnum>;
-export type RegistrationListInput = z.infer<
-  typeof registrationListInputSchema
->;
+/** Status lifecycle registration; berbeda dari `RegistrationStatus` hasil submit publik (#28). */
+export type RegistrationReviewStatus = z.infer<typeof registrationStatusSchema>;
 export type RegistrationFilter = z.infer<typeof registrationFilterSchema>;
 export type ReviewRegistrationInput = z.infer<
   typeof reviewRegistrationInputSchema
@@ -118,20 +93,15 @@ export type ConvertRegistrationInput = z.infer<
 >;
 
 // ============================================================
-// Proyeksi Field & Query Helpers
+// Proyeksi Field
 // ============================================================
 
-const ADMIN_REGISTRATION_FIELDS =
-  "id,full_name,nim,email,phone,faculty,study_program,batch,preferred_department_id,skills,experience,motivation,portfolio_url,photo,status,admin_notes,submitted_at,accepted_at,rejected_at,converted_member_id,created_at,updated_at";
+// Proyeksi listing kontrak #31; kontak, jawaban, dan catatan hanya di detail.
+const ADMIN_REGISTRATION_LIST_FIELDS =
+  "id,full_name,nim,study_program,batch,preferred_department_id,status,submitted_at";
 
-function parseQuery<T extends z.ZodType>(schema: T, raw: unknown): z.infer<T> {
-  const result = schema.safeParse(raw);
-  if (!result.success) throw new AppError("VALIDATION_ERROR");
-  return result.data;
-}
-
-const rangeOf = ({ page, page_size }: { page: number; page_size: number }) =>
-  [(page - 1) * page_size, page * page_size - 1] as const;
+const ADMIN_REGISTRATION_DETAIL_FIELDS =
+  "id,full_name,nim,email,phone,faculty,study_program,batch,preferred_department_id,skills,experience,motivation,portfolio_url,photo,status,admin_notes,submitted_at,accepted_at,rejected_at,converted_member_id,consent_at,created_at,updated_at";
 
 // ============================================================
 // Domain Queries (Scope 1, Privacy: Admin Only)
@@ -146,7 +116,7 @@ export async function listAdminRegistrations(client: Client, raw: unknown) {
 
   let query = client
     .from("registrations")
-    .select(ADMIN_REGISTRATION_FIELDS, { count: "exact" });
+    .select(ADMIN_REGISTRATION_LIST_FIELDS, { count: "exact" });
 
   if (filter.status) {
     query = query.eq("status", filter.status);
@@ -181,7 +151,7 @@ export async function getAdminRegistrationById(client: Client, id: string) {
 
   const { data, error } = await client
     .from("registrations")
-    .select(ADMIN_REGISTRATION_FIELDS)
+    .select(ADMIN_REGISTRATION_DETAIL_FIELDS)
     .eq("id", id)
     .maybeSingle();
 
@@ -197,6 +167,7 @@ export async function getAdminRegistrationById(client: Client, id: string) {
 
 /**
  * Review pendaftaran: ubah status dan catatan internal admin via SQL RPC (D13).
+ * Transisi: SUBMITTED → UNDER_REVIEW → ACCEPTED | REJECTED; selain itu CONFLICT.
  */
 export async function reviewRegistration(client: Client, raw: unknown) {
   const input = parseQuery(reviewRegistrationInputSchema, raw);
@@ -204,41 +175,41 @@ export async function reviewRegistration(client: Client, raw: unknown) {
   const { data, error } = await client.rpc("admin_review_registration", {
     p_registration_id: input.registration_id,
     p_status: input.status,
-    p_admin_notes: input.admin_notes ?? (null as unknown as string),
+    p_admin_notes: input.admin_notes,
   });
 
   if (error) databaseError(error);
 
-  return data as { id: string; status: RegistrationStatus };
+  return data as { id: string; status: RegistrationReviewStatus };
 }
 
 /**
- * Operasi aman Accept pendaftaran (Scope 4).
+ * Operasi aman Accept pendaftaran (Scope 4). Registrasi harus berstatus UNDER_REVIEW.
  */
 export async function acceptRegistration(
   client: Client,
   registrationId: string,
-  adminNotes?: string | null,
+  adminNotes?: string,
 ) {
   return reviewRegistration(client, {
     registration_id: registrationId,
     status: "ACCEPTED",
-    admin_notes: adminNotes ?? null,
+    admin_notes: adminNotes,
   });
 }
 
 /**
- * Operasi aman Reject pendaftaran (Scope 4).
+ * Operasi aman Reject pendaftaran (Scope 4). Registrasi harus berstatus UNDER_REVIEW.
  */
 export async function rejectRegistration(
   client: Client,
   registrationId: string,
-  adminNotes?: string | null,
+  adminNotes?: string,
 ) {
   return reviewRegistration(client, {
     registration_id: registrationId,
     status: "REJECTED",
-    admin_notes: adminNotes ?? null,
+    admin_notes: adminNotes,
   });
 }
 
@@ -253,9 +224,9 @@ export async function convertRegistrationToMember(client: Client, raw: unknown) 
     {
       p_registration_id: input.registration_id,
       p_organization_period_id: input.organization_period_id,
-      p_department_id: input.department_id as string,
       p_position_id: input.position_id,
       p_start_date: input.start_date,
+      p_department_id: input.department_id ?? undefined,
     },
   );
 
@@ -267,4 +238,3 @@ export async function convertRegistrationToMember(client: Client, raw: unknown) 
     registration_id: string;
   };
 }
-

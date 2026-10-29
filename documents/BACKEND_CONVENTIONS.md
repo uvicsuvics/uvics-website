@@ -102,6 +102,8 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 | `MEDIA_COMPLETED` | upload_intent | `category`, `kind` |
 | `MEDIA_PUBLISHED` | upload_intent | `reference_type`, `reference_id` |
 | `PAGE_PUBLISHED` / `PROGRAM_PUBLISHED` | page / program | `status` |
+| `REGISTRATION_REVIEWED` (#29) | registration | `status`; new juga `notes_changed` (isi catatan tidak diaudit) |
+| `APPLICANT_CONVERTED` (#29) | registration | new: `member_id`, `organization_period_id`, `department_id`, `position_id` |
 | Settings (milik #30) | website_settings, `entity_id = null` | `key`; nilai hanya untuk flag publik boolean |
 
 **Direct DML.** `authenticated` dan `service_role` hanya memiliki SELECT pada tabel domain: CMS (`pages`, `programs`, `website_settings`), organisasi/membership (`registrations`, `members`, `membership_histories`, `departments`, `positions`, `organization_periods`), dan content #36 (`competitions`, `achievements`, `achievement_members`, `achievement_certificates`, `projects`, `project_members`). `service_role` melewati RLS, sehingga DML langsung berarti mutation tanpa audit (D13). Admin membaca lewat policy SELECT `active_admin_read`; tidak ada policy write yang tersisa, sehingga grant baru tidak diam-diam membuka bypass. Tersedia: `publish_page`, `publish_program`. Belum tersedia dan tetap tertutup sampai owner menambah RPC ter-audit: CRUD page/program/settings (#30), organisasi/membership (#29), dan content (owner baru). Sampai saat itu, operator mengisi data lewat seeder/`psql` sebagai owner database, bukan service client.

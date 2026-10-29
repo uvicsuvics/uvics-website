@@ -801,7 +801,7 @@ export type Database = {
     Functions: {
       admin_convert_registration_to_member: {
         Args: {
-          p_department_id: string;
+          p_department_id?: string;
           p_organization_period_id: string;
           p_position_id: string;
           p_registration_id: string;
@@ -811,7 +811,7 @@ export type Database = {
       };
       admin_review_registration: {
         Args: {
-          p_admin_notes: string;
+          p_admin_notes?: string;
           p_registration_id: string;
           p_status: string;
         };

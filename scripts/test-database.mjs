@@ -192,8 +192,8 @@ try {
             await c.query(`select set_config('request.jwt.claims', $1, false)`, [jwtClaims]);
             return (
               await c.query(
-                "select public.admin_convert_registration_to_member($1, $2, $3, $4, $5) as res",
-                [reg, period, dept, pos, "2027-08-15"],
+                "select public.admin_convert_registration_to_member($1, $2, $3, $4::date, $5) as res",
+                [reg, period, pos, "2027-08-15", dept],
               )
             ).rows[0].res;
           } finally {
@@ -205,7 +205,8 @@ try {
       const fulfilled = results.filter((r) => r.status === "fulfilled");
       const rejected = results.filter((r) => r.status === "rejected");
       assert.equal(fulfilled.length, 1, `Exactly 1 conversion should succeed; got ${fulfilled.length}`);
-      assert.equal(rejected.length, 9, `9 conversions should fail with check_violation; got ${rejected.length}`);
+      const codes = rejected.map((r) => r.reason.code);
+      assert.deepEqual(codes, Array(9).fill("P0001"), `9 conversions should fail with P0001; got ${codes}`);
 
       const memberCount = (
         await client.query("select count(*)::int as n from public.members where nim = '10502181999'")
