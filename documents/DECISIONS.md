@@ -187,7 +187,7 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
   - Project: `problem`, `solution`, `technologies`, `figma_url`, dan `documentation_url` (nullable, URL berpola `^https?://` seperti `project_url`). Section yang kosong disembunyikan. Galeri memakai tabel anak berisi referensi media, bentuk final mengikuti alur upload #28/#29.
   - Setelah diterima: nomor `D` baru, `types/database.ts` diperbarui, dan tes `tests/db` mencakup RLS untuk admin aktif, `authenticated` non-admin, dan `anon`.
 - **Owner:** PM memutuskan; owner backend konten (owner baru, lihat BACKEND_CONVENTIONS) mengerjakan migration dan tes DB.
-- **Dampak:** sampai diputuskan, frontend hanya menyimpan `projectId` di mock (`Achievement.projectId`) dan tidak membangun filter kategori, penanda featured prestasi (sementara yang disorot adalah prestasi terbaru), section Documentation, maupun section detail project (masalah, solusi, teknologi, galeri, Figma). Mock project tidak memuat tautan karena domain `uvics.org` dan organisasi GitHub `uvicsuvics` belum terbukti milik UVICS; detail project menampilkan "Belum ada tautan untuk project ini."
+- **Dampak:** sampai diputuskan, frontend hanya menyimpan `projectId` di mock (`Achievement.projectId`) dan tidak membangun filter kategori, penanda featured prestasi (sementara yang disorot adalah prestasi terbaru), section Documentation, maupun section detail project (masalah, solusi, teknologi, galeri, Figma). Mock project tidak memuat tautan karena tautan contoh sebelumnya karangan: repositori dan subdomain `*.uvics.org` yang dirujuk belum tentu ada; detail project menampilkan "Belum ada tautan untuk project ini."
 - **Menunggu:** keputusan PM.
 
 ## D. Isu terbuka

@@ -10,6 +10,15 @@ function hasDuplicates(values: string[]): boolean {
   return new Set(values).size !== values.length;
 }
 
+// Tautan contoh karangan: subdomain *.uvics.org dan repositori github.com/uvicsuvics/* belum tentu ada.
+function isInventedExampleLink(raw: string): boolean {
+  const { hostname, pathname } = new URL(raw);
+  return (
+    hostname.toLowerCase().endsWith('uvics.org') ||
+    `${hostname}${pathname}`.toLowerCase().startsWith('github.com/uvicsuvics/')
+  );
+}
+
 describe('portfolio mock data (relational integrity)', () => {
   it('uses unique ids and DB-valid unique slugs', () => {
     for (const rows of [UVICS_PROJECTS, UVICS_ACHIEVEMENTS, UVICS_ACHIEVEMENT_MEMBERS, UVICS_PROJECT_MEMBERS]) {
@@ -63,15 +72,16 @@ describe('portfolio mock data (relational integrity)', () => {
     }
   });
 
-  it('links to no domain or repository that is not proven to belong to UVICS', () => {
+  it('contains no invented example links (uvics.org subdomains, uvicsuvics repositories)', () => {
     const rows = [...UVICS_PROJECTS, ...UVICS_ACHIEVEMENTS, ...UVICS_PROJECT_MEMBERS, ...UVICS_ACHIEVEMENT_MEMBERS];
     const urls = rows
       .flatMap((row) => Object.values(row))
       .filter((value): value is string => typeof value === 'string' && /^https?:\/\//i.test(value));
-    for (const raw of urls) {
-      const { hostname, pathname } = new URL(raw);
-      expect(hostname.toLowerCase().endsWith('uvics.org'), raw).toBe(false);
-      expect(`${hostname}${pathname}`.toLowerCase().startsWith('github.com/uvicsuvics/'), raw).toBe(false);
-    }
+    for (const raw of urls) expect(isInventedExampleLink(raw), raw).toBe(false);
+  });
+
+  it('flags the invented example links the scan guards against', () => {
+    expect(isInventedExampleLink('https://campus.uvics.org')).toBe(true);
+    expect(isInventedExampleLink('https://github.com/uvicsuvics/campus-superapp')).toBe(true);
   });
 });
