@@ -3,14 +3,14 @@ import { AchievementsExplorer } from "@/components/portfolio/AchievementsExplore
 import { EmptyState } from "@/components/portfolio/EmptyState";
 import { FeaturedAchievement } from "@/components/portfolio/FeaturedAchievement";
 import { PortfolioHero } from "@/components/portfolio/PortfolioHero";
-import { listAchievements } from "@/lib/services/portfolioService";
+import { getAchievements } from "@/lib/services/achievementService";
 
 const description = "Capaian mahasiswa UVICS di kompetisi nasional dan internasional.";
 
 export const metadata: Metadata = { title: "Prestasi | UVICS", description };
 
 export default async function AchievementsPage() {
-  const items = await listAchievements();
+  const items = await getAchievements();
 
   if (items.length === 0) {
     return (

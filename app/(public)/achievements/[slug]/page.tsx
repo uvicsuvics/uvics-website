@@ -8,23 +8,23 @@ import { ProjectCard } from "@/components/portfolio/ProjectCard";
 import { LEVEL_LABELS, formatPortfolioDate } from "@/components/portfolio/portfolioLabels";
 import { Badge } from "@/components/ui/Badge";
 import {
-  getAchievementDetail,
+  getAchievementBySlug,
+  getAchievements,
   getRelatedAchievements,
-  listAchievements,
-} from "@/lib/services/portfolioService";
+} from "@/lib/services/achievementService";
 
 interface AchievementDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  const items = await listAchievements();
+  const items = await getAchievements();
   return items.map(({ achievement }) => ({ slug: achievement.slug }));
 }
 
 export async function generateMetadata({ params }: AchievementDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const detail = await getAchievementDetail(slug);
+  const detail = await getAchievementBySlug(slug);
 
   if (!detail) {
     return {
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: AchievementDetailPageProps): 
 
 export default async function AchievementDetailPage({ params }: AchievementDetailPageProps) {
   const { slug } = await params;
-  const detail = await getAchievementDetail(slug);
+  const detail = await getAchievementBySlug(slug);
 
   if (!detail) {
     notFound();

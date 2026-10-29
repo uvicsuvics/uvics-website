@@ -11,9 +11,11 @@ import {
   PROJECT_STATUS_OPTIONS,
   formatPortfolioDate,
   formatPortfolioPeriod,
+  getRankTier,
   getYear,
 } from '@/components/portfolio/portfolioLabels';
-import { MOCK_ACHIEVEMENTS, MOCK_PROJECTS } from '@/data/mock/portfolio';
+import { UVICS_ACHIEVEMENTS } from '@/data/mock/achievements';
+import { UVICS_PROJECTS } from '@/data/mock/projects';
 
 const noop = () => undefined;
 
@@ -21,6 +23,14 @@ describe('portfolioLabels', () => {
   it('mengambil tahun dari ISO date tanpa pergeseran zona waktu', () => {
     expect(getYear('2026-01-01')).toBe(2026);
     expect(getYear('2025-12-31')).toBe(2025);
+  });
+
+  it('menurunkan tier warna dari teks ranking', () => {
+    expect(getRankTier('Juara 1')).toBe('gold');
+    expect(getRankTier('juara 2 (Silver Medal)')).toBe('silver');
+    expect(getRankTier('Juara 3')).toBe('bronze');
+    expect(getRankTier('Top 5 Finalis')).toBe('neutral');
+    expect(getRankTier('Juara 10')).toBe('neutral');
   });
 
   it('memformat tanggal dalam bahasa Indonesia', () => {
@@ -45,7 +55,7 @@ describe('portfolioLabels', () => {
 
 describe('AchievementCard', () => {
   it('menampilkan ranking, kompetisi, tim, tanggal, dan tautan detail', () => {
-    const achievement = MOCK_ACHIEVEMENTS[0];
+    const achievement = UVICS_ACHIEVEMENTS[0];
     const html = renderToStaticMarkup(
       createElement(AchievementCard, { achievement, members: ['Dave', 'Sarah', 'Kevin', 'Kezia'] }),
     );
@@ -58,7 +68,7 @@ describe('AchievementCard', () => {
   });
 
   it('tetap dirender tanpa gambar, level, dan anggota', () => {
-    const achievement = { ...MOCK_ACHIEVEMENTS[0], coverImage: null, level: null };
+    const achievement = { ...UVICS_ACHIEVEMENTS[0], coverImage: null, level: null };
     const html = renderToStaticMarkup(createElement(AchievementCard, { achievement }));
     expect(html).not.toContain('<img');
     expect(html).not.toContain('lainnya');
@@ -67,7 +77,7 @@ describe('AchievementCard', () => {
 
 describe('ProjectCard', () => {
   it('menampilkan status, ringkasan, tahun, dan kategori bila diberikan', () => {
-    const project = MOCK_PROJECTS[0];
+    const project = UVICS_PROJECTS[0];
     const html = renderToStaticMarkup(createElement(ProjectCard, { project, category: 'Web App' }));
     expect(html).toContain('Selesai');
     expect(html).toContain(project.summary);
@@ -77,7 +87,7 @@ describe('ProjectCard', () => {
   });
 
   it('tidak menampilkan tahun bila tanggal kosong', () => {
-    const project = { ...MOCK_PROJECTS[0], startDate: null, endDate: null };
+    const project = { ...UVICS_PROJECTS[0], startDate: null, endDate: null };
     expect(renderToStaticMarkup(createElement(ProjectCard, { project }))).not.toContain('<time');
   });
 });

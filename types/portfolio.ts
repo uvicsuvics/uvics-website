@@ -6,12 +6,6 @@ export type ContentLevel = 'INTERNAL' | 'REGIONAL' | 'NASIONAL' | 'INTERNASIONAL
 
 export type ProjectStatus = 'PLANNED' | 'ONGOING' | 'COMPLETED' | 'ARCHIVED';
 
-/** Proyeksi publik member (D02): tanpa NIM, email, atau akses langsung ke tabel `members`. */
-export interface Member {
-  id: string;
-  name: string;
-}
-
 export interface Achievement {
   id: string;
   slug: string;
@@ -61,4 +55,24 @@ export interface AchievementMember extends Participation {
 
 export interface ProjectMember extends Participation {
   projectId: string;
+}
+
+/** Anggota tim yang sudah digabung oleh service dari baris `achievement_members` atau `project_members`. */
+export interface PortfolioTeamMember {
+  id: string;
+  name: string;
+  role: string | null;
+}
+
+export interface AchievementWithRelations {
+  achievement: Achievement;
+  members: PortfolioTeamMember[];
+  project: Project | null;
+}
+
+export interface ProjectWithRelations {
+  project: Project;
+  members: PortfolioTeamMember[];
+  /** Prestasi yang `projectId`-nya menunjuk project ini, terbaru lebih dulu. */
+  achievements: AchievementWithRelations[];
 }

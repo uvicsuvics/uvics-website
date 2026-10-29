@@ -12,11 +12,13 @@ import {
   Calendar,
   ArrowRight,
 } from "lucide-react";
-import { AchievementItem, UVICS_ACHIEVEMENTS } from "@/data/mock/achievements";
+import { LEVEL_LABELS, formatPortfolioDate, getRankTier, getYear } from "@/components/portfolio/portfolioLabels";
+import type { RankTier } from "@/components/portfolio/portfolioLabels";
 import { Button } from "@/components/ui/Button";
+import type { AchievementWithRelations } from "@/types/portfolio";
 
 interface AchievementsSectionProps {
-  achievements?: AchievementItem[];
+  achievements: AchievementWithRelations[];
 }
 
 /**
@@ -24,19 +26,24 @@ interface AchievementsSectionProps {
  * Menampilkan catatan prestasi mahasiswa Informatika UVICS dalam format linimasa kehormatan
  * dengan filter tahun interaktif, alur linimasa presisi, dan kartu milestone horizontal.
  */
-export function AchievementsSection({
-  achievements = UVICS_ACHIEVEMENTS,
-}: AchievementsSectionProps) {
+export function AchievementsSection({ achievements }: AchievementsSectionProps) {
   const [selectedYear, setSelectedYear] = useState<string>("all");
 
   const years = ["all", "2026", "2025", "2024"];
 
+  const items = achievements.map(({ achievement, members }) => ({
+    ...achievement,
+    year: String(getYear(achievement.achievementDate)),
+    tier: getRankTier(achievement.ranking),
+    memberNames: members.map((member) => member.name).join(", "),
+  }));
+
   const filteredItems =
     selectedYear === "all"
-      ? achievements
-      : achievements.filter((item) => item.year === selectedYear);
+      ? items
+      : items.filter((item) => item.year === selectedYear);
 
-  const getRankBadge = (tier: "gold" | "silver" | "bronze", rankText: string) => {
+  const getRankBadge = (tier: RankTier, rankText: string) => {
     switch (tier) {
       case "gold":
         return (
@@ -53,10 +60,16 @@ export function AchievementsSection({
           </span>
         );
       case "bronze":
-      default:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-900 border border-orange-300">
             <Award className="w-3.5 h-3.5 text-orange-600" />
+            <span>{rankText}</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-800 border border-gray-300">
+            <Award className="w-3.5 h-3.5 text-gray-500" />
             <span>{rankText}</span>
           </span>
         );
@@ -109,9 +122,9 @@ export function AchievementsSection({
             {/* Titik Node Indikator Linimasa */}
             <div
               className={`absolute -left-[31px] md:-left-[47px] top-4 w-5 h-5 rounded-full border-4 border-white shadow-xs transition-colors duration-300 ${
-                item.rankTier === "gold"
+                item.tier === "gold"
                   ? "bg-secondary"
-                  : item.rankTier === "silver"
+                  : item.tier === "silver"
                   ? "bg-slate-400"
                   : "bg-primary"
               }`}
@@ -123,14 +136,16 @@ export function AchievementsSection({
                 {/* Info Utama Prestasi (8 Kolom) */}
                 <div className="lg:col-span-8 space-y-4">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    {getRankBadge(item.rankTier, item.ranking)}
+                    {getRankBadge(item.tier, item.ranking)}
                     <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{item.date}</span>
+                      <span>{formatPortfolioDate(item.achievementDate)}</span>
                     </span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                      Tingkat {item.level}
-                    </span>
+                    {item.level ? (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                        Tingkat {LEVEL_LABELS[item.level]}
+                      </span>
+                    ) : null}
                   </div>
 
                   <div>
@@ -138,7 +153,7 @@ export function AchievementsSection({
                       {item.title}
                     </h3>
                     <p className="text-xs sm:text-sm font-semibold text-primary mt-1">
-                      {item.competitionName} • {item.organizer}
+                      {[item.competitionName, item.organizer].filter(Boolean).join(" • ")}
                     </p>
                   </div>
 
@@ -150,11 +165,8 @@ export function AchievementsSection({
                   <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-gray-100">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-gray-400" />
-                      <span className="text-xs font-bold text-gray-800">
-                        {item.teamName}:
-                      </span>
                       <span className="text-xs text-gray-600">
-                        {item.teamMembers.join(", ")}
+                        {item.memberNames}
                       </span>
                     </div>
 
@@ -170,16 +182,18 @@ export function AchievementsSection({
 
                 {/* Thumbnail Dokumentasi Visual (4 Kolom) */}
                 <div className="lg:col-span-4 relative h-48 sm:h-52 w-full rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-                  <Image
-                    src={item.image}
-                    alt={item.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 1024px) 100vw, 30vw"
-                  />
+                  {item.coverImage ? (
+                    <Image
+                      src={item.coverImage}
+                      alt={item.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 1024px) 100vw, 30vw"
+                    />
+                  ) : null}
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-950/60 via-transparent to-transparent" />
                   <div className="absolute bottom-3 left-3 right-3 text-white text-[11px] font-semibold flex items-center justify-between">
-                    <span className="truncate">{item.teamName}</span>
+                    <span className="truncate">{item.memberNames}</span>
                     <span className="font-mono text-secondary">
                       {item.year}
                     </span>

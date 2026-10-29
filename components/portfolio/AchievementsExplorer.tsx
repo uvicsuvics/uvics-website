@@ -7,7 +7,7 @@ import { Pagination } from '@/components/portfolio/Pagination';
 import { PortfolioFilter } from '@/components/portfolio/PortfolioFilter';
 import { filterAchievements, getAchievementFilterFields } from '@/components/portfolio/achievementFilters';
 import { Button } from '@/components/ui/Button';
-import type { AchievementWithRelations } from '@/lib/services/portfolioService';
+import type { AchievementWithRelations } from '@/types/portfolio';
 
 const ITEMS_PER_PAGE = 6;
 

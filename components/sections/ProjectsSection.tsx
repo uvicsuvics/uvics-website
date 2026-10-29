@@ -9,21 +9,20 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { IconBrandGithub } from "@tabler/icons-react";
-import { ProjectItem, UVICS_PROJECTS } from "@/data/mock/projects";
+import { PROJECT_STATUS_CONFIG, formatPortfolioPeriod } from "@/components/portfolio/portfolioLabels";
 import { Button } from "@/components/ui/Button";
+import type { ProjectWithRelations } from "@/types/portfolio";
 
 interface ProjectsSectionProps {
-  projects?: ProjectItem[];
+  projects: ProjectWithRelations[];
 }
 
 /**
  * Seksi 8: Featured Projects (Editorial Alternating Rows)
  * Menampilkan proyek unggulan mahasiswa dalam baris editorial bergantian (kiri-kanan) berukuran penuh.
- * Menekankan narasi karya, stack teknologi terapan, tautan demo/repo, dan studi kasus.
+ * Menekankan narasi karya, tautan demo/repo, dan studi kasus.
  */
-export function ProjectsSection({
-  projects = UVICS_PROJECTS,
-}: ProjectsSectionProps) {
+export function ProjectsSection({ projects }: ProjectsSectionProps) {
   if (!projects || projects.length === 0) {
     return (
       <div className="p-8 text-center bg-gray-50 rounded-2xl border border-gray-200">
@@ -61,8 +60,9 @@ export function ProjectsSection({
 
       {/* Baris Bergantian (Alternating Editorial Rows) */}
       <div className="space-y-24">
-        {displayProjects.map((project, index) => {
+        {displayProjects.map(({ project }, index) => {
           const isEven = index % 2 === 0;
+          const period = formatPortfolioPeriod(project.startDate, project.endDate);
 
           return (
             <motion.div
@@ -81,29 +81,30 @@ export function ProjectsSection({
                   !isEven ? "lg:order-2" : "lg:order-1"
                 }`}
               >
-                <Image
-                  src={project.coverImage}
-                  alt={project.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-700"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
+                {project.coverImage ? (
+                  <Image
+                    src={project.coverImage}
+                    alt={project.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                ) : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-950/60 via-transparent to-transparent" />
 
                 <div className="absolute top-4 left-4">
                   <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/95 text-gray-900 shadow-xs">
-                    {project.category}
+                    {PROJECT_STATUS_CONFIG[project.status].label}
                   </span>
                 </div>
 
-                <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between text-white text-xs">
-                  <span className="font-semibold text-secondary">
-                    {project.highlightStat.label}: {project.highlightStat.value}
-                  </span>
-                  <span className="font-mono text-[11px] bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm">
-                    Rilis {project.year}
-                  </span>
-                </div>
+                {period ? (
+                  <div className="absolute bottom-4 left-6 right-6 flex items-center justify-end text-white text-xs">
+                    <span className="font-mono text-[11px] bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm">
+                      {period}
+                    </span>
+                  </div>
+                ) : null}
               </div>
 
               {/* Kolom Naratif (6 Kolom) */}
@@ -114,7 +115,7 @@ export function ProjectsSection({
               >
                 <div className="space-y-2">
                   <span className="text-xs font-mono font-bold text-primary tracking-widest uppercase">
-                    PROYEK #{String(index + 1).padStart(2, "0")} • {project.status}
+                    PROYEK #{String(index + 1).padStart(2, "0")}
                   </span>
                   <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 font-heading">
                     {project.title}
@@ -124,18 +125,6 @@ export function ProjectsSection({
                 <p className="text-base text-gray-600 leading-relaxed">
                   {project.description}
                 </p>
-
-                {/* Tech Badges */}
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {project.technologies.map((tech) => (
-                    <span
-                      key={tech}
-                      className="text-xs font-medium px-3 py-1 rounded-lg bg-gray-50 border border-gray-200 text-gray-700"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
 
                 {/* Aksi & Kontributor */}
                 <div className="pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">

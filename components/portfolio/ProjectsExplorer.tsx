@@ -7,7 +7,7 @@ import { PortfolioFilter } from '@/components/portfolio/PortfolioFilter';
 import { ProjectCard } from '@/components/portfolio/ProjectCard';
 import { filterProjects, getProjectFilterFields } from '@/components/portfolio/projectFilters';
 import { Button } from '@/components/ui/Button';
-import type { ProjectWithRelations } from '@/lib/services/portfolioService';
+import type { ProjectWithRelations } from '@/types/portfolio';
 
 const ITEMS_PER_PAGE = 6;
 

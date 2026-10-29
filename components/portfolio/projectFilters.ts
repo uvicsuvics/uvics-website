@@ -1,7 +1,6 @@
 import { PROJECT_STATUS_OPTIONS, getYear } from '@/components/portfolio/portfolioLabels';
 import type { PortfolioFilterField } from '@/components/portfolio/PortfolioFilter';
-import type { ProjectWithRelations } from '@/lib/services/portfolioService';
-import type { Project } from '@/types/portfolio';
+import type { Project, ProjectWithRelations } from '@/types/portfolio';
 
 /** Tahun project = tahun startDate, atau endDate bila startDate kosong; null bila keduanya kosong. */
 function getProjectYear({ startDate, endDate }: Project): number | null {

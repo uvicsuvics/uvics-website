@@ -30,6 +30,16 @@ export const PROJECT_STATUS_OPTIONS: PortfolioOption[] = (
   Object.keys(PROJECT_STATUS_CONFIG) as ProjectStatus[]
 ).map((value) => ({ value, label: PROJECT_STATUS_CONFIG[value].label }));
 
+export type RankTier = 'gold' | 'silver' | 'bronze' | 'neutral';
+
+const RANK_TIERS: Record<string, RankTier> = { '1': 'gold', '2': 'silver', '3': 'bronze' };
+
+/** Tier warna dari teks ranking: "Juara 1" emas, "Juara 2" perak, "Juara 3" perunggu, selain itu netral. */
+export function getRankTier(ranking: string): RankTier {
+  const place = /^juara\s*([123])\b/i.exec(ranking.trim())?.[1];
+  return place ? RANK_TIERS[place] : 'neutral';
+}
+
 /** Tahun dari ISO date (YYYY-MM-DD) tanpa konversi zona waktu. */
 export function getYear(isoDate: string): number {
   return Number(isoDate.slice(0, 4));

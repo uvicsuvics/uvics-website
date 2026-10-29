@@ -3,14 +3,14 @@ import { EmptyState } from "@/components/portfolio/EmptyState";
 import { PortfolioHero } from "@/components/portfolio/PortfolioHero";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
 import { ProjectsExplorer } from "@/components/portfolio/ProjectsExplorer";
-import { listProjects } from "@/lib/services/portfolioService";
+import { getProjects } from "@/lib/services/projectService";
 
 const description = "Karya dan proyek teknologi yang dibangun anggota UVICS.";
 
 export const metadata: Metadata = { title: "Project | UVICS", description };
 
 export default async function ProjectsPage() {
-  const items = await listProjects();
+  const items = await getProjects();
 
   if (items.length === 0) {
     return (

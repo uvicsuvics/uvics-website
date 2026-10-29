@@ -1,6 +1,6 @@
 import { LEVEL_OPTIONS, getYear } from '@/components/portfolio/portfolioLabels';
 import type { PortfolioFilterField } from '@/components/portfolio/PortfolioFilter';
-import type { AchievementWithRelations } from '@/lib/services/portfolioService';
+import type { AchievementWithRelations } from '@/types/portfolio';
 
 /** Field filter prestasi: Year, Level, Ranking. Category belum ada di data prestasi. */
 export function getAchievementFilterFields(items: AchievementWithRelations[]): PortfolioFilterField[] {

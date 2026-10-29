@@ -8,7 +8,7 @@ import { AchievementCard } from "@/components/portfolio/AchievementCard";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
 import { PROJECT_STATUS_CONFIG, formatPortfolioPeriod } from "@/components/portfolio/portfolioLabels";
 import { Badge } from "@/components/ui/Badge";
-import { getProjectDetail, getRelatedProjects, listProjects } from "@/lib/services/portfolioService";
+import { getProjectBySlug, getProjects, getRelatedProjects } from "@/lib/services/projectService";
 import { cn } from "@/lib/utils";
 
 interface ProjectDetailPageProps {
@@ -16,13 +16,13 @@ interface ProjectDetailPageProps {
 }
 
 export async function generateStaticParams() {
-  const items = await listProjects();
+  const items = await getProjects();
   return items.map(({ project }) => ({ slug: project.slug }));
 }
 
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const detail = await getProjectDetail(slug);
+  const detail = await getProjectBySlug(slug);
 
   if (!detail) {
     return {
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: ProjectDetailPageProps): Prom
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const { slug } = await params;
-  const detail = await getProjectDetail(slug);
+  const detail = await getProjectBySlug(slug);
 
   if (!detail) {
     notFound();
