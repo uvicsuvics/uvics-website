@@ -5,7 +5,7 @@ import { httpUrlSchema } from "./validation";
 export const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
 // PostgREST mengembalikan timestamptz dengan offset (+00:00) dan mikrodetik.
 const timestampSchema = z.iso.datetime({ offset: true });
-// Referensi media, bukan URL (BACKEND_CONVENTIONS); bentuknya ditetapkan alur upload #28/#29.
+// Referensi media, bukan URL (BACKEND_CONVENTIONS); bentuknya ditetapkan alur upload #29 (#28 tidak menerima foto).
 const photoSchema = z.string().optional().nullable();
 
 export const memberSchema = z.object({
@@ -35,7 +35,7 @@ export const membershipHistorySchema = z.object({
   id: z.string().uuid(),
   member_id: z.string().uuid(),
   organization_period_id: z.string().uuid(),
-  department_id: z.string().uuid(),
+  department_id: z.string().uuid().nullable(),
   position_id: z.string().uuid(),
   start_date: z.string().optional().nullable(),
   end_date: z.string().optional().nullable(),
@@ -43,6 +43,8 @@ export const membershipHistorySchema = z.object({
   created_at: timestampSchema,
   updated_at: timestampSchema,
 });
+
+export const registrationStatusSchema = z.enum(["SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"]);
 
 export const registrationSchema = z.object({
   id: z.string().uuid(),
@@ -59,7 +61,7 @@ export const registrationSchema = z.object({
   motivation: z.string().optional().nullable(),
   portfolio_url: httpUrlSchema.optional().nullable(),
   photo: photoSchema,
-  status: z.enum(["SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"]).default("SUBMITTED"),
+  status: registrationStatusSchema.default("SUBMITTED"),
   admin_notes: z.string().optional().nullable(),
   submitted_at: timestampSchema,
   accepted_at: timestampSchema.optional().nullable(),

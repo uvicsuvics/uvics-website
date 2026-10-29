@@ -102,9 +102,11 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 | `MEDIA_COMPLETED` | upload_intent | `category`, `kind` |
 | `MEDIA_PUBLISHED` | upload_intent | `reference_type`, `reference_id` |
 | `PAGE_PUBLISHED` / `PROGRAM_PUBLISHED` | page / program | `status` |
+| `REGISTRATION_REVIEWED` (#29) | registration | `status`; new juga `notes_changed` (isi catatan tidak diaudit) |
+| `APPLICANT_CONVERTED` (#29) | registration | new: `member_id`, `organization_period_id`, `department_id`, `position_id` |
 | Settings (milik #30) | website_settings, `entity_id = null` | `key`; nilai hanya untuk flag publik boolean |
 
-**Direct DML.** `authenticated` dan `service_role` hanya memiliki SELECT pada tabel domain: CMS (`pages`, `programs`, `website_settings`), organisasi/membership (`registrations`, `members`, `membership_histories`, `departments`, `positions`, `organization_periods`), dan content #36 (`competitions`, `achievements`, `achievement_members`, `achievement_certificates`, `projects`, `project_members`). `service_role` melewati RLS, sehingga DML langsung berarti mutation tanpa audit (D13). Admin membaca lewat policy SELECT `active_admin_read`; tidak ada policy write yang tersisa, sehingga grant baru tidak diam-diam membuka bypass. Tersedia: `publish_page`, `publish_program`. Belum tersedia dan tetap tertutup sampai owner menambah RPC ter-audit: CRUD page/program/settings (#30), organisasi/membership (#29), dan content (owner baru). Sampai saat itu, operator mengisi data lewat seeder/`psql` sebagai owner database, bukan service client.
+**Direct DML.** `authenticated` dan `service_role` hanya memiliki SELECT pada tabel domain: CMS (`pages`, `programs`, `website_settings`), organisasi/membership (`registrations`, `members`, `membership_histories`, `departments`, `positions`, `organization_periods`), dan content #36 (`competitions`, `achievements`, `achievement_members`, `achievement_certificates`, `projects`, `project_members`). `service_role` melewati RLS, sehingga DML langsung berarti mutation tanpa audit (D13). Admin membaca lewat policy SELECT `active_admin_read`; tidak ada policy write yang tersisa, sehingga grant baru tidak diam-diam membuka bypass. Tersedia: `publish_page`, `publish_program`. Belum tersedia dan tetap tertutup sampai owner menambah RPC ter-audit: CRUD page/program/settings (#30), organisasi/membership (#29), dan content (owner baru). Sampai saat itu, operator mengisi data lewat seeder/`psql` sebagai owner database, bukan service client. Supabase hosted memberi ALL pada objek baru di `public` ke `anon`, `authenticated`, dan `service_role` (default privileges), jadi migration mencabut dari `public, anon, authenticated, service_role` lalu grant eksplisit. `tests/db/bootstrap.sql` meniru default privileges ini; `tests/db/security.sql` menolak grant tulis apa pun di `public` (kecuali DML provisioning `service_role` pada `admins`) dan EXECUTE `anon` di luar `read_public_settings()`.
 
 **DTO dan privasi.** `lib/backend/dto.ts`:
 
@@ -134,8 +136,8 @@ Semua tabel memakai RLS; `service_role` hanya SELECT pada seluruh tabel domain d
 Berlaku untuk `lib/backend/content.ts` (competition, achievement, project). Field DTO memakai snake_case sesuai kolom database.
 
 - **Tanggal:** `registration_deadline`, `competition_date`, `achievement_date`, `start_date`, dan `end_date` bertipe `date`, dikirim `YYYY-MM-DD` tanpa jam dan zona waktu.
-- **Level:** kode `content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` ([U17](DECISIONS.md#u17--nilai-baku-level)). Label tampilan menjadi urusan frontend. Filter `level` di luar kode ini menghasilkan `VALIDATION_ERROR`.
-- **Media:** `poster` (competition) dan `cover_image` (achievement, project) berisi referensi media, bukan URL, maksimal 500 karakter. Bentuk final ditetapkan alur upload #28/#29. Sertifikat ada di tabel `achievement_certificates` yang hanya terbaca admin aktif ([U18](DECISIONS.md#u18--data-privat-konten-untuk-authenticated-non-admin)).
+- **Level:** kode `content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` ([D20](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). Label tampilan menjadi urusan frontend. Filter `level` di luar kode ini menghasilkan `VALIDATION_ERROR`.
+- **Media:** `poster` (competition) dan `cover_image` (achievement, project) berisi referensi media, bukan URL, maksimal 500 karakter. Bentuk final ditetapkan alur upload #28/#29. Sertifikat ada di tabel `achievement_certificates` yang hanya terbaca admin aktif ([D21](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 - **Anggota:** proyeksi publik `achievement_members`/`project_members` hanya `member_name` dan `role`. Anggota yang tertaut lewat `member_id` tampil dengan `member_name: null` sampai proyeksi D02 tersedia.
 - **Visibilitas:** query publik selalu memfilter `publication_status = 'PUBLISHED'` dan tidak mengirim field `publication_status`.
 - **Pencarian:** competition mencari `title` dan `organizer`, achievement mencari `title` dan `competition_name`, project mencari `title`. Karakter `, ( ) " ' \ * % _ :` dibuang dari kata kunci; hasil kosong berarti tanpa filter.
@@ -157,3 +159,26 @@ Pemetaan DTO competition ke `types/competition.ts` (frontend #15), untuk issue i
 | `status` | `status` | Nilai sama (`UPCOMING` … `FINISHED`) |
 | `featured`, `created_at`, `updated_at` | `featured`, `createdAt`, `updatedAt` | |
 | Filter kosong (`status=`, `level=`) | Filter `'ALL'` | Kirim kosong atau hilangkan parameter; `ALL` ditolak |
+
+## Registration publik #28
+
+Pendaftaran `/join` tidak membuat akun. Alur: Server Action `submitRegistrationAction` → `assertOrigin` (satu-satunya pengecekan origin aplikasi untuk `/join`; `proxy.ts` hanya mencakup `/admin` dan `/api/admin`) → `trustedIp` → `submitRegistration` di `lib/backend/registration.ts`: Zod `registrationSubmissionSchema` (strict, pesan Indonesia lewat `registrationErrorMap`) → `limitRegistration(email, ip)` → RPC `submit_registration`. Zod dijalankan sebelum limiter karena bucket email membutuhkan email ternormalisasi; input tidak valid tidak menyentuh database.
+
+| Status RPC | Hasil |
+| --- | --- |
+| `SUBMITTED` | `{ ok: true, data: null }` tanpa ID |
+| `CLOSED` (`registration_open` bukan JSON `true`) | `FORBIDDEN`; form menampilkan state tertutup |
+| `DUPLICATE` (registration aktif atau NIM sudah member) | `CONFLICT`, `field_errors.nim` = pesan duplikat; respons sama untuk kedua kasus (D02) |
+| `INVALID_DEPARTMENT` | `VALIDATION_ERROR`, `field_errors.preferred_department_id` |
+| error RPC/bentuk tak dikenal | `SERVICE_UNAVAILABLE` tanpa detail |
+
+Kuota `consume_rate_limit`: `registration_email_ip` 5/jam dan `registration_ip` 60/jam (NAT kampus); limiter gagal → 503. `submit_registration` hanya dapat dieksekusi `service_role` — pengecualian service client ketiga setelah limiter dan media; tidak ada grant DML langsung untuk role mana pun. Registration aktif per NIM ditegakkan index parsial `registrations_one_active_per_nim` (U19); `consent_at` diisi waktu database (U20). Membuka/menutup pendaftaran: toggle settings milik #30/#27; sebelum itu SQL operator di runbook.
+
+## Kontrak review registrasi dan konversi anggota #29
+
+Berlaku untuk `lib/backend/registration-review.ts` dan migration `20261029174600_registration_review_conversion.sql`. Server Action admin tetap memanggil `requireAdmin` lebih dulu.
+
+- **Listing:** `listAdminRegistrations` memakai proyeksi listing #31 (`id, full_name, nim, study_program, batch, preferred_department_id, status, submitted_at`), filter `status`, search nama/NIM (`normalizeSearch`, minimal 2 karakter), order `created_at DESC, id DESC`, dan paginasi standar. Kontak, jawaban, `admin_notes`, dan `consent_at` hanya ada di `getAdminRegistrationById`.
+- **Review:** `public.admin_review_registration(p_registration_id uuid, p_status text, p_admin_notes text default null)`. Transisi mengikuti issue #29: `SUBMITTED → UNDER_REVIEW`, `UNDER_REVIEW → ACCEPTED | REJECTED`. Status yang sama hanya memperbarui catatan; tanpa perubahan, tidak ada audit. `REJECTED` dan registration terkonversi bersifat final, sehingga accept/reject harus melewati `UNDER_REVIEW`. Masuk `ACCEPTED` mengisi `accepted_at` dan mengosongkan `rejected_at`, begitu pula sebaliknya. `p_admin_notes` null mempertahankan catatan, string kosong menghapusnya, maksimal 2000 karakter.
+- **Konversi:** `public.admin_convert_registration_to_member(p_registration_id uuid, p_organization_period_id uuid, p_position_id uuid, p_start_date date, p_department_id uuid default null)`. Registration wajib `ACCEPTED` dan belum dikonversi (D12), periode bukan `ENDED` dan `p_start_date` di dalam rentang periode, posisi dan departemen aktif, serta NIM dan email belum dipakai member. RPC membuat member `ACTIVE` dan `membership_histories`, mengisi `converted_member_id`, lalu menulis audit dalam satu transaksi (D13). `department_id` null diizinkan sesuai migration ini; syarat "posisi non-inti wajib departemen" menunggu keputusan U01/U08.
+- **Error:** guard bisnis → `P0001` (`CONFLICT`); registration, periode, posisi, atau departemen tidak ditemukan → `P0002` (`NOT_FOUND`); sesi bukan admin → `42501` (`FORBIDDEN`).

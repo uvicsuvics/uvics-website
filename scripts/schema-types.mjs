@@ -3,8 +3,8 @@ import { createRequire } from "node:module";
 
 const ts = createRequire(import.meta.url)("typescript");
 const SCALAR = { text: "string", uuid: "string", date: "string", timestamptz: "string", varchar: "string", bool: "boolean", int2: "number", int4: "number", int8: "number", numeric: "number", jsonb: "Json", json: "Json", inet: "unknown" };
-const ARG = { uuid: "string", text: "string", integer: "number", bigint: "number", boolean: "boolean" };
-const RETURNS = { void: "undefined", json: "Json", jsonb: "Json", boolean: "boolean" };
+const ARG = { uuid: "string", text: "string", date: "string", integer: "number", bigint: "number", boolean: "boolean" };
+const RETURNS = { void: "undefined", json: "Json", jsonb: "Json", boolean: "boolean", text: "string" };
 
 const SQL = {
   columns: `select c.table_name, c.column_name, c.is_nullable = 'YES' as nullable,

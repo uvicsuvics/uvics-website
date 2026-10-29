@@ -378,8 +378,6 @@ export const MobileNav = ({
           ? "1px solid var(--color-muted)"
           : "1px solid transparent",
         width: isVis ? "92%" : "100%",
-        paddingRight: isVis ? "12px" : "0px",
-        paddingLeft: isVis ? "12px" : "0px",
         borderRadius: isVis ? "1rem" : "2rem",
         y: isVis ? 8 : 0,
       }}
@@ -393,8 +391,9 @@ export const MobileNav = ({
             }
       }
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-transparent px-0 py-2 lg:hidden",
-        isVis && "bg-white/95",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between px-3 py-2 lg:hidden",
+        // Selalu berlatar seperti NavBody agar logo dan hamburger terbaca di atas hero foto gelap.
+        isVis ? "bg-white/95" : "bg-white/80 backdrop-blur-md",
         className,
       )}
     >
