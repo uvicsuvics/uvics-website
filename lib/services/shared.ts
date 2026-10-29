@@ -18,3 +18,16 @@ export function findBySlug<T extends { slug: string }>(items: readonly T[], slug
 export function toTeamMembers(rows: readonly (AchievementMember | ProjectMember)[]): PortfolioTeamMember[] {
   return rows.map((row) => ({ id: row.id, name: row.memberName, role: row.role }));
 }
+
+/** Kelompokkan item per kunci, urutan input terjaga; kunci null dilewati. Untuk membangun relasi sekali, bukan filter per item. */
+export function groupBy<T>(items: readonly T[], key: (item: T) => string | null): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const k = key(item);
+    if (k === null) continue;
+    const group = groups.get(k);
+    if (group) group.push(item);
+    else groups.set(k, [item]);
+  }
+  return groups;
+}

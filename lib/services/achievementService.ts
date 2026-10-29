@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   UVICS_ACHIEVEMENT_MEMBERS,
   UVICS_ACHIEVEMENTS,
@@ -5,7 +6,7 @@ import {
   type AchievementsPageContent,
 } from "@/data/mock/achievements";
 import { UVICS_PROJECTS } from "@/data/mock/projects";
-import { applyLimit, findBySlug, toTeamMembers, type ListOptions } from "@/lib/services/shared";
+import { applyLimit, findBySlug, groupBy, toTeamMembers, type ListOptions } from "@/lib/services/shared";
 import type { Achievement, AchievementWithRelations } from "@/types/portfolio";
 
 // Sumber data sementara: mock relasional. Join dilakukan di sini, supaya halaman tidak berubah
@@ -13,12 +14,14 @@ import type { Achievement, AchievementWithRelations } from "@/types/portfolio";
 
 const PROJECTS_BY_ID = new Map(UVICS_PROJECTS.map((project) => [project.id, project]));
 
-function toWithRelations(achievement: Achievement): AchievementWithRelations {
-  return {
+/** Peserta dikelompokkan sekali per pemanggilan, bukan difilter ulang untuk tiap prestasi. */
+function createRelationBuilder(): (achievement: Achievement) => AchievementWithRelations {
+  const membersByAchievement = groupBy(UVICS_ACHIEVEMENT_MEMBERS, (row) => row.achievementId);
+  return (achievement) => ({
     achievement,
-    members: toTeamMembers(UVICS_ACHIEVEMENT_MEMBERS.filter((row) => row.achievementId === achievement.id)),
+    members: toTeamMembers(membersByAchievement.get(achievement.id) ?? []),
     project: achievement.projectId ? (PROJECTS_BY_ID.get(achievement.projectId) ?? null) : null,
-  };
+  });
 }
 
 /** Jumlah `memberId` unik; peserta non-member (`memberId` null) dan nama yang sama tidak mempengaruhi hitungan. */
@@ -34,13 +37,14 @@ export async function getAchievementMemberCount(): Promise<number> {
 /** Prestasi, terbaru lebih dulu. */
 export async function getAchievements(options: ListOptions = {}): Promise<AchievementWithRelations[]> {
   const sorted = [...UVICS_ACHIEVEMENTS].sort((a, b) => b.achievementDate.localeCompare(a.achievementDate));
-  return applyLimit(sorted, options.limit).map(toWithRelations);
+  return applyLimit(sorted, options.limit).map(createRelationBuilder());
 }
 
-export async function getAchievementBySlug(slug: string): Promise<AchievementWithRelations | null> {
+/** Dibungkus `cache` supaya `generateMetadata` dan page berbagi satu hasil per request. */
+export const getAchievementBySlug = cache(async (slug: string): Promise<AchievementWithRelations | null> => {
   const achievement = findBySlug(UVICS_ACHIEVEMENTS, slug);
-  return achievement ? toWithRelations(achievement) : null;
-}
+  return achievement ? createRelationBuilder()(achievement) : null;
+});
 
 /** Prestasi lain dengan level atau tahun yang sama, terbaru lebih dulu. */
 export async function getRelatedAchievements(slug: string, limit = 3): Promise<AchievementWithRelations[]> {

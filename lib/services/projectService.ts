@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   UVICS_PROJECT_MEMBERS,
   UVICS_PROJECTS,
@@ -5,30 +6,33 @@ import {
   type ProjectsPageContent,
 } from "@/data/mock/projects";
 import { getAchievements } from "@/lib/services/achievementService";
-import { applyLimit, findBySlug, toTeamMembers, type ListOptions } from "@/lib/services/shared";
+import { applyLimit, findBySlug, groupBy, toTeamMembers, type ListOptions } from "@/lib/services/shared";
 import type { Project, ProjectWithRelations } from "@/types/portfolio";
 
 // Sumber data sementara: mock relasional. Lihat achievementService.ts.
 
-async function toWithRelations(project: Project): Promise<ProjectWithRelations> {
-  const achievements = (await getAchievements()).filter(({ achievement }) => achievement.projectId === project.id);
-  return {
+/** Relasi dibangun sekali per pemanggilan (satu join prestasi, satu pengelompokan anggota), lalu dipakai tiap project. */
+async function createRelationBuilder(): Promise<(project: Project) => ProjectWithRelations> {
+  const achievementsByProject = groupBy(await getAchievements(), ({ achievement }) => achievement.projectId);
+  const membersByProject = groupBy(UVICS_PROJECT_MEMBERS, (row) => row.projectId);
+  return (project) => ({
     project,
-    members: toTeamMembers(UVICS_PROJECT_MEMBERS.filter((row) => row.projectId === project.id)),
-    achievements,
-  };
+    members: toTeamMembers(membersByProject.get(project.id) ?? []),
+    achievements: achievementsByProject.get(project.id) ?? [],
+  });
 }
 
 /** Project, terbaru (startDate) lebih dulu; tanpa startDate di urutan akhir. */
 export async function getProjects(options: ListOptions = {}): Promise<ProjectWithRelations[]> {
   const sorted = [...UVICS_PROJECTS].sort((a, b) => (b.startDate ?? "").localeCompare(a.startDate ?? ""));
-  return Promise.all(applyLimit(sorted, options.limit).map(toWithRelations));
+  return applyLimit(sorted, options.limit).map(await createRelationBuilder());
 }
 
-export async function getProjectBySlug(slug: string): Promise<ProjectWithRelations | null> {
+/** Dibungkus `cache` supaya `generateMetadata` dan page berbagi satu hasil per request. */
+export const getProjectBySlug = cache(async (slug: string): Promise<ProjectWithRelations | null> => {
   const project = findBySlug(UVICS_PROJECTS, slug);
-  return project ? toWithRelations(project) : null;
-}
+  return project ? (await createRelationBuilder())(project) : null;
+});
 
 /** Project lain dengan status yang sama lebih dulu, lalu sisanya; terbaru lebih dulu di tiap kelompok. */
 export async function getRelatedProjects(slug: string, limit = 3): Promise<ProjectWithRelations[]> {

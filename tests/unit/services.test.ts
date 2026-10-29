@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { filterAchievements, getAchievementFilterFields } from "@/components/portfolio/achievementFilters";
 import { filterProjects, getProjectFilterFields } from "@/components/portfolio/projectFilters";
+import * as achievementService from "@/lib/services/achievementService";
 import {
   countUniqueMemberIds,
   getAchievementBySlug,
@@ -11,7 +12,7 @@ import {
 } from "@/lib/services/achievementService";
 import { getCompetitionBySlug, getCompetitions } from "@/lib/services/competitionService";
 import { getProjectBySlug, getProjects, getRelatedProjects } from "@/lib/services/projectService";
-import { toTeamMembers } from "@/lib/services/shared";
+import { groupBy, toTeamMembers } from "@/lib/services/shared";
 import { UVICS_ACHIEVEMENT_MEMBERS, UVICS_ACHIEVEMENTS } from "@/data/mock/achievements";
 import { UVICS_COMPETITIONS } from "@/data/mock/competitions";
 import { UVICS_PROJECTS } from "@/data/mock/projects";
@@ -193,5 +194,34 @@ describe("projectFilters", () => {
     expect(filterProjects(items, { year: "2025" })).toHaveLength(2);
     expect(filterProjects(items, { status: "ONGOING" })).toHaveLength(1);
     expect(filterProjects(items, { year: "2025", status: "ONGOING" })).toHaveLength(0);
+  });
+});
+
+describe("portfolio relations are built once per call (no N+1)", () => {
+  it("groups items by key in input order and skips null keys", () => {
+    const grouped = groupBy(
+      [
+        { id: 1, key: "a" },
+        { id: 2, key: null },
+        { id: 3, key: "b" },
+        { id: 4, key: "a" },
+      ],
+      ({ key }) => key,
+    );
+    expect([...grouped.keys()]).toEqual(["a", "b"]);
+    expect(grouped.get("a")?.map(({ id }) => id)).toEqual([1, 4]);
+  });
+
+  it("joins the achievements once for all projects, not once per project", async () => {
+    expect(UVICS_PROJECTS.length).toBeGreaterThan(1);
+    const spy = vi.spyOn(achievementService, "getAchievements");
+    try {
+      await getProjects();
+      await getProjectBySlug(UVICS_PROJECTS[0].slug);
+      await getRelatedProjects(UVICS_PROJECTS[0].slug);
+      expect(spy).toHaveBeenCalledTimes(3);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
