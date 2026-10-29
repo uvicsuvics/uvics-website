@@ -7,6 +7,7 @@ import ProjectsPage from '@/app/(public)/projects/page';
 import { AchievementCard } from '@/components/portfolio/AchievementCard';
 import { PortfolioFilter } from '@/components/portfolio/PortfolioFilter';
 import { ProjectCard } from '@/components/portfolio/ProjectCard';
+import { TeamMemberList } from '@/components/portfolio/TeamMemberList';
 import {
   LEVEL_OPTIONS,
   PROJECT_STATUS_OPTIONS,
@@ -105,13 +106,12 @@ describe('AchievementCard', () => {
 });
 
 describe('ProjectCard', () => {
-  it('menampilkan status, ringkasan, tahun, dan kategori bila diberikan', () => {
+  it('menampilkan status, ringkasan, tahun, dan tautan detail', () => {
     const project = UVICS_PROJECTS[0];
-    const html = renderToStaticMarkup(createElement(ProjectCard, { project, category: 'Web App' }));
+    const html = renderToStaticMarkup(createElement(ProjectCard, { project }));
     expect(html).toContain('Selesai');
     expect(html).toContain(project.summary);
     expect(html).toContain('>2025<');
-    expect(html).toContain('Web App');
     expect(html).toContain(`href="/projects/${project.slug}"`);
   });
 
@@ -158,6 +158,28 @@ describe('ProjectsSection', () => {
     const project = { ...UVICS_PROJECTS[0], projectUrl: 'https://demo.example.com/app' };
     const html = renderToStaticMarkup(createElement(ProjectsSection, { projects: [toRelations(project)] }));
     expect(html).toContain('<a href="https://demo.example.com/app" target="_blank" rel="noopener noreferrer"');
+  });
+});
+
+describe('TeamMemberList', () => {
+  it('menampilkan nama dan peran, dengan pengganti untuk anggota tanpa nama publik', () => {
+    const html = renderToStaticMarkup(
+      createElement(TeamMemberList, {
+        members: [
+          { id: 'a', name: 'Dave', role: 'Project Lead' },
+          { id: 'b', name: null, role: null },
+        ],
+      }),
+    );
+    expect(html).toContain('Dave');
+    expect(html).toContain('Project Lead');
+    expect(html).toContain('Anggota UVICS');
+  });
+
+  it('menampilkan teks kosong bila tidak ada anggota', () => {
+    const html = renderToStaticMarkup(createElement(TeamMemberList, { members: [] }));
+    expect(html).toContain('Data tim belum tersedia.');
+    expect(html).not.toContain('<li');
   });
 });
 

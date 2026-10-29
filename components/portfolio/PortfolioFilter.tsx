@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import type { PortfolioOption } from '@/components/portfolio/portfolioLabels';
 
 export interface PortfolioFilterField {
-  /** Kunci unik, mis. "year", "level", "category", "ranking", "status". */
+  /** Kunci unik, mis. "year", "level", "ranking", "status". */
   id: string;
   label: string;
   options: PortfolioOption[];
@@ -27,7 +27,7 @@ interface PortfolioFilterProps {
 
 /**
  * Kontrol filter terkontrol berbasis select native (nyaman di mobile dan aksesibel).
- * Field ditentukan pemanggil: Year, Level, Category, Ranking untuk prestasi; Status untuk project.
+ * Field ditentukan pemanggil: Tahun, Level, Ranking untuk prestasi; Tahun, Status untuk project (filter kategori menunggu U22).
  */
 export function PortfolioFilter({
   fields,

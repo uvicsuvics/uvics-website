@@ -2,12 +2,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarDays, Trophy, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { LEVEL_LABELS, formatPortfolioDate, summarizeMembers } from '@/components/portfolio/portfolioLabels';
+import {
+  LEVEL_LABELS,
+  formatPortfolioDate,
+  getRankTier,
+  summarizeMembers,
+} from '@/components/portfolio/portfolioLabels';
 import { cn } from '@/lib/utils';
 import type { Achievement } from '@/types/portfolio';
 
 const MAX_VISIBLE_MEMBERS = 3;
-const TOP_RANK_PATTERN = /^juara\s*1\b/i;
 
 interface AchievementCardProps {
   achievement: Achievement;
@@ -26,7 +30,7 @@ interface AchievementCardProps {
 export function AchievementCard({ achievement, members = [], className }: AchievementCardProps) {
   const { slug, title, competitionName, level, ranking, achievementDate, coverImage } = achievement;
   const memberSummary = summarizeMembers(members, MAX_VISIBLE_MEMBERS);
-  const isTopRank = TOP_RANK_PATTERN.test(ranking);
+  const isTopRank = getRankTier(ranking) === 'gold';
 
   return (
     <article

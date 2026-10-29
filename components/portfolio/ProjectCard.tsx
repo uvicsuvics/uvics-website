@@ -8,19 +8,16 @@ import type { Project } from '@/types/portfolio';
 
 interface ProjectCardProps {
   project: Project;
-  /** Belum ada kolom `category` pada tabel projects; hanya tampil bila pemanggil menyediakannya. */
-  category?: string;
   className?: string;
 }
 
 /**
- * Kartu project: cover, kategori, status, judul, ringkasan, dan tahun.
+ * Kartu project: cover, status, judul, ringkasan, dan tahun.
  * Seluruh kartu dapat diklik lewat tautan pada judul menuju /projects/{slug}.
  * @param project - Data project
- * @param category - Kategori project (opsional)
  * @param className - CSS class tambahan (opsional)
  */
-export function ProjectCard({ project, category, className }: ProjectCardProps) {
+export function ProjectCard({ project, className }: ProjectCardProps) {
   const { slug, title, summary, coverImage, status, startDate, endDate } = project;
   const { label: statusLabel, badgeClassName } = PROJECT_STATUS_CONFIG[status];
   const referenceDate = startDate ?? endDate;
@@ -53,12 +50,6 @@ export function ProjectCard({ project, category, className }: ProjectCardProps) 
       </div>
 
       <div className="flex flex-col flex-1 gap-3 p-5">
-        {category ? (
-          <div>
-            <Badge variant="primary">{category}</Badge>
-          </div>
-        ) : null}
-
         <h3 className="font-heading sm:text-lg font-bold leading-snug text-gray-900 line-clamp-2 transition-colors group-hover:text-primary">
           <Link
             href={`/projects/${slug}`}

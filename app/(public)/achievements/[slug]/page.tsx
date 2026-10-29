@@ -2,10 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowLeft, Building2, CalendarDays, Flag, Trophy, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, Flag, Trophy } from "lucide-react";
 import { AchievementCard } from "@/components/portfolio/AchievementCard";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
-import { LEVEL_LABELS, MEMBER_NAME_FALLBACK, formatPortfolioDate } from "@/components/portfolio/portfolioLabels";
+import { TeamMemberList } from "@/components/portfolio/TeamMemberList";
+import { LEVEL_LABELS, formatPortfolioDate } from "@/components/portfolio/portfolioLabels";
 import { Badge } from "@/components/ui/Badge";
 import {
   getAchievementBySlug,
@@ -121,26 +122,7 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
             <h2 id="team-heading" className="font-heading text-xl font-bold text-gray-900 sm:text-2xl">
               Tim
             </h2>
-            {members.length > 0 ? (
-              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {members.map((member) => (
-                  <li
-                    key={member.id}
-                    className="flex items-center gap-3 p-4 bg-card rounded-xl border border-gray-200/90 shadow-2xs"
-                  >
-                    <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary-50 text-primary shrink-0">
-                      <UserRound className="w-5 h-5" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{member.name ?? MEMBER_NAME_FALLBACK}</p>
-                      {member.role ? <p className="text-xs text-gray-500 truncate">{member.role}</p> : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-500">Data tim belum tersedia.</p>
-            )}
+            <TeamMemberList members={members} />
           </section>
         </div>
 
