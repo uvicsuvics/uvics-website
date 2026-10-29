@@ -12,6 +12,7 @@ import {
   formatPortfolioPeriod,
 } from "@/components/portfolio/portfolioLabels";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { getProjectBySlug, getProjects, getRelatedProjects } from "@/lib/services/projectService";
 import { cn } from "@/lib/utils";
 
@@ -158,19 +159,14 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
               <ul className="flex flex-col gap-2">
                 {links.map(({ icon: Icon, label, href }) => (
                   <li key={label}>
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-3 px-4 py-3 text-sm font-semibold text-primary rounded-lg border border-primary/30 transition-colors duration-200 ease-standard hover:text-white hover:bg-primary hover:border-primary"
-                    >
+                    <Button variant="outline" size="sm" href={href} external className="group gap-3 w-full">
                       <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span className="flex-1">{label}</span>
+                      <span className="flex-1 text-left">{label}</span>
                       <ArrowUpRight
                         className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
                         aria-hidden="true"
                       />
-                    </a>
+                    </Button>
                   </li>
                 ))}
               </ul>

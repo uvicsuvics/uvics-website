@@ -1,4 +1,9 @@
-import { UVICS_PROJECT_MEMBERS, UVICS_PROJECTS } from "@/data/mock/projects";
+import {
+  UVICS_PROJECT_MEMBERS,
+  UVICS_PROJECTS,
+  UVICS_PROJECTS_PAGE,
+  type ProjectsPageContent,
+} from "@/data/mock/projects";
 import { getAchievements } from "@/lib/services/achievementService";
 import { applyLimit, findBySlug, toTeamMembers, type ListOptions } from "@/lib/services/shared";
 import type { Project, ProjectWithRelations } from "@/types/portfolio";
@@ -34,4 +39,8 @@ export async function getRelatedProjects(slug: string, limit = 3): Promise<Proje
   const sameStatus = others.filter(({ project }) => project.status === current.status);
   const rest = others.filter(({ project }) => project.status !== current.status);
   return [...sameStatus, ...rest].slice(0, limit);
+}
+
+export async function getProjectsPage(): Promise<ProjectsPageContent> {
+  return UVICS_PROJECTS_PAGE;
 }

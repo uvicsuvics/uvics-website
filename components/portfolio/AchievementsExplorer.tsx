@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { SearchX } from 'lucide-react';
 import { AchievementCard } from '@/components/portfolio/AchievementCard';
-import { EmptyState } from '@/components/portfolio/EmptyState';
-import { Pagination } from '@/components/portfolio/Pagination';
 import { PortfolioFilter } from '@/components/portfolio/PortfolioFilter';
 import { filterAchievements, getAchievementFilterFields } from '@/components/portfolio/achievementFilters';
 import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Pagination } from '@/components/ui/Pagination';
 import type { AchievementWithRelations } from '@/types/portfolio';
 
 const ITEMS_PER_PAGE = 6;
@@ -75,6 +76,7 @@ export function AchievementsExplorer({ items }: AchievementsExplorerProps) {
         </ul>
       ) : (
         <EmptyState
+          icon={SearchX}
           title="Prestasi tidak ditemukan"
           message={
             items.length === 0

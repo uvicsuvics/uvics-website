@@ -1,3 +1,4 @@
+import type { PageHeroContent } from '@/data/mock/about';
 import type { Achievement, AchievementMember } from '@/types/portfolio';
 
 // Data relasional bergaya tabel: relasi hanya lewat id, tanpa objek bersarang.
@@ -79,3 +80,19 @@ export const UVICS_ACHIEVEMENT_MEMBERS: AchievementMember[] = [
   // Peserta non-member (D18): hanya nama, tanpa tautan ke members.
   { id: 'am-12', achievementId: 'ach-gemastik-xvii-2024', memberId: null, memberName: 'Alvin Mokodompit', role: 'Anggota Tamu' },
 ];
+
+export interface AchievementsPageContent {
+  hero: PageHeroContent;
+}
+
+export const UVICS_ACHIEVEMENTS_PAGE: AchievementsPageContent = {
+  hero: {
+    title: 'Prestasi',
+    titleHighlight: 'UVICS',
+    description: 'Capaian mahasiswa UVICS di kompetisi nasional dan internasional.',
+    image: {
+      src: '/images/img/foto-8.webp',
+      alt: 'Anggota UVICS berkaus biru berfoto bersama di pantai dengan pohon kelapa dan gazebo',
+    },
+  },
+};

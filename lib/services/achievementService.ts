@@ -1,4 +1,9 @@
-import { UVICS_ACHIEVEMENT_MEMBERS, UVICS_ACHIEVEMENTS } from "@/data/mock/achievements";
+import {
+  UVICS_ACHIEVEMENT_MEMBERS,
+  UVICS_ACHIEVEMENTS,
+  UVICS_ACHIEVEMENTS_PAGE,
+  type AchievementsPageContent,
+} from "@/data/mock/achievements";
 import { UVICS_PROJECTS } from "@/data/mock/projects";
 import { applyLimit, findBySlug, toTeamMembers, type ListOptions } from "@/lib/services/shared";
 import type { Achievement, AchievementWithRelations } from "@/types/portfolio";
@@ -52,4 +57,8 @@ export async function getRelatedAchievements(slug: string, limit = 3): Promise<A
           achievement.achievementDate.startsWith(currentYear)),
     )
     .slice(0, limit);
+}
+
+export async function getAchievementsPage(): Promise<AchievementsPageContent> {
+  return UVICS_ACHIEVEMENTS_PAGE;
 }

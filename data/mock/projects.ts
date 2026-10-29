@@ -1,3 +1,4 @@
+import type { PageHeroContent } from '@/data/mock/about';
 import type { Project, ProjectMember } from '@/types/portfolio';
 
 // Data relasional bergaya tabel: relasi hanya lewat id, tanpa objek bersarang.
@@ -84,3 +85,19 @@ export const UVICS_PROJECT_MEMBERS: ProjectMember[] = [
   { id: 'pm-10', projectId: 'proj-ctf-arena', memberId: 'mem-matthew', memberName: 'Matthew Tambuwun', role: 'Project Lead' },
   { id: 'pm-11', projectId: 'proj-ctf-arena', memberId: 'mem-dave', memberName: 'Dave Sumampouw', role: 'Security Engineer' },
 ];
+
+export interface ProjectsPageContent {
+  hero: PageHeroContent;
+}
+
+export const UVICS_PROJECTS_PAGE: ProjectsPageContent = {
+  hero: {
+    title: 'Project',
+    titleHighlight: 'UVICS',
+    description: 'Karya dan proyek teknologi yang dibangun anggota UVICS.',
+    image: {
+      src: '/images/img/foto-7.webp',
+      alt: 'Anggota UVICS berfoto bersama di ruang kelas Universitas Klabat',
+    },
+  },
+};

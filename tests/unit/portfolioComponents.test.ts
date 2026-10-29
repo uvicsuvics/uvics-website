@@ -1,9 +1,10 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { Trophy } from 'lucide-react';
+import { describe, expect, it, vi } from 'vitest';
+import AchievementsPage from '@/app/(public)/achievements/page';
+import ProjectsPage from '@/app/(public)/projects/page';
 import { AchievementCard } from '@/components/portfolio/AchievementCard';
-import { EmptyState } from '@/components/portfolio/EmptyState';
-import { Pagination } from '@/components/portfolio/Pagination';
 import { PortfolioFilter } from '@/components/portfolio/PortfolioFilter';
 import { ProjectCard } from '@/components/portfolio/ProjectCard';
 import {
@@ -14,8 +15,23 @@ import {
   getRankTier,
   getYear,
 } from '@/components/portfolio/portfolioLabels';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Pagination } from '@/components/ui/Pagination';
 import { UVICS_ACHIEVEMENTS } from '@/data/mock/achievements';
 import { UVICS_PROJECTS } from '@/data/mock/projects';
+import { getAchievementsPage } from '@/lib/services/achievementService';
+import { getProjectsPage } from '@/lib/services/projectService';
+
+// Halaman daftar diuji pada cabang data kosong; getter konten hero tetap asli.
+vi.mock('@/lib/services/achievementService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/services/achievementService')>()),
+  getAchievements: async () => [],
+}));
+vi.mock('@/lib/services/projectService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/services/projectService')>()),
+  getProjects: async () => [],
+}));
 
 const noop = () => undefined;
 
@@ -172,6 +188,49 @@ describe('EmptyState', () => {
     expect(html).toContain('Tidak ditemukan');
     expect(html).toContain('Belum ada prestasi untuk filter yang dipilih.');
     expect(html).toContain('Reset');
+  });
+});
+
+describe('EmptyState dengan ikon', () => {
+  it('merender svg hanya bila icon diberikan', () => {
+    const withIcon = renderToStaticMarkup(createElement(EmptyState, { message: 'Kosong.', icon: Trophy }));
+    expect(withIcon).toContain('<svg');
+    expect(withIcon).toContain('Kosong.');
+    expect(renderToStaticMarkup(createElement(EmptyState, { message: 'Kosong.' }))).not.toContain('<svg');
+  });
+});
+
+describe('Button tautan eksternal', () => {
+  it('membuka tab baru dengan rel aman bila external', () => {
+    const html = renderToStaticMarkup(Button({ href: 'https://x.test', external: true, children: 'Buka' }));
+    expect(html).toContain('href="https://x.test"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
+
+  it('tetap tautan internal tanpa target bila tidak external', () => {
+    const html = renderToStaticMarkup(Button({ href: '/projects', children: 'Buka' }));
+    expect(html).toContain('href="/projects"');
+    expect(html).not.toContain('target=');
+  });
+});
+
+describe('halaman daftar tanpa data', () => {
+  it('prestasi: hero PageHero dan pesan kosong tanpa statistik', async () => {
+    const { hero } = await getAchievementsPage();
+    const html = renderToStaticMarkup(await AchievementsPage());
+    expect(html).toContain('<h1');
+    expect(html).toContain(hero.title);
+    expect(html).toContain('Belum ada prestasi yang tersedia saat ini.');
+    expect(html).not.toContain('<dl');
+  });
+
+  it('project: hero PageHero dan pesan kosong', async () => {
+    const { hero } = await getProjectsPage();
+    const html = renderToStaticMarkup(await ProjectsPage());
+    expect(html).toContain('<h1');
+    expect(html).toContain(hero.title);
+    expect(html).toContain('Belum ada project yang tersedia.');
   });
 });
 

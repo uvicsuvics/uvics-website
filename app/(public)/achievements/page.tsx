@@ -1,21 +1,29 @@
 import type { Metadata } from "next";
 import { AchievementsExplorer } from "@/components/portfolio/AchievementsExplorer";
-import { EmptyState } from "@/components/portfolio/EmptyState";
 import { FeaturedAchievement } from "@/components/portfolio/FeaturedAchievement";
-import { PortfolioHero } from "@/components/portfolio/PortfolioHero";
-import { getAchievementMemberCount, getAchievements } from "@/lib/services/achievementService";
+import { PageHero } from "@/components/sections/PageHero";
+import { EmptyState } from "@/components/ui/EmptyState";
+import {
+  getAchievementMemberCount,
+  getAchievements,
+  getAchievementsPage,
+} from "@/lib/services/achievementService";
 
 const description = "Capaian mahasiswa UVICS di kompetisi nasional dan internasional.";
 
 export const metadata: Metadata = { title: "Prestasi | UVICS", description };
 
 export default async function AchievementsPage() {
-  const [items, memberCount] = await Promise.all([getAchievements(), getAchievementMemberCount()]);
+  const [page, items, memberCount] = await Promise.all([
+    getAchievementsPage(),
+    getAchievements(),
+    getAchievementMemberCount(),
+  ]);
 
   if (items.length === 0) {
     return (
       <div>
-        <PortfolioHero title="Prestasi UVICS" description={description} />
+        <PageHero hero={page.hero} />
         <div className="mx-auto px-4 py-12 w-full max-w-7xl sm:px-6 lg:px-8">
           <EmptyState message="Belum ada prestasi yang tersedia saat ini." />
         </div>
@@ -37,7 +45,7 @@ export default async function AchievementsPage() {
 
   return (
     <div>
-      <PortfolioHero title="Prestasi UVICS" description={description} />
+      <PageHero hero={page.hero} />
 
       <section
         aria-label="Statistik prestasi"

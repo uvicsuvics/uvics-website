@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { EmptyState } from '@/components/portfolio/EmptyState';
-import { Pagination } from '@/components/portfolio/Pagination';
+import { SearchX } from 'lucide-react';
 import { PortfolioFilter } from '@/components/portfolio/PortfolioFilter';
 import { ProjectCard } from '@/components/portfolio/ProjectCard';
 import { filterProjects, getProjectFilterFields } from '@/components/portfolio/projectFilters';
 import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Pagination } from '@/components/ui/Pagination';
 import type { ProjectWithRelations } from '@/types/portfolio';
 
 const ITEMS_PER_PAGE = 6;
@@ -75,6 +76,7 @@ export function ProjectsExplorer({ items }: ProjectsExplorerProps) {
         </ul>
       ) : (
         <EmptyState
+          icon={SearchX}
           title="Project tidak ditemukan"
           message={
             items.length === 0 ? 'Belum ada project yang tersedia.' : 'Belum ada project untuk filter yang dipilih.'

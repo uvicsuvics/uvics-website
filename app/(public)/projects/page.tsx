@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { EmptyState } from "@/components/portfolio/EmptyState";
-import { PortfolioHero } from "@/components/portfolio/PortfolioHero";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
 import { ProjectsExplorer } from "@/components/portfolio/ProjectsExplorer";
-import { getProjects } from "@/lib/services/projectService";
+import { PageHero } from "@/components/sections/PageHero";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { getProjects, getProjectsPage } from "@/lib/services/projectService";
 
 const description = "Karya dan proyek teknologi yang dibangun anggota UVICS.";
 
 export const metadata: Metadata = { title: "Project | UVICS", description };
 
 export default async function ProjectsPage() {
-  const items = await getProjects();
+  const [page, items] = await Promise.all([getProjectsPage(), getProjects()]);
 
   if (items.length === 0) {
     return (
       <div>
-        <PortfolioHero title="Project UVICS" description={description} />
+        <PageHero hero={page.hero} />
         <div className="mx-auto px-4 py-12 w-full max-w-7xl sm:px-6 lg:px-8">
           <EmptyState message="Belum ada project yang tersedia." />
         </div>
@@ -27,7 +27,7 @@ export default async function ProjectsPage() {
 
   return (
     <div>
-      <PortfolioHero title="Project UVICS" description={description} />
+      <PageHero hero={page.hero} />
 
       {featured.length > 0 ? (
         <section
