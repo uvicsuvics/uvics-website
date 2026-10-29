@@ -74,8 +74,8 @@ describe('AchievementCard', () => {
     );
     expect(named).toContain('Dave, Sarah +1 lainnya');
     const unnamed = renderToStaticMarkup(createElement(AchievementCard, { achievement, members: [null, null] }));
-    expect(unnamed).toContain('2 anggota UVICS');
-    expect(unnamed).not.toContain('+');
+    expect(unnamed).toContain('2 Anggota UVICS');
+    expect(unnamed).not.toContain('lainnya');
   });
 
   it('tetap dirender tanpa gambar, level, dan anggota', () => {

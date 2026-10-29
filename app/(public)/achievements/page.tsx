@@ -3,14 +3,14 @@ import { AchievementsExplorer } from "@/components/portfolio/AchievementsExplore
 import { EmptyState } from "@/components/portfolio/EmptyState";
 import { FeaturedAchievement } from "@/components/portfolio/FeaturedAchievement";
 import { PortfolioHero } from "@/components/portfolio/PortfolioHero";
-import { countUniqueMembers, getAchievements } from "@/lib/services/achievementService";
+import { getAchievementMemberCount, getAchievements } from "@/lib/services/achievementService";
 
 const description = "Capaian mahasiswa UVICS di kompetisi nasional dan internasional.";
 
 export const metadata: Metadata = { title: "Prestasi | UVICS", description };
 
 export default async function AchievementsPage() {
-  const items = await getAchievements();
+  const [items, memberCount] = await Promise.all([getAchievements(), getAchievementMemberCount()]);
 
   if (items.length === 0) {
     return (
@@ -32,7 +32,7 @@ export default async function AchievementsPage() {
   const stats = [
     { label: "Total Prestasi", value: items.length },
     { label: "Tingkat Nasional & Internasional", value: nationalPlus },
-    { label: "Anggota Terlibat", value: countUniqueMembers(items) },
+    { label: "Anggota Terlibat", value: memberCount },
   ];
 
   return (

@@ -16,5 +16,5 @@ export function findBySlug<T extends { slug: string }>(items: readonly T[], slug
 
 /** Peserta prestasi atau project (D18) menjadi anggota tim; member tertaut tanpa nama tetap dipertahankan. */
 export function toTeamMembers(rows: readonly (AchievementMember | ProjectMember)[]): PortfolioTeamMember[] {
-  return rows.map((row) => ({ id: row.id, memberId: row.memberId, name: row.memberName, role: row.role }));
+  return rows.map((row) => ({ id: row.id, name: row.memberName, role: row.role }));
 }

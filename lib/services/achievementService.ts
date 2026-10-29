@@ -16,9 +16,14 @@ function toWithRelations(achievement: Achievement): AchievementWithRelations {
   };
 }
 
-/** Anggota unik (per `memberId`) di semua prestasi; peserta non-member dan nama yang sama tidak mempengaruhi hitungan. */
-export function countUniqueMembers(items: readonly Pick<AchievementWithRelations, "members">[]): number {
-  return new Set(items.flatMap(({ members }) => members.flatMap(({ memberId }) => (memberId ? [memberId] : [])))).size;
+/** Jumlah `memberId` unik; peserta non-member (`memberId` null) dan nama yang sama tidak mempengaruhi hitungan. */
+export function countUniqueMemberIds(rows: readonly { memberId: string | null }[]): number {
+  return new Set(rows.flatMap(({ memberId }) => (memberId ? [memberId] : []))).size;
+}
+
+/** Anggota terlibat di semua prestasi, dihitung di server dari baris peserta: `memberId` tidak dikirim ke client (D21). */
+export async function getAchievementMemberCount(): Promise<number> {
+  return countUniqueMemberIds(UVICS_ACHIEVEMENT_MEMBERS);
 }
 
 /** Prestasi, terbaru lebih dulu. */

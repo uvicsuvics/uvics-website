@@ -41,7 +41,7 @@ export function summarizeMembers(names: readonly (string | null)[], maxNames = n
   const known = names.filter((name): name is string => name !== null).slice(0, maxNames);
   const rest = names.length - known.length;
   if (rest === 0) return known.join(', ');
-  return known.length > 0 ? `${known.join(', ')} +${rest} lainnya` : `${rest} anggota UVICS`;
+  return known.length > 0 ? `${known.join(', ')} +${rest} lainnya` : `${rest} ${MEMBER_NAME_FALLBACK}`;
 }
 
 export type RankTier = 'gold' | 'silver' | 'bronze' | 'neutral';

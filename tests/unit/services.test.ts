@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import { filterAchievements, getAchievementFilterFields } from "@/components/portfolio/achievementFilters";
 import { filterProjects, getProjectFilterFields } from "@/components/portfolio/projectFilters";
 import {
-  countUniqueMembers,
+  countUniqueMemberIds,
   getAchievementBySlug,
+  getAchievementMemberCount,
   getAchievements,
   getRelatedAchievements,
 } from "@/lib/services/achievementService";
@@ -14,7 +15,7 @@ import { toTeamMembers } from "@/lib/services/shared";
 import { UVICS_ACHIEVEMENT_MEMBERS, UVICS_ACHIEVEMENTS } from "@/data/mock/achievements";
 import { UVICS_COMPETITIONS } from "@/data/mock/competitions";
 import { UVICS_PROJECTS } from "@/data/mock/projects";
-import type { AchievementMember, PortfolioTeamMember } from "@/types/portfolio";
+import type { AchievementMember } from "@/types/portfolio";
 
 describe("frontend services (mock source)", () => {
   it("returns every item by default as a copy callers cannot mutate into the source", async () => {
@@ -93,8 +94,8 @@ describe("team members without a public name (contract #11)", () => {
       { id: "r2", achievementId: "a", memberId: null, memberName: "Tamu", role: null },
     ];
     expect(toTeamMembers(rows)).toEqual([
-      { id: "r1", memberId: "x", name: null, role: "Ketua Tim" },
-      { id: "r2", memberId: null, name: "Tamu", role: null },
+      { id: "r1", name: null, role: "Ketua Tim" },
+      { id: "r2", name: "Tamu", role: null },
     ]);
   });
 
@@ -104,22 +105,35 @@ describe("team members without a public name (contract #11)", () => {
       const rows = UVICS_ACHIEVEMENT_MEMBERS.filter((row) => row.achievementId === achievement.id);
       expect(members).toHaveLength(rows.length);
     }
-    expect(items.flatMap(({ members }) => members).filter((m) => m.memberId && m.name === null)).toHaveLength(1);
+    expect(items.flatMap(({ members }) => members).filter((m) => m.name === null)).toHaveLength(1);
   });
 
   it("counts participants by unique memberId, not by name and not guests", () => {
-    const person = (id: string, memberId: string | null, name: string | null): PortfolioTeamMember => ({
+    const row = (id: string, memberId: string | null, memberName: string | null): AchievementMember => ({
       id,
+      achievementId: "a",
       memberId,
-      name,
+      memberName,
       role: null,
     });
-    const items = [
-      { members: [person("1", "m1", "Dave"), person("2", "m2", "Dave"), person("3", null, "Tamu")] },
-      { members: [person("4", "m1", "Dave"), person("5", "m3", null)] },
+    const rows = [
+      row("1", "m1", "Dave"),
+      row("2", "m2", "Dave"), // nama sama, member berbeda: dihitung dua
+      row("3", null, "Tamu"), // non-member: tidak dihitung
+      row("4", "m1", "Dave"), // memberId berulang: dihitung sekali
+      row("5", "m3", null), // member tertaut tanpa nama: tetap dihitung
     ];
-    expect(countUniqueMembers(items)).toBe(3);
-    expect(countUniqueMembers([])).toBe(0);
+    expect(countUniqueMemberIds(rows)).toBe(3);
+    expect(countUniqueMemberIds([])).toBe(0);
+  });
+
+  it("counts the mock achievement members on the server (8 members, the guest is not counted)", async () => {
+    expect(await getAchievementMemberCount()).toBe(8);
+  });
+
+  it("never exposes memberId in data that reaches client components (D21)", async () => {
+    expect(JSON.stringify(await getAchievements())).not.toContain("memberId");
+    expect(JSON.stringify(await getProjects())).not.toContain("memberId");
   });
 });
 

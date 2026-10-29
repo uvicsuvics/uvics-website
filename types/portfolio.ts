@@ -60,10 +60,10 @@ export interface ProjectMember extends Participation {
 /**
  * Anggota tim yang sudah digabung oleh service dari baris `achievement_members` atau `project_members`.
  * `name: null` berarti member tertaut tanpa proyeksi nama publik (kontrak #11, D02).
+ * Sengaja tanpa `memberId`: objek ini sampai ke komponen client dan payload RSC publik (D21).
  */
 export interface PortfolioTeamMember {
   id: string;
-  memberId: string | null;
   name: string | null;
   role: string | null;
 }
