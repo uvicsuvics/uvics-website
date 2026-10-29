@@ -15,8 +15,8 @@ export const UVICS_PROJECTS: Project[] = [
     description:
       'Platform web dan mobile yang dirancang mahasiswa UVICS untuk mengintegrasikan presensi digital ormawa, kalender akademik interaktif, dan kanal pengumuman resmi Universitas Klabat.',
     coverImage: '/images/img/foto-14.webp',
-    projectUrl: 'https://campus.uvics.org',
-    repositoryUrl: 'https://github.com/uvicsuvics/campus-superapp',
+    projectUrl: null,
+    repositoryUrl: null,
     startDate: '2025-08-01',
     endDate: '2026-03-31',
     status: 'COMPLETED',
@@ -31,8 +31,8 @@ export const UVICS_PROJECTS: Project[] = [
     description:
       'Model deep learning CNN berlatensi rendah yang membantu petani Minahasa Utara mendeteksi infeksi hama pada tanaman cengkih dan kelapa tanpa koneksi internet.',
     coverImage: '/images/img/foto-16.webp',
-    projectUrl: 'https://vision.uvics.org',
-    repositoryUrl: 'https://github.com/uvicsuvics/nusantara-vision',
+    projectUrl: null,
+    repositoryUrl: null,
     startDate: '2026-01-15',
     endDate: '2026-07-31',
     status: 'COMPLETED',
@@ -47,8 +47,8 @@ export const UVICS_PROJECTS: Project[] = [
     description:
       'Desain sistem dengan 40+ komponen siap pakai, token warna, tipografi terkalibrasi, dan dokumentasi interaktif untuk mempercepat prototyping tim frontend UVICS.',
     coverImage: '/images/img/foto-17.webp',
-    projectUrl: 'https://design.uvics.org',
-    repositoryUrl: 'https://github.com/uvicsuvics/virtue-design',
+    projectUrl: null,
+    repositoryUrl: null,
     startDate: '2025-02-01',
     endDate: '2025-11-30',
     status: 'COMPLETED',
@@ -63,8 +63,8 @@ export const UVICS_PROJECTS: Project[] = [
     description:
       'Laboratorium siber virtual dengan container terisolasi untuk latihan peretasan etis, audit kerentanan binary, forensik digital, dan kriptografi terapan sebagai persiapan delegasi lomba cyber.',
     coverImage: '/images/img/foto-5.webp',
-    projectUrl: 'https://ctf.uvics.org',
-    repositoryUrl: 'https://github.com/uvicsuvics/ctf-arena',
+    projectUrl: null,
+    repositoryUrl: null,
     startDate: '2026-05-01',
     endDate: null,
     status: 'ONGOING',

@@ -18,7 +18,7 @@ export interface Achievement {
   achievementDate: string;
   description: string;
   coverImage: string | null;
-  /** Project terkait (opsional). Belum ada kolomnya di schema; perlu migration saat backend diintegrasikan. */
+  /** Project terkait (opsional). Belum ada kolomnya di schema; perlu migration saat U22 diterima (DECISIONS.md). */
   projectId: string | null;
 }
 

@@ -62,4 +62,16 @@ describe('portfolio mock data (relational integrity)', () => {
       if (startDate && endDate) expect(startDate <= endDate).toBe(true);
     }
   });
+
+  it('links to no domain or repository that is not proven to belong to UVICS', () => {
+    const rows = [...UVICS_PROJECTS, ...UVICS_ACHIEVEMENTS, ...UVICS_PROJECT_MEMBERS, ...UVICS_ACHIEVEMENT_MEMBERS];
+    const urls = rows
+      .flatMap((row) => Object.values(row))
+      .filter((value): value is string => typeof value === 'string' && /^https?:\/\//i.test(value));
+    for (const raw of urls) {
+      const { hostname, pathname } = new URL(raw);
+      expect(hostname.toLowerCase().endsWith('uvics.org'), raw).toBe(false);
+      expect(`${hostname}${pathname}`.toLowerCase().startsWith('github.com/uvicsuvics/'), raw).toBe(false);
+    }
+  });
 });
