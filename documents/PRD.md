@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 # UVICS Website Platform
 
-**Document Version:** 1.1  
+**Document Version:** 1.2  
 **Status:** Draft for Development  
 **Product:** UVICS Website Platform  
 **Document Type:** Product Requirements Document  
@@ -12,10 +12,13 @@
 
 **Keputusan produk:** Jawaban open questions (§79) dan penyelesaian bagian yang ambigu dicatat di [DECISIONS.md](DECISIONS.md). Keputusan berstatus *Diterima* di sana berlaku sampai PRD diperbarui. Penanda **Catatan v1.1** di dokumen ini menunjuk bagian yang masih menunggu keputusan.
 
+**Sumber konten organisasi:** identitas, visi, misi, culture & value, struktur, departemen, program, dan ketentuan keanggotaan UVICS mengikuti *Achievers Guidebook* 2026 (Main Rules Batch 3.5), sesuai [D22](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima). Contoh konten di dokumen dan mock data yang bertentangan dengan guidebook dianggap salah.
+
 ### Riwayat Perubahan
 
 | Versi | Tanggal | Perubahan |
 | --- | --- | --- |
+| 1.2 | 25 Oktober 2026 | Menyelaraskan profil organisasi dengan *Achievers Guidebook* 2026: ketentuan keanggotaan (§9), konten About (§12), struktur organisasi (§13), departemen (§14), program (§21A), dan posisi (§31). |
 | 1.1 | 10 Oktober 2026 | Menyelaraskan istilah autentikasi, keamanan, dan error dengan TECH_STACK (§8, §45.1, §48, §54); menambah modul Programs (§21A) sesuai tabel yang sudah dibuat; menandai bagian yang bertentangan dengan spesifikasi atau implementasi; mengubah §79 menjadi tabel status; memperbarui struktur dokumentasi (§81). |
 | 1.0 | — | Draft awal. |
 
@@ -291,6 +294,18 @@ Admin Review
         Alumni
 ```
 
+## 9.1 Ketentuan Keanggotaan (Achievers Guidebook 2026)
+
+- Anggota tergabung per **batch**; guidebook 2026 berlaku untuk **Batch 3.5**.
+- Masa jabatan anggota **2 semester atau 1 tahun**, sesuai kesepakatan di awal.
+- Anggota baru wajib mengisi formulir data anggota dan menandatangani surat komitmen.
+- Anggota boleh memilih ikut atau tidak ikut lomba, dan organisasi tidak berkegiatan pada masa ujian.
+- Akhir masa jabatan: farewell, penerimaan sertifikat dan laporan kinerja, lalu formulir status untuk melanjutkan atau mengakhiri keanggotaan.
+- Sertifikat hanya diberikan bila anggota pernah menyelesaikan minimal satu proyek bersama UVICS. Durasi keanggotaan ditulis di sertifikat.
+- Pengunduran diri diberitahukan ke core team dua minggu sebelumnya dan melewati exit interview. Anggota yang tidak memberi kabar selama satu bulan dan sudah menerima SP 2 dinyatakan keluar tanpa sertifikat.
+
+Aturan internal lain di guidebook (meeting, absensi, surat peringatan, pendanaan, hirarki komunikasi, kode etik) adalah dokumen internal. Isinya **tidak** ditampilkan di website publik; mengunggah informasi internal tanpa persetujuan termasuk pelanggaran yang dikenai SP.
+
 ---
 
 # 10. High-Level Information Architecture
@@ -398,6 +413,39 @@ Halaman About dapat berisi:
 
 Admin dapat mengubah konten melalui Pages Management.
 
+## 12.1 Konten Resmi (Achievers Guidebook 2026)
+
+Teks visi dan misi dipakai apa adanya, tidak diparafrasekan. Bagian lain boleh disunting gayanya selama faktanya tetap.
+
+**Identitas.** UVICS (Unklab Virtue in Computer Science) adalah organisasi yang dibentuk atas inisiatif mahasiswa Universitas Klabat sebagai wadah untuk menggali dan mengembangkan potensi diri, khususnya di jenjang perlombaan, serta mewujudkan aspirasi positif bersama. UVICS mempertemukan mahasiswa dengan minat serupa untuk berprestasi secara kolektif dalam organisasi yang terstruktur.
+
+- Anggota berasal dari **berbagai tingkat dan jurusan**, bukan hanya program studi komputer.
+- Jenis kompetisi yang didukung: Business Case Competition, Business Plan Competition, Hackathon, Web Competition, sayembara arsitektur, karya tulis ilmiah, nursing study case, health educational creative video, dan lomba lain.
+- Tagline: **"Be an Achiever, Carve Your Future"**.
+- Tahun berdiri: **2024** (dikonfirmasi pengguna 24 Oktober 2026; tidak tertulis di guidebook).
+
+**Visi**
+
+1. Menjadi wadah untuk mahasiswa-mahasiswa yang ingin bertumbuh dan berprestasi dalam lomba.
+2. Menjadi organisasi yang membawa prestasi dan nama baik bagi kampus Universitas Klabat.
+3. Menjadi tempat mahasiswa untuk mengasah dan meningkatkan hard skill dan soft skill mereka untuk meningkatkan pengalaman dan portofolio.
+4. Menjadi organisasi yang memberikan manfaat dan dampak yang berkelanjutan dalam masyarakat.
+
+**Misi**
+
+1. Mengumpulkan mahasiswa dari berbagai tingkat dan jurusan untuk sama-sama bertumbuh dan berprestasi membangun portofolio.
+2. Memberikan sistem dan kesempatan yang sama kepada mahasiswa untuk melatih kerja sama, komunikasi, dan leadership mereka.
+3. Menyediakan media belajar bersama untuk setiap anggota meningkatkan hard skill dan soft skill mereka.
+4. Menciptakan program-program inovatif yang dapat memberikan dampak dalam masyarakat dan mengasah pola pikir kreatif member UVICS.
+
+**Culture:** Discipline; Active and Communicative; Innovative; Sharing and Caring; Transparent.
+
+**Value:** Willing to Learn; Dare to Do Extra; Grow Together; Enthusiasm; Inspired.
+
+> Ejaan "Transparent" dan "Willing to Learn" dikoreksi dari guidebook ("Transparant", "Willing to Learned"). Konfirmasi ke PM bila ejaan asli ingin dipertahankan.
+
+Belum tersedia di guidebook dan tidak boleh dikarang: narasi sejarah selain tahun berdiri, tonggak per tahun, dan angka statistik (jumlah anggota, prestasi, proyek).
+
 ---
 
 # 13. Organization Structure
@@ -414,21 +462,29 @@ Member
 Display Order
 ```
 
-Example:
+Struktur resmi (Achievers Guidebook 2026):
 
 ```text
-UVICS 2026/2027
-
-President
-Vice President
-Secretary
-Treasurer
-
+Advisor
+   ↓
+President (Ketua)
+   ↓
+Core Team ── Treasurer (Bendahara), Secretary (Sekretaris)
+   ↓
 Departments
-├── Department A
-├── Department B
-└── Department C
+├── Public Relations
+├── External Affairs
+├── Web Development
+├── Competition Handler
+└── Editor
+
+Setiap departemen:
+Steering Helper → Koordinator → PIC (Person In Charge) → Anggota
 ```
+
+- Tidak ada posisi Vice President / Wakil Ketua di struktur resmi.
+- Advisor adalah pembina yang menerima laporan bulanan dari ketua dan core team; apakah Advisor tampil di website publik belum diputuskan ([T07](DECISIONS.md#d-isu-terbuka)).
+- Peran tiap posisi (ringkas): Steering Helper membantu koordinator menetapkan goals/roadmap dan menangani kendala divisi; Koordinator membuat roadmap dan timeline, memimpin meeting departemen, dan melapor ke core team; PIC membantu koordinator mengeksekusi dan mengarahkan tim; Anggota menjalankan jobdesc yang disepakati.
 
 Admin dapat mengganti periode yang ingin ditampilkan.
 
@@ -455,6 +511,18 @@ Public website dapat menampilkan:
 - current members;
 - department leader;
 - selected projects/programs.
+
+Departemen resmi (Achievers Guidebook 2026) beserta programnya:
+
+| Departemen | Program |
+| --- | --- |
+| Public Relations | UVICS Activity Content, Educational Content, Fun Trends Content, Interact with Followers, Content Summary |
+| External Affairs | Belum dijabarkan di guidebook |
+| Web Development | Website Building, DevHub |
+| Competition Handler | Mentor Community, Competition Finder |
+| Editor | Template, Editing & Documentation |
+
+Guidebook juga mencantumkan **Internal Development** (KABEL, Bonding, Champion of Change) dan **Officer** (UVICS Impact, UVICS Vibes, Perlombaan) di bagian "Departemen & Program", tetapi keduanya tidak ada di bagan struktur. Statusnya menunggu [T07](DECISIONS.md#d-isu-terbuka); jangan ditampilkan sebagai departemen sebelum diputuskan.
 
 ---
 
@@ -711,7 +779,7 @@ Admin dapat menentukan partner mana yang ditampilkan.
 
 # 21A. Programs Management
 
-Program adalah kegiatan rutin UVICS (mis. workshop, study group, bootcamp) yang ditampilkan di homepage dan halaman Programs. Modul ini ditambahkan pada v1.1 untuk mendokumentasikan tabel yang sudah dibuat di migration CMS foundation (issue #10).
+Program adalah kegiatan rutin UVICS (mis. KABEL, Mentor Community, UVICS Vibes) yang ditampilkan di homepage dan halaman Programs. Modul ini ditambahkan pada v1.1 untuk mendokumentasikan tabel yang sudah dibuat di migration CMS foundation (issue #10).
 
 Data (tabel `programs`):
 
@@ -757,6 +825,32 @@ Public pages:
 - publish dilakukan lewat fungsi database yang memeriksa sesi admin.
 
 > **Catatan v1.1:** Spesifikasi halaman publik meminta informasi tambahan (kategori, ikon, relasi ke departemen) yang belum ada di tabel. Lihat [U05](DECISIONS.md#u05--field-programs).
+
+### Program Resmi (Achievers Guidebook 2026)
+
+Daftar ini menggantikan contoh program sebelumnya. Kolom pengelola diisi bila relasi program–departemen diputuskan (U05).
+
+| Program | Pengelola | Deskripsi |
+| --- | --- | --- |
+| UVICS Activity Content | Public Relations | Video reels pengenalan program atau event UVICS yang sedang berjalan. |
+| Educational Content | Public Relations | Konten edukasi seputar karier dan perkuliahan. |
+| Fun Trends Content | Public Relations | Konten kreatif keseruan internal anggota dalam bentuk reels atau story. |
+| Interact with Followers | Public Relations | Konten interaksi di Instagram Story dan live report kegiatan. |
+| Content Summary | Public Relations | Rangkuman pembelajaran dari setiap event, mis. KABEL dan webinar. |
+| Template | Editor | Template Instagram dan program lain, termasuk untuk hari peringatan. |
+| Editing & Documentation | Editor | Menyunting konten atau dokumen organisasi dan mendokumentasikan kegiatan. |
+| Mentor Community | Competition Handler | Pendampingan tim lomba dan solusi atas kendala selama persiapan. |
+| Competition Finder | Competition Handler | Mencarikan lomba yang sesuai permintaan tim yang sudah terbentuk. |
+| Website Building | Web Development | Pembuatan website resmi organisasi. |
+| DevHub | Web Development | Belajar dan diskusi web development serta proyek departemen. |
+| KABEL (Kamar Belajar) | Internal Development* | Belajar bersama lewat sharing expert sesuai topik, juga memakai platform MySkill. |
+| Bonding | Internal Development* | Kegiatan untuk memperkuat kebersamaan antaranggota. |
+| Champion of Change (CoC) | Internal Development* | Apresiasi bagi anggota yang aktif berkontribusi di acara dan kegiatan development. |
+| UVICS Impact | Officer* | Kampanye edukasi masyarakat tentang isu tertentu, diadakan tiga bulan sekali. |
+| UVICS Vibes | Officer* | Webinar atau seminar tentang teknologi dan pengembangan diri. |
+| Perlombaan | Officer* | Merancang dan menyelenggarakan kompetisi secara profesional. |
+
+\* Status Internal Development dan Officer menunggu [T07](DECISIONS.md#d-isu-terbuka).
 
 ---
 
@@ -1075,16 +1169,20 @@ display_order
 active
 ```
 
-Examples:
+Posisi resmi (Achievers Guidebook 2026), urut dari atas:
 
 ```text
-President
-Vice President
-Secretary
-Treasurer
-Coordinator
-Member
+Advisor
+President (Ketua)
+Treasurer (Bendahara)
+Secretary (Sekretaris)
+Steering Helper
+Koordinator
+PIC (Person In Charge)
+Anggota
 ```
+
+Tidak ada Vice President. Pengelompokan level (U08) mengikuti urutan ini.
 
 Position bersifat configurable melalui admin dashboard.
 
@@ -2130,7 +2228,7 @@ Recommended:
 >
 > - pendaftaran `/register` vs `/join` ([U03](DECISIONS.md#u03--route-pendaftaran));
 > - berita `/news` vs `/blog`, serta route template `/pricing`, `/batch`, `/forgot-password` ([U09](DECISIONS.md#u09--route-berita-dan-route-template));
-> - halaman Visi & Misi `/vision-mission` ([U10](DECISIONS.md#u10--halaman-visi--misi));
+> - halaman Visi & Misi `/vision-mission` ([D19](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
 > - detail galeri `/gallery/{slug}` ([U14](DECISIONS.md#u14--galeri));
 > - `/members` dan `/alumni` ([U12](DECISIONS.md#u12--halaman-members-dan-alumni)).
 

@@ -32,7 +32,7 @@ Route memakai slug bahasa Inggris dari PRD dan navbar, huruf kecil, kebab-case. 
 | Placeholder | `/organization`, `/members`, `/alumni`, `/achievements`, `/projects`, `/events`, `/news`, `/gallery`, `/join` |
 
 - Placeholder memakai `PagePlaceholder` (`components/sections/PagePlaceholder.tsx`) agar link navigasi tidak 404. Halaman sebenarnya **mengganti isi file yang sama**; jangan membuat route baru dengan nama lain.
-- Route yang masih menunggu keputusan PM: `/join` vs `/register` ([U03](DECISIONS.md#u03--route-pendaftaran)), `/news` vs `/blog` serta route sisa template `/pricing`, `/batch`, `/forgot-password` ([U09](DECISIONS.md#u09--route-berita-dan-route-template)), `/vision-mission` ([U10](DECISIONS.md#u10--halaman-visi--misi)), `/members` dan `/alumni` ([U12](DECISIONS.md#u12--halaman-members-dan-alumni)).
+- Route yang masih menunggu keputusan PM: `/join` vs `/register` ([U03](DECISIONS.md#u03--route-pendaftaran)), `/news` vs `/blog` serta route sisa template `/pricing`, `/batch`, `/forgot-password` ([U09](DECISIONS.md#u09--route-berita-dan-route-template)), `/members` dan `/alumni` ([U12](DECISIONS.md#u12--halaman-members-dan-alumni)). `/vision-mission` sudah diputuskan menjadi halaman sendiri ([D19](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 
 ## 3. Layout dan navigasi
 
