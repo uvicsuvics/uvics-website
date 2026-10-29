@@ -10,14 +10,15 @@ const publicMemberSource = z.object({
   // Foto non-PUBLIC atau malformed tidak pernah diteruskan; dianggap tidak ada.
   photo: publicImageSchema.nullable().catch(null),
   position_name: z.string().min(1),
-  department_name: z.string().min(1),
+  // null: core team tanpa departemen (U01).
+  department_name: z.string().min(1).nullable(),
 });
 
 export type PublicMember = {
   name: string;
   photo: PublicImage | null;
   position: string;
-  department: string;
+  department: string | null;
 };
 
 /**
