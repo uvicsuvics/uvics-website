@@ -1,6 +1,6 @@
 # Catatan Keputusan UVICS
 
-**Diperbarui:** 25 Oktober 2026
+**Diperbarui:** 29 Oktober 2026
 **Rujukan:** [PRD](PRD.md) · [Spesifikasi halaman publik](UVICS_Public_Website_Page_Specification.md) · [Tech stack](TECH_STACK.md) · [Kontrak backend](BACKEND_CONVENTIONS.md)
 
 Dokumen ini adalah satu-satunya tempat mencatat keputusan produk, data, dan teknis yang tidak tertulis jelas di PRD atau spesifikasi. Jika PRD, spesifikasi, dan dokumen ini berbeda, keputusan berstatus **Diterima** di sini yang berlaku sampai PRD diperbarui.
@@ -82,6 +82,7 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 | U19 | Aturan duplikat registration sementara | Satu registration aktif per NIM tanpa entitas periode | #28 (diterapkan), U04 |
 | U20 | Persetujuan data pendaftar | Simpan `consent_at`; gender/semester/minat tidak disimpan | #28 (diterapkan), T05 |
 | U21 | Landing page `/join` | Issue frontend untuk Why Join, Benefits, Departments, Requirements, Process, Dates, FAQ | Recruitment (spesifikasi Page 15) |
+| U22 | Field schema untuk halaman Prestasi dan Project | Migration additive: `achievements.project_id`, kategori, `achievements.featured`, dan field detail project | #5 (kategori, documentation, detail project) |
 
 ### U01 — Pengurus inti tanpa departemen
 
@@ -172,6 +173,25 @@ Diurutkan dari yang paling menghambat Sprint 2. Kolom **Menghambat** menunjukkan
 - **Rekomendasi:** buat issue frontend terpisah untuk bagian landing. #28 hanya menyediakan form fungsional minimal dan state tertutup/berhasil agar MVP §74 butir 10 terpenuhi.
 - **Dampak:** `/join` saat ini berisi judul, deskripsi singkat, dan form atau pesan tertutup.
 - **Menunggu:** keputusan PM untuk membuat issue.
+
+### U22 — Field schema untuk halaman Prestasi dan Project
+
+- **Masalah:** halaman publik Prestasi dan Project membutuhkan data yang belum ada di tabel `achievements` dan `projects`: relasi prestasi ke project (`achievements.project_id`), kategori untuk keduanya, `achievements.featured`, dan field detail project (latar belakang/masalah, solusi, teknologi/tools, galeri, `figma_url`, `documentation_url`).
+- **Bukti:**
+  - Spesifikasi §13 (Page 10): filter kategori, Featured Achievements, Related Project, Documentation. Spesifikasi §14 (Page 11): kartu memuat kategori; detail memuat Problem/Background, Solution, Technology/Tools, Gallery, dan tautan Live Demo, GitHub, Figma, Documentation.
+  - Issue #5: mock relasi Achievement ↔ Project dan tautan project (Live Demo, GitHub, Figma, Documentation, External URL).
+  - `20261004080000_content_foundation.sql` (#36): `achievements` tidak punya `project_id`, kategori, maupun `featured`. `projects` punya `featured`, `project_url`, dan `repository_url`, tetapi tidak punya kategori, field detail, `figma_url`, maupun `documentation_url`. Hanya `competitions` yang punya `category`.
+- **Rekomendasi:** satu migration additive baru (migration #36 tidak diedit):
+  - `achievements.project_id` (FK ke `projects`, `on delete set null`, diberi index) dan `achievements.featured boolean not null default false`. Grant kolom `anon` pada `achievements` ditambah secara eksplisit, dan relasi ke project non-`PUBLISHED` tidak boleh terlihat publik.
+  - Kategori `text` nullable dengan batas 120 karakter pada `achievements` dan `projects`, mengikuti `competitions.category`. PM menetapkan daftar kategori awal untuk filter.
+  - Project: `problem`, `solution`, `technologies`, `figma_url`, dan `documentation_url` (nullable, URL berpola `^https?://` seperti `project_url`). Section yang kosong disembunyikan. Galeri memakai tabel anak berisi referensi media, bentuk final mengikuti alur upload #28/#29.
+  - Statistik "Anggota Terlibat" (halaman Prestasi): kontrak publik #11 hanya memproyeksikan `achievement_members(member_name, role)`, sedangkan `member_id` tidak terbaca `anon` (D21), sehingga anggota unik tidak bisa dihitung dari proyeksi publik. Perlu agregat count-only (RPC atau view atas prestasi `PUBLISHED`, grant ke `anon`); jika tidak, statistik ini dihapus.
+  - Proyeksi publik `achievement_members` dan `project_members` perlu menambah `id` partisipasi sebagai key daftar tim; alternatifnya daftar tim memakai index sebagai key.
+  - Section Documentation pada detail prestasi (spesifikasi §13): sumber datanya diputuskan PM, yaitu `documentation_url` project terkait atau field terpisah pada `achievements`.
+  - Setelah diterima: nomor `D` baru, `types/database.ts` diperbarui, dan tes `tests/db` mencakup RLS untuk admin aktif, `authenticated` non-admin, dan `anon`.
+- **Owner:** PM memutuskan; owner backend konten (owner baru, lihat BACKEND_CONVENTIONS) mengerjakan migration dan tes DB.
+- **Dampak:** sampai diputuskan, frontend hanya menyimpan `projectId` di mock (`Achievement.projectId`) dan tidak membangun filter kategori, penanda featured prestasi (sementara yang disorot adalah prestasi terbaru), section Documentation, maupun section detail project (masalah, solusi, teknologi, galeri, Figma). Mock project tidak memuat tautan karena tautan contoh sebelumnya karangan: repositori dan subdomain `*.uvics.org` yang dirujuk belum tentu ada; detail project menampilkan "Belum ada tautan untuk project ini."
+- **Menunggu:** keputusan PM.
 
 ## D. Isu terbuka
 
