@@ -30,6 +30,7 @@ export function countUniqueMemberIds(rows: readonly { memberId: string | null }[
 }
 
 /** Anggota terlibat di semua prestasi, dihitung di server dari baris peserta: `memberId` tidak dikirim ke client (D21). */
+// Proyeksi publik tidak punya `member_id`: perlu agregat count-only atau stat dihapus (lihat U22 di documents/DECISIONS.md).
 export async function getAchievementMemberCount(): Promise<number> {
   return countUniqueMemberIds(UVICS_ACHIEVEMENT_MEMBERS);
 }
