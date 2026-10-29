@@ -3,6 +3,7 @@ import type { Achievement, AchievementMember } from '@/types/portfolio';
 // Data relasional bergaya tabel: relasi hanya lewat id, tanpa objek bersarang.
 // Penggabungan (join) dilakukan di lib/services, bukan di sini.
 // Nama peserta ada di `memberName`, juga untuk baris yang punya `memberId`: proyeksi nama member belum ada.
+// Satu baris tertaut (am-8) sengaja tanpa nama, meniru kontrak #11 supaya placeholder teruji.
 
 export const UVICS_ACHIEVEMENTS: Achievement[] = [
   {
@@ -71,7 +72,7 @@ export const UVICS_ACHIEVEMENT_MEMBERS: AchievementMember[] = [
   { id: 'am-5', achievementId: 'ach-hackathon-merdeka-2025', memberId: 'mem-kezia', memberName: 'Kezia Sondakh', role: 'UI/UX Designer' },
   { id: 'am-6', achievementId: 'ach-hackathon-merdeka-2025', memberId: 'mem-dave', memberName: 'Dave Sumampouw', role: 'Backend Engineer' },
   { id: 'am-7', achievementId: 'ach-uiux-techfair-2026', memberId: 'mem-kezia', memberName: 'Kezia Sondakh', role: 'Ketua Tim' },
-  { id: 'am-8', achievementId: 'ach-uiux-techfair-2026', memberId: 'mem-rachel', memberName: 'Rachel Runtu', role: 'UI/UX Designer' },
+  { id: 'am-8', achievementId: 'ach-uiux-techfair-2026', memberId: 'mem-rachel', memberName: null, role: 'UI/UX Designer' },
   { id: 'am-9', achievementId: 'ach-gemastik-xvii-2024', memberId: 'mem-jonathan', memberName: 'Jonathan Rumagit', role: 'Ketua Tim' },
   { id: 'am-10', achievementId: 'ach-gemastik-xvii-2024', memberId: 'mem-clarissa', memberName: 'Clarissa Pangkey', role: 'Frontend Engineer' },
   { id: 'am-11', achievementId: 'ach-gemastik-xvii-2024', memberId: 'mem-dave', memberName: 'Dave Sumampouw', role: 'Backend Engineer' },

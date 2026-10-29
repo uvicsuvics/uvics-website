@@ -6,7 +6,11 @@ import { ArrowLeft, ArrowUpRight, CalendarDays, FolderGit2, Globe, UserRound } f
 import { IconBrandGithub } from "@tabler/icons-react";
 import { AchievementCard } from "@/components/portfolio/AchievementCard";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
-import { PROJECT_STATUS_CONFIG, formatPortfolioPeriod } from "@/components/portfolio/portfolioLabels";
+import {
+  MEMBER_NAME_FALLBACK,
+  PROJECT_STATUS_CONFIG,
+  formatPortfolioPeriod,
+} from "@/components/portfolio/portfolioLabels";
 import { Badge } from "@/components/ui/Badge";
 import { getProjectBySlug, getProjects, getRelatedProjects } from "@/lib/services/projectService";
 import { cn } from "@/lib/utils";
@@ -129,7 +133,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                       <UserRound className="w-5 h-5" aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{member.name}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">{member.name ?? MEMBER_NAME_FALLBACK}</p>
                       {member.role ? <p className="text-xs text-gray-500 truncate">{member.role}</p> : null}
                     </div>
                   </li>

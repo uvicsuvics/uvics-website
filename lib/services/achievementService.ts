@@ -16,6 +16,11 @@ function toWithRelations(achievement: Achievement): AchievementWithRelations {
   };
 }
 
+/** Anggota unik (per `memberId`) di semua prestasi; peserta non-member dan nama yang sama tidak mempengaruhi hitungan. */
+export function countUniqueMembers(items: readonly Pick<AchievementWithRelations, "members">[]): number {
+  return new Set(items.flatMap(({ members }) => members.flatMap(({ memberId }) => (memberId ? [memberId] : [])))).size;
+}
+
 /** Prestasi, terbaru lebih dulu. */
 export async function getAchievements(options: ListOptions = {}): Promise<AchievementWithRelations[]> {
   const sorted = [...UVICS_ACHIEVEMENTS].sort((a, b) => b.achievementDate.localeCompare(a.achievementDate));

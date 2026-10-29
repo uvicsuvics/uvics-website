@@ -3,15 +3,18 @@ import { describe, expect, it } from "vitest";
 import { filterAchievements, getAchievementFilterFields } from "@/components/portfolio/achievementFilters";
 import { filterProjects, getProjectFilterFields } from "@/components/portfolio/projectFilters";
 import {
+  countUniqueMembers,
   getAchievementBySlug,
   getAchievements,
   getRelatedAchievements,
 } from "@/lib/services/achievementService";
 import { getCompetitionBySlug, getCompetitions } from "@/lib/services/competitionService";
 import { getProjectBySlug, getProjects, getRelatedProjects } from "@/lib/services/projectService";
-import { UVICS_ACHIEVEMENTS } from "@/data/mock/achievements";
+import { toTeamMembers } from "@/lib/services/shared";
+import { UVICS_ACHIEVEMENT_MEMBERS, UVICS_ACHIEVEMENTS } from "@/data/mock/achievements";
 import { UVICS_COMPETITIONS } from "@/data/mock/competitions";
 import { UVICS_PROJECTS } from "@/data/mock/projects";
+import type { AchievementMember, PortfolioTeamMember } from "@/types/portfolio";
 
 describe("frontend services (mock source)", () => {
   it("returns every item by default as a copy callers cannot mutate into the source", async () => {
@@ -80,6 +83,43 @@ describe("achievementService", () => {
     const related = await getRelatedAchievements(slug, 2);
     expect(related).toHaveLength(2);
     expect(related.some(({ achievement }) => achievement.slug === slug)).toBe(false);
+  });
+});
+
+describe("team members without a public name (contract #11)", () => {
+  it("keeps a linked member with a null name instead of dropping the row", () => {
+    const rows: AchievementMember[] = [
+      { id: "r1", achievementId: "a", memberId: "x", memberName: null, role: "Ketua Tim" },
+      { id: "r2", achievementId: "a", memberId: null, memberName: "Tamu", role: null },
+    ];
+    expect(toTeamMembers(rows)).toEqual([
+      { id: "r1", memberId: "x", name: null, role: "Ketua Tim" },
+      { id: "r2", memberId: null, name: "Tamu", role: null },
+    ]);
+  });
+
+  it("keeps every mock participation row, including the linked one without a name", async () => {
+    const items = await getAchievements();
+    for (const { achievement, members } of items) {
+      const rows = UVICS_ACHIEVEMENT_MEMBERS.filter((row) => row.achievementId === achievement.id);
+      expect(members).toHaveLength(rows.length);
+    }
+    expect(items.flatMap(({ members }) => members).filter((m) => m.memberId && m.name === null)).toHaveLength(1);
+  });
+
+  it("counts participants by unique memberId, not by name and not guests", () => {
+    const person = (id: string, memberId: string | null, name: string | null): PortfolioTeamMember => ({
+      id,
+      memberId,
+      name,
+      role: null,
+    });
+    const items = [
+      { members: [person("1", "m1", "Dave"), person("2", "m2", "Dave"), person("3", null, "Tamu")] },
+      { members: [person("4", "m1", "Dave"), person("5", "m3", null)] },
+    ];
+    expect(countUniqueMembers(items)).toBe(3);
+    expect(countUniqueMembers([])).toBe(0);
   });
 });
 

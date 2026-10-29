@@ -3,7 +3,7 @@ import { AchievementsExplorer } from "@/components/portfolio/AchievementsExplore
 import { EmptyState } from "@/components/portfolio/EmptyState";
 import { FeaturedAchievement } from "@/components/portfolio/FeaturedAchievement";
 import { PortfolioHero } from "@/components/portfolio/PortfolioHero";
-import { getAchievements } from "@/lib/services/achievementService";
+import { countUniqueMembers, getAchievements } from "@/lib/services/achievementService";
 
 const description = "Capaian mahasiswa UVICS di kompetisi nasional dan internasional.";
 
@@ -28,12 +28,11 @@ export default async function AchievementsPage() {
   const nationalPlus = items.filter(
     ({ achievement }) => achievement.level === "NASIONAL" || achievement.level === "INTERNASIONAL",
   ).length;
-  const participants = new Set(items.flatMap(({ members }) => members.map((member) => member.name))).size;
 
   const stats = [
     { label: "Total Prestasi", value: items.length },
     { label: "Tingkat Nasional & Internasional", value: nationalPlus },
-    { label: "Anggota Terlibat", value: participants },
+    { label: "Anggota Terlibat", value: countUniqueMembers(items) },
   ];
 
   return (

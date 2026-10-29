@@ -57,10 +57,14 @@ export interface ProjectMember extends Participation {
   projectId: string;
 }
 
-/** Anggota tim yang sudah digabung oleh service dari baris `achievement_members` atau `project_members`. */
+/**
+ * Anggota tim yang sudah digabung oleh service dari baris `achievement_members` atau `project_members`.
+ * `name: null` berarti member tertaut tanpa proyeksi nama publik (kontrak #11, D02).
+ */
 export interface PortfolioTeamMember {
   id: string;
-  name: string;
+  memberId: string | null;
+  name: string | null;
   role: string | null;
 }
 

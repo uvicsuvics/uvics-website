@@ -12,7 +12,13 @@ import {
   Calendar,
   ArrowRight,
 } from "lucide-react";
-import { LEVEL_LABELS, formatPortfolioDate, getRankTier, getYear } from "@/components/portfolio/portfolioLabels";
+import {
+  LEVEL_LABELS,
+  formatPortfolioDate,
+  getRankTier,
+  getYear,
+  summarizeMembers,
+} from "@/components/portfolio/portfolioLabels";
 import type { RankTier } from "@/components/portfolio/portfolioLabels";
 import { Button } from "@/components/ui/Button";
 import type { AchievementWithRelations } from "@/types/portfolio";
@@ -35,7 +41,7 @@ export function AchievementsSection({ achievements }: AchievementsSectionProps) 
     ...achievement,
     year: String(getYear(achievement.achievementDate)),
     tier: getRankTier(achievement.ranking),
-    memberNames: members.map((member) => member.name).join(", "),
+    memberNames: summarizeMembers(members.map((member) => member.name)),
   }));
 
   const filteredItems =

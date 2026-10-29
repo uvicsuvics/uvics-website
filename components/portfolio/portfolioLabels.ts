@@ -30,6 +30,20 @@ export const PROJECT_STATUS_OPTIONS: PortfolioOption[] = (
   Object.keys(PROJECT_STATUS_CONFIG) as ProjectStatus[]
 ).map((value) => ({ value, label: PROJECT_STATUS_CONFIG[value].label }));
 
+/** Pengganti nama untuk member tertaut tanpa proyeksi nama publik (kontrak #11). */
+export const MEMBER_NAME_FALLBACK = 'Anggota UVICS';
+
+/**
+ * Ringkasan anggota untuk kartu: nama yang ada (maks. `maxNames`), lalu jumlah sisanya
+ * termasuk anggota tanpa nama.
+ */
+export function summarizeMembers(names: readonly (string | null)[], maxNames = names.length): string {
+  const known = names.filter((name): name is string => name !== null).slice(0, maxNames);
+  const rest = names.length - known.length;
+  if (rest === 0) return known.join(', ');
+  return known.length > 0 ? `${known.join(', ')} +${rest} lainnya` : `${rest} anggota UVICS`;
+}
+
 export type RankTier = 'gold' | 'silver' | 'bronze' | 'neutral';
 
 const RANK_TIERS: Record<string, RankTier> = { '1': 'gold', '2': 'silver', '3': 'bronze' };

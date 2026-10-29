@@ -67,6 +67,17 @@ describe('AchievementCard', () => {
     expect(html).toContain(`href="/achievements/${achievement.slug}"`);
   });
 
+  it('menggabungkan nama yang ada dan menghitung anggota tanpa nama sebagai sisanya', () => {
+    const achievement = UVICS_ACHIEVEMENTS[0];
+    const named = renderToStaticMarkup(
+      createElement(AchievementCard, { achievement, members: ['Dave', null, 'Sarah'] }),
+    );
+    expect(named).toContain('Dave, Sarah +1 lainnya');
+    const unnamed = renderToStaticMarkup(createElement(AchievementCard, { achievement, members: [null, null] }));
+    expect(unnamed).toContain('2 anggota UVICS');
+    expect(unnamed).not.toContain('+');
+  });
+
   it('tetap dirender tanpa gambar, level, dan anggota', () => {
     const achievement = { ...UVICS_ACHIEVEMENTS[0], coverImage: null, level: null };
     const html = renderToStaticMarkup(createElement(AchievementCard, { achievement }));

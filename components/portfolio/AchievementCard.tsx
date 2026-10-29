@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarDays, Trophy, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { LEVEL_LABELS, formatPortfolioDate } from '@/components/portfolio/portfolioLabels';
+import { LEVEL_LABELS, formatPortfolioDate, summarizeMembers } from '@/components/portfolio/portfolioLabels';
 import { cn } from '@/lib/utils';
 import type { Achievement } from '@/types/portfolio';
 
@@ -11,8 +11,8 @@ const TOP_RANK_PATTERN = /^juara\s*1\b/i;
 
 interface AchievementCardProps {
   achievement: Achievement;
-  /** Nama anggota/tim yang sudah digabung oleh service; `Achievement` hanya menyimpan relasi lewat id. */
-  members?: string[];
+  /** Nama anggota/tim yang sudah digabung oleh service; `null` untuk anggota tanpa nama publik. */
+  members?: (string | null)[];
   className?: string;
 }
 
@@ -25,8 +25,7 @@ interface AchievementCardProps {
  */
 export function AchievementCard({ achievement, members = [], className }: AchievementCardProps) {
   const { slug, title, competitionName, level, ranking, achievementDate, coverImage } = achievement;
-  const visibleMembers = members.slice(0, MAX_VISIBLE_MEMBERS);
-  const hiddenCount = members.length - visibleMembers.length;
+  const memberSummary = summarizeMembers(members, MAX_VISIBLE_MEMBERS);
   const isTopRank = TOP_RANK_PATTERN.test(ranking);
 
   return (
@@ -78,13 +77,10 @@ export function AchievementCard({ achievement, members = [], className }: Achiev
         </h3>
 
         <div className="flex flex-col gap-1.5 pt-3 mt-auto text-xs sm:text-sm text-gray-600 border-t border-gray-100">
-          {visibleMembers.length > 0 ? (
+          {memberSummary ? (
             <div className="flex items-start gap-2">
               <Users className="w-3.5 h-3.5 mt-0.5 text-gray-400 shrink-0" aria-hidden="true" />
-              <span className="line-clamp-2">
-                {visibleMembers.join(', ')}
-                {hiddenCount > 0 ? ` +${hiddenCount} lainnya` : ''}
-              </span>
+              <span className="line-clamp-2">{memberSummary}</span>
             </div>
           ) : null}
           <div className="flex items-center gap-2">
