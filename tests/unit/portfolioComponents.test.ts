@@ -2,6 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Trophy } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
+import AchievementDetailPage from '@/app/(public)/achievements/[slug]/page';
 import AchievementsPage from '@/app/(public)/achievements/page';
 import ProjectsPage from '@/app/(public)/projects/page';
 import { AchievementCard } from '@/components/portfolio/AchievementCard';
@@ -73,15 +74,15 @@ describe('portfolioLabels', () => {
 });
 
 describe('AchievementCard', () => {
-  it('menampilkan ranking, kompetisi, tim, tanggal, dan tautan detail', () => {
+  it('menampilkan kompetisi, tim, tanggal, dan tautan detail tanpa badge ranking dan level', () => {
     const achievement = UVICS_ACHIEVEMENTS[0];
     const html = renderToStaticMarkup(
       createElement(AchievementCard, { achievement, members: ['Dave', 'Sarah', 'Kevin', 'Kezia'] }),
     );
-    expect(html).toContain(achievement.ranking);
+    expect(html).not.toContain(`>${achievement.ranking}<`);
     expect(html).toContain(achievement.competitionName);
     expect(html).toContain('Dave, Sarah, Kevin +1 lainnya');
-    expect(html).toContain('Nasional');
+    expect(html).not.toContain('Nasional');
     expect(html).toContain(`dateTime="${achievement.achievementDate}"`);
     expect(html).toContain(`href="/achievements/${achievement.slug}"`);
   });
@@ -295,6 +296,22 @@ describe('halaman daftar tanpa data', () => {
     expect(html).toContain('<h1');
     expect(html).toContain(hero.title);
     expect(html).toContain('Belum ada project yang tersedia.');
+  });
+});
+
+describe('halaman detail prestasi', () => {
+  it('menyatukan judul, hasil, info kompetisi, dan tanggal di hero tanpa tautan "Semua Prestasi"', async () => {
+    const achievement = UVICS_ACHIEVEMENTS[3];
+    const html = renderToStaticMarkup(
+      await AchievementDetailPage({ params: Promise.resolve({ slug: achievement.slug }) }),
+    );
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html).toContain(achievement.title);
+    expect(html).toContain(achievement.ranking);
+    expect(html).toContain(achievement.competitionName);
+    expect(html).toContain(`dateTime="${achievement.achievementDate}"`);
+    expect(html).not.toContain('Semua Prestasi');
+    expect(html).not.toContain('href="/achievements"');
   });
 });
 

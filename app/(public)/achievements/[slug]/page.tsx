@@ -1,18 +1,17 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowLeft, Building2, CalendarDays, Flag, Trophy } from "lucide-react";
+import { Building2, CalendarDays, Flag, Medal, Trophy } from "lucide-react";
 import { AchievementCard } from "@/components/portfolio/AchievementCard";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
 import { TeamMemberList } from "@/components/portfolio/TeamMemberList";
 import { LEVEL_LABELS, formatPortfolioDate } from "@/components/portfolio/portfolioLabels";
-import { Badge } from "@/components/ui/Badge";
 import {
   getAchievementBySlug,
   getAchievements,
   getRelatedAchievements,
 } from "@/lib/services/achievementService";
+import { cn } from "@/lib/utils";
 
 interface AchievementDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -56,126 +55,98 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
   const competitionInfo = [
     { icon: Flag, label: "Kompetisi", value: competitionName },
     organizer ? { icon: Building2, label: "Penyelenggara", value: organizer } : null,
-    level ? { icon: Trophy, label: "Level", value: LEVEL_LABELS[level] } : null,
+    level ? { icon: Medal, label: "Level", value: LEVEL_LABELS[level] } : null,
+    {
+      icon: CalendarDays,
+      label: "Tanggal",
+      value: <time dateTime={achievementDate}>{formatPortfolioDate(achievementDate)}</time>,
+    },
   ].filter((row) => row !== null);
 
   return (
-    <div className="pb-16 lg:pb-24">
-      {/* Header */}
-      <header className="bg-primary-50/60 border-b border-gray-200/90">
-        <div className="flex flex-col gap-5 mx-auto px-4 pt-28 pb-10 w-full max-w-7xl sm:px-6 lg:px-8 lg:pt-32 lg:pb-14">
-          <Link
-            href="/achievements"
-            className="inline-flex items-center gap-1.5 w-fit text-sm font-medium text-primary transition-colors hover:text-primary-600"
-          >
-            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-            Semua Prestasi
-          </Link>
+    <div className="flex flex-col gap-14 mx-auto px-4 pt-28 pb-16 w-full max-w-7xl sm:px-6 lg:gap-20 lg:px-8 lg:pt-32 lg:pb-24">
+      {/* Hero: foto di kiri, ringkasan prestasi di kanan (bertumpuk di mobile) */}
+      <header className="grid overflow-hidden bg-card rounded-xl border border-gray-200/90 shadow-sm lg:grid-cols-5">
+        <div className="relative w-full aspect-16/10 bg-primary-50 lg:col-span-3 lg:aspect-auto lg:min-h-96">
+          {coverImage ? (
+            <Image
+              src={coverImage}
+              alt={`Dokumentasi prestasi ${title}`}
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 60vw"
+              className="object-cover object-center"
+            />
+          ) : (
+            <div className="flex items-center justify-center w-full h-full">
+              <Trophy className="w-16 h-16 text-primary-200" aria-hidden="true" />
+            </div>
+          )}
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="px-2.5 py-1 font-semibold bg-secondary text-gray-900">
-              <Trophy className="w-3.5 h-3.5" aria-hidden="true" />
-              {ranking}
-            </Badge>
-            {level ? <Badge variant="accent">{LEVEL_LABELS[level]}</Badge> : null}
+        <div className="flex flex-col gap-6 p-6 sm:p-8 lg:col-span-2 lg:justify-center">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary-50 text-primary shrink-0">
+              <Trophy className="w-5 h-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold tracking-wide uppercase text-gray-500">Hasil</p>
+              <p className="font-heading text-lg font-bold text-primary">{ranking}</p>
+            </div>
           </div>
 
-          <h1 className="max-w-4xl font-heading text-3xl font-bold leading-tight text-gray-900 text-balance sm:text-4xl lg:text-5xl">
+          <h1 className="font-heading text-2xl font-bold leading-tight text-gray-900 text-balance sm:text-3xl">
             {title}
           </h1>
 
-          <p className="flex items-center gap-2 text-sm text-gray-600">
-            <CalendarDays className="w-4 h-4 text-gray-400" aria-hidden="true" />
-            <time dateTime={achievementDate}>{formatPortfolioDate(achievementDate)}</time>
-          </p>
+          <dl className="flex flex-col border-t border-gray-100 divide-y divide-gray-100">
+            {competitionInfo.map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-start gap-4 py-3 text-sm">
+                <dt className="flex items-center gap-2 w-32 text-gray-500 shrink-0">
+                  <Icon className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
+                  {label}
+                </dt>
+                <dd className="min-w-0 font-medium text-gray-900">{value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </header>
 
-      <div className="grid gap-8 mx-auto px-4 pt-10 w-full max-w-7xl sm:px-6 lg:grid-cols-3 lg:gap-10 lg:px-8 lg:pt-14">
-        {/* Main column */}
-        <div className="flex flex-col gap-10 lg:col-span-2">
-          <div className="relative w-full overflow-hidden aspect-video bg-primary-50 rounded-xl border border-gray-200/90 shadow-sm">
-            {coverImage ? (
-              <Image
-                src={coverImage}
-                alt={`Dokumentasi prestasi ${title}`}
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 66vw"
-                className="object-cover object-center"
-              />
-            ) : (
-              <div className="flex items-center justify-center w-full h-full">
-                <Trophy className="w-16 h-16 text-primary-200" aria-hidden="true" />
-              </div>
-            )}
-          </div>
-
-          <section aria-labelledby="description-heading" className="flex flex-col gap-3">
+      <div className="grid gap-12 lg:grid-cols-3 lg:gap-10">
+        <div className={cn("flex flex-col gap-12", project ? "lg:col-span-2" : "lg:col-span-3 max-w-4xl")}>
+          <section aria-labelledby="description-heading" className="flex flex-col gap-4">
             <h2 id="description-heading" className="font-heading text-xl font-bold text-gray-900 sm:text-2xl">
-              Deskripsi
+              Tentang Prestasi
             </h2>
-            <p className="leading-relaxed text-gray-700">{description}</p>
+            <p className="leading-relaxed text-gray-700 sm:text-lg">{description}</p>
           </section>
 
           <section aria-labelledby="team-heading" className="flex flex-col gap-4">
-            <h2 id="team-heading" className="font-heading text-xl font-bold text-gray-900 sm:text-2xl">
-              Tim
-            </h2>
+            <div className="flex items-baseline justify-between gap-4">
+              <h2 id="team-heading" className="font-heading text-xl font-bold text-gray-900 sm:text-2xl">
+                Tim
+              </h2>
+              {members.length > 0 ? <p className="text-sm text-gray-500">{members.length} anggota</p> : null}
+            </div>
             <TeamMemberList members={members} />
           </section>
         </div>
 
-        {/* Sidebar */}
-        <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
-          <section
-            aria-labelledby="result-heading"
-            className="flex flex-col gap-2 p-6 text-white bg-primary rounded-xl shadow-primary"
-          >
-            <h2 id="result-heading" className="text-xs font-semibold tracking-wide uppercase text-primary-100">
-              Hasil
+        {project ? (
+          <aside aria-labelledby="related-project-heading" className="flex flex-col gap-4 lg:sticky lg:top-28 lg:self-start">
+            <h2 id="related-project-heading" className="font-heading text-xl font-bold text-gray-900 sm:text-2xl">
+              Project Terkait
             </h2>
-            <p className="flex items-center gap-3 font-heading text-3xl font-bold">
-              <Trophy className="w-8 h-8 text-secondary shrink-0" aria-hidden="true" />
-              {ranking}
-            </p>
-          </section>
-
-          <section
-            aria-labelledby="competition-info-heading"
-            className="flex flex-col gap-4 p-6 bg-card rounded-xl border border-gray-200/90 shadow-2xs"
-          >
-            <h2 id="competition-info-heading" className="font-heading text-lg font-bold text-gray-900">
-              Informasi Kompetisi
-            </h2>
-            <dl className="flex flex-col gap-4">
-              {competitionInfo.map(({ icon: Icon, label, value }) => (
-                <div key={label} className="flex items-start gap-3">
-                  <Icon className="w-4 h-4 mt-1 text-gray-400 shrink-0" aria-hidden="true" />
-                  <div className="min-w-0">
-                    <dt className="text-xs text-gray-500">{label}</dt>
-                    <dd className="text-sm font-medium text-gray-900">{value}</dd>
-                  </div>
-                </div>
-              ))}
-            </dl>
-          </section>
-
-          {project ? (
-            <section aria-labelledby="related-project-heading" className="flex flex-col gap-3">
-              <h2 id="related-project-heading" className="font-heading text-lg font-bold text-gray-900">
-                Project Terkait
-              </h2>
-              <ProjectCard project={project} />
-            </section>
-          ) : null}
-        </aside>
+            <ProjectCard project={project} />
+          </aside>
+        ) : null}
       </div>
 
       {related.length > 0 ? (
         <section
           aria-labelledby="related-achievements-heading"
-          className="flex flex-col gap-6 mx-auto px-4 pt-14 w-full max-w-7xl sm:px-6 lg:px-8 lg:pt-20"
+          className="flex flex-col gap-6 pt-12 border-t border-gray-200/90 lg:pt-16"
         >
           <h2 id="related-achievements-heading" className="font-heading text-2xl font-bold text-gray-900">
             Prestasi Lainnya

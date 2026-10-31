@@ -1,13 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarDays, Trophy, Users } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
-import {
-  LEVEL_LABELS,
-  formatPortfolioDate,
-  getRankTier,
-  summarizeMembers,
-} from '@/components/portfolio/portfolioLabels';
+import { formatPortfolioDate, summarizeMembers } from '@/components/portfolio/portfolioLabels';
 import { cn } from '@/lib/utils';
 import type { Achievement } from '@/types/portfolio';
 
@@ -21,16 +15,15 @@ interface AchievementCardProps {
 }
 
 /**
- * Kartu prestasi: gambar, ranking, judul, nama kompetisi, tim, dan tanggal.
+ * Kartu prestasi: gambar, judul, nama kompetisi, tim, dan tanggal.
  * Seluruh kartu dapat diklik lewat tautan pada judul menuju /achievements/{slug}.
  * @param achievement - Data prestasi
  * @param members - Nama anggota/tim (opsional)
  * @param className - CSS class tambahan (opsional)
  */
 export function AchievementCard({ achievement, members = [], className }: AchievementCardProps) {
-  const { slug, title, competitionName, level, ranking, achievementDate, coverImage } = achievement;
+  const { slug, title, competitionName, achievementDate, coverImage } = achievement;
   const memberSummary = summarizeMembers(members, MAX_VISIBLE_MEMBERS);
-  const isTopRank = getRankTier(ranking) === 'gold';
 
   return (
     <article
@@ -53,23 +46,10 @@ export function AchievementCard({ achievement, members = [], className }: Achiev
             <Trophy className="w-12 h-12 text-primary-200" aria-hidden="true" />
           </div>
         )}
-        <Badge
-          variant={isTopRank ? 'secondary' : 'primary'}
-          className={cn(
-            'absolute top-3 left-3 px-2.5 py-1 font-semibold shadow-xs',
-            isTopRank ? 'bg-secondary text-gray-900' : 'bg-white text-primary-900'
-          )}
-        >
-          <Trophy className="w-3.5 h-3.5" aria-hidden="true" />
-          {ranking}
-        </Badge>
       </div>
 
       <div className="flex flex-col flex-1 gap-3 p-5">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {level ? <Badge variant="accent">{LEVEL_LABELS[level]}</Badge> : null}
-          <span className="line-clamp-1 text-xs font-medium text-gray-500">{competitionName}</span>
-        </div>
+        <p className="line-clamp-1 text-xs font-medium text-gray-500">{competitionName}</p>
 
         <h3 className="font-heading sm:text-lg font-bold leading-snug text-gray-900 line-clamp-2 transition-colors group-hover:text-primary">
           <Link

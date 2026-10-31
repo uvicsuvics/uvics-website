@@ -1,8 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, CalendarDays, Trophy } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
-import { LEVEL_LABELS, formatPortfolioDate } from '@/components/portfolio/portfolioLabels';
+import { formatPortfolioDate } from '@/components/portfolio/portfolioLabels';
 import { cn } from '@/lib/utils';
 import type { Achievement } from '@/types/portfolio';
 
@@ -13,7 +12,7 @@ interface FeaturedAchievementProps {
 
 /** Sorotan satu prestasi: gambar besar di kiri, ringkasan di kanan (bertumpuk di mobile). */
 export function FeaturedAchievement({ achievement, className }: FeaturedAchievementProps) {
-  const { slug, title, competitionName, level, ranking, achievementDate, description, coverImage } = achievement;
+  const { slug, title, competitionName, achievementDate, description, coverImage } = achievement;
 
   return (
     <article
@@ -40,14 +39,6 @@ export function FeaturedAchievement({ achievement, className }: FeaturedAchievem
       </div>
 
       <div className="flex flex-col justify-center gap-4 p-6 sm:p-8">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="px-2.5 py-1 font-semibold bg-secondary text-gray-900">
-            <Trophy className="w-3.5 h-3.5" aria-hidden="true" />
-            {ranking}
-          </Badge>
-          {level ? <Badge variant="accent">{LEVEL_LABELS[level]}</Badge> : null}
-        </div>
-
         <h3 className="font-heading text-2xl font-bold leading-snug text-gray-900 transition-colors group-hover:text-primary sm:text-3xl">
           <Link
             href={`/achievements/${slug}`}
