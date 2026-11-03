@@ -5,8 +5,16 @@ import { httpUrlSchema } from "./validation";
 export const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
 // PostgREST mengembalikan timestamptz dengan offset (+00:00) dan mikrodetik.
 const timestampSchema = z.iso.datetime({ offset: true });
-// Referensi media, bukan URL (BACKEND_CONVENTIONS); bentuknya ditetapkan alur upload #29 (#28 tidak menerima foto).
-const photoSchema = z.string().optional().nullable();
+// Referensi media, bukan URL (BACKEND_CONVENTIONS §140); maksimal 500 karakter.
+export const photoSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((val) => !/^https?:\/\//i.test(val), {
+    message: "Foto harus berupa referensi media, bukan URL eksternal.",
+  })
+  .optional()
+  .nullable();
 
 export const memberSchema = z.object({
   id: z.string().uuid(),
@@ -31,18 +39,26 @@ export const memberSchema = z.object({
   deleted_at: timestampSchema.optional().nullable(),
 });
 
-export const membershipHistorySchema = z.object({
-  id: z.string().uuid(),
-  member_id: z.string().uuid(),
-  organization_period_id: z.string().uuid(),
-  department_id: z.string().uuid().nullable(),
-  position_id: z.string().uuid(),
-  start_date: z.string().optional().nullable(),
-  end_date: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  created_at: timestampSchema,
-  updated_at: timestampSchema,
-});
+export const membershipHistorySchema = z
+  .object({
+    id: z.string().uuid(),
+    member_id: z.string().uuid(),
+    organization_period_id: z.string().uuid(),
+    department_id: z.string().uuid().nullable(),
+    position_id: z.string().uuid(),
+    start_date: z.string().optional().nullable(),
+    end_date: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    created_at: timestampSchema,
+    updated_at: timestampSchema,
+  })
+  .refine(
+    (data) => !data.start_date || !data.end_date || data.end_date >= data.start_date,
+    {
+      message: "end_date harus setelah atau sama dengan start_date.",
+      path: ["end_date"],
+    },
+  );
 
 export const registrationStatusSchema = z.enum(["SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"]);
 

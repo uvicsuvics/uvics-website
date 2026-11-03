@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { memberSchema, registrationSchema } from "@/lib/backend/membership";
+import {
+  memberSchema,
+  membershipHistorySchema,
+  photoSchema,
+  registrationSchema,
+} from "@/lib/backend/membership";
 import type { Database } from "@/types/database";
 
 type Tables = Database["public"]["Tables"];
@@ -67,6 +72,63 @@ describe("membership row schemas (D04 stored phone)", () => {
       expect(memberSchema.shape.phone.safeParse(phone).success).toBe(false);
     },
   );
+});
+
+describe("membership validations (Issue #54)", () => {
+  describe("photoSchema", () => {
+    it("accepts media reference key, null, and undefined", () => {
+      expect(photoSchema.safeParse(null).success).toBe(true);
+      expect(photoSchema.safeParse(undefined).success).toBe(true);
+      expect(photoSchema.safeParse("uvics/members/photo-123.jpg").success).toBe(true);
+    });
+
+    it("rejects external HTTP/HTTPS URLs", () => {
+      expect(photoSchema.safeParse("https://example.com/photo.jpg").success).toBe(false);
+      expect(photoSchema.safeParse("http://example.com/photo.jpg").success).toBe(false);
+    });
+
+    it("rejects strings exceeding 500 characters", () => {
+      const longRef = "a".repeat(501);
+      expect(photoSchema.safeParse(longRef).success).toBe(false);
+    });
+  });
+
+  describe("membershipHistorySchema", () => {
+    const validHistory = {
+      id: "00000000-0000-4000-8000-000000000001",
+      member_id: "00000000-0000-4000-8000-000000000002",
+      organization_period_id: "00000000-0000-4000-8000-000000000003",
+      department_id: null,
+      position_id: "00000000-0000-4000-8000-000000000004",
+      start_date: "2024-08-01",
+      end_date: "2025-07-31",
+      notes: "Active contributor",
+      created_at: "2026-10-10T00:00:00Z",
+      updated_at: "2026-10-10T00:00:00Z",
+    };
+
+    it("accepts valid date range or null dates", () => {
+      expect(membershipHistorySchema.safeParse(validHistory).success).toBe(true);
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, start_date: null, end_date: null }).success,
+      ).toBe(true);
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, start_date: "2024-08-01", end_date: "2024-08-01" }).success,
+      ).toBe(true);
+    });
+
+    it("rejects when end_date is before start_date", () => {
+      const invalid = membershipHistorySchema.safeParse({
+        ...validHistory,
+        start_date: "2025-08-01",
+        end_date: "2024-08-01",
+      });
+      expect(invalid.success).toBe(false);
+      if (!invalid.success) {
+        expect(invalid.error.issues[0]?.path).toEqual(["end_date"]);
+      }
+    });
+  });
 });
 
 describe("database types mirror membership migration", () => {

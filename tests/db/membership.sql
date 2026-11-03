@@ -26,25 +26,75 @@ begin
     'Test Applicant', '105021810011', 'applicant@student.unklab.ac.id', '+628123456789', 'FIK', 'Informatika', 2023, d
   ) returning id into r;
 
-  -- Test member insert
+  -- Test member insert with valid photo media reference and valid social URLs
   insert into public.members (
-    full_name, nim, email, phone, faculty, study_program, batch, status
+    full_name, nim, email, phone, faculty, study_program, batch, status,
+    photo, linkedin_url, github_url, instagram_url
   ) values (
-    'Test Member', '105021810012', 'member@student.unklab.ac.id', '+628123456780', 'FIK', 'Informatika', 2023, 'ACTIVE'
+    'Test Member', '105021810012', 'member@student.unklab.ac.id', '+628123456780', 'FIK', 'Informatika', 2023, 'ACTIVE',
+    'uvics/members/photo-10012.webp',
+    'https://www.linkedin.com/in/testmember',
+    'https://github.com/testmember',
+    'https://instagram.com/testmember'
   ) returning id into m;
   
-  -- Test membership history insert
+  -- Test membership history insert with valid date range
   insert into public.membership_histories (
-    member_id, organization_period_id, department_id, position_id, start_date
+    member_id, organization_period_id, department_id, position_id, start_date, end_date
   ) values (
-    m, o, d, p, '2025-08-01'
+    m, o, d, p, '2025-08-01', '2026-07-31'
   );
-  
-  -- Test soft delete strategy for members (update deleted_at)
-  update public.members set deleted_at = statement_timestamp() where id = m;
-  if not found then
-    raise exception 'Soft delete failed';
-  end if;
+
+  -- Constraint tests (Issue #54):
+  -- 1. members.photo: reject URL
+  begin
+    insert into public.members (full_name, photo) values ('URL Photo', 'https://example.com/photo.jpg');
+    raise exception 'external photo URL must be rejected by check constraint';
+  exception when check_violation then
+    null;
+  end;
+
+  -- 2. members.photo: reject length > 500
+  begin
+    insert into public.members (full_name, photo) values ('Long Photo', repeat('a', 501));
+    raise exception 'photo exceeding 500 chars must be rejected';
+  exception when check_violation then
+    null;
+  end;
+
+  -- 3. membership_histories date range: reject end_date < start_date
+  begin
+    insert into public.membership_histories (
+      member_id, organization_period_id, department_id, position_id, start_date, end_date
+    ) values (
+      m, o, d, p, '2026-07-31', '2025-08-01'
+    );
+    raise exception 'membership_history with end_date < start_date must be rejected';
+  exception when check_violation then
+    null;
+  end;
+
+  -- 4. Social URLs: reject prefix-only ('https://') or invalid schemes ('javascript:...')
+  begin
+    insert into public.members (full_name, linkedin_url) values ('Bad LinkedIn', 'https://');
+    raise exception 'prefix-only linkedin URL must be rejected';
+  exception when check_violation then
+    null;
+  end;
+
+  begin
+    insert into public.members (full_name, github_url) values ('Bad GitHub', 'javascript:alert(1)');
+    raise exception 'javascript scheme github URL must be rejected';
+  exception when check_violation then
+    null;
+  end;
+
+  begin
+    insert into public.members (full_name, instagram_url) values ('Bad Instagram', 'https://');
+    raise exception 'prefix-only instagram URL must be rejected';
+  exception when check_violation then
+    null;
+  end;
 
   -- Test that converted_member_id prevents multiple registrations converting to same member
   update public.registrations set status = 'ACCEPTED', converted_member_id = m where id = r;
@@ -90,11 +140,61 @@ begin
 
 end$$;
 
--- RLS registrations: admin hanya baca, non-admin nihil, anon ditolak
+-- ============================================================
+-- Role 1: Active Admin (Authenticated with valid admin session)
+-- ============================================================
 select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-4000-8000-000000000001'::uuid, 'session_id', '00000000-0000-4000-8000-000000000011'::uuid)::text, true);
 set local role authenticated;
 do $$
+declare
+  target_member uuid;
+  del_res jsonb;
 begin
+  -- 1. Admin can read active members (deleted_at is null)
+  select id into target_member from public.members where nim = '105021810012';
+  if target_member is null then
+    raise exception 'active admin must be able to read active members';
+  end if;
+
+  -- 2. Direct DML on members is blocked (D13)
+  begin
+    delete from public.members where id = target_member;
+    raise exception 'direct delete on members must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  -- 3. Execute audited RPC admin_soft_delete_member
+  del_res := public.admin_soft_delete_member(target_member);
+  if del_res->>'deleted' <> 'true' then
+    raise exception 'admin_soft_delete_member must return deleted: true';
+  end if;
+
+  -- 4. Member with deleted_at must not be readable via RLS
+  if exists(select from public.members where id = target_member) then
+    raise exception 'soft deleted member must not be visible in admin read query';
+  end if;
+
+  -- 5. Soft-deleted member cannot be deleted again (returns no_data_found)
+  begin
+    perform public.admin_soft_delete_member(target_member);
+    raise exception 'calling soft delete on already deleted member must raise no_data_found';
+  exception when no_data_found then
+    null;
+  end;
+
+  -- 6. Audit log must exist for soft delete
+  if not exists(
+    select from public.audit_logs
+    where action = 'MEMBER_SOFT_DELETED'
+      and entity_type = 'member'
+      and entity_id = target_member
+      and actor_id = '00000000-0000-4000-8000-000000000001'
+  ) then
+    raise exception 'audit log for MEMBER_SOFT_DELETED was not recorded';
+  end if;
+
+  -- 7. Admin can read registrations but cannot direct-write
   if not exists(select from public.registrations) then
     raise exception 'active admin should be able to read registrations';
   end if;
@@ -107,22 +207,53 @@ begin
 end$$;
 reset role;
 
+-- ============================================================
+-- Role 2: Authenticated Non-Admin
+-- ============================================================
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000002"}', true);
 set local role authenticated;
 do $$
 begin
+  if exists(select from public.members) then
+    raise exception 'non-admin should not be able to read members';
+  end if;
   if exists(select from public.registrations) then
     raise exception 'non-admin should not be able to read registrations';
   end if;
+
+  -- Calling RPC raises insufficient_privilege
+  begin
+    perform public.admin_soft_delete_member('00000000-0000-4000-8000-000000000001');
+    raise exception 'non-admin must not execute admin_soft_delete_member';
+  exception when insufficient_privilege then
+    null;
+  end;
 end$$;
 reset role;
 
+-- ============================================================
+-- Role 3: Anon (Unauthenticated)
+-- ============================================================
 set local role anon;
 do $$
 begin
   begin
+    perform id from public.members;
+    raise exception 'anon should not have access to members';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  begin
     perform id from public.registrations;
     raise exception 'anon should not have access to registrations';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  begin
+    perform public.admin_soft_delete_member('00000000-0000-4000-8000-000000000001');
+    raise exception 'anon must not have execute privilege on admin_soft_delete_member';
   exception when insufficient_privilege then
     null;
   end;
