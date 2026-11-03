@@ -27,13 +27,23 @@ describe("Organization domain schemas", () => {
       description: "Handles engineering",
       display_order: 1,
       active: true,
-      created_at: "2026-09-22T00:00:00.000Z",
-      updated_at: "2026-09-22T00:00:00.000Z",
+      created_at: "2026-09-22T10:00:00.123456+00:00",
+      updated_at: "2026-09-22T10:00:00.123456+00:00",
     };
 
     it("parses valid department", () => {
       const res = departmentSchema.safeParse(validDepartment);
       expect(res.success).toBe(true);
+    });
+
+    it("accepts offset timestamps and Z timestamps", () => {
+      expect(
+        departmentSchema.safeParse({
+          ...validDepartment,
+          created_at: "2026-09-22T18:00:00.123456+08:00",
+          updated_at: "2026-09-22T10:00:00.000Z",
+        }).success,
+      ).toBe(true);
     });
 
     it("enforces lowercase kebab-case for slug", () => {
@@ -66,13 +76,23 @@ describe("Organization domain schemas", () => {
       level: "Executive",
       display_order: 1,
       active: true,
-      created_at: "2026-09-22T00:00:00.000Z",
-      updated_at: "2026-09-22T00:00:00.000Z",
+      created_at: "2026-09-22T10:00:00.123456+00:00",
+      updated_at: "2026-09-22T10:00:00.123456+00:00",
     };
 
     it("parses valid position", () => {
       const res = positionSchema.safeParse(validPosition);
       expect(res.success).toBe(true);
+    });
+
+    it("accepts offset timestamps and Z timestamps", () => {
+      expect(
+        positionSchema.safeParse({
+          ...validPosition,
+          created_at: "2026-09-22T18:00:00+08:00",
+          updated_at: "2026-09-22T10:00:00Z",
+        }).success,
+      ).toBe(true);
     });
 
     it("rejects invalid level or name lengths", () => {
@@ -88,13 +108,23 @@ describe("Organization domain schemas", () => {
       start_date: "2024-08-01",
       end_date: "2025-07-31",
       status: "ENDED" as const,
-      created_at: "2026-09-22T00:00:00.000Z",
-      updated_at: "2026-09-22T00:00:00.000Z",
+      created_at: "2026-09-22T10:00:00.123456+00:00",
+      updated_at: "2026-09-22T10:00:00.123456+00:00",
     };
 
     it("parses valid organization period", () => {
       const res = organizationPeriodSchema.safeParse(validPeriod);
       expect(res.success).toBe(true);
+    });
+
+    it("accepts offset timestamps and Z timestamps", () => {
+      expect(
+        organizationPeriodSchema.safeParse({
+          ...validPeriod,
+          created_at: "2026-09-22T18:00:00.654321+08:00",
+          updated_at: "2026-09-22T10:00:00.000Z",
+        }).success,
+      ).toBe(true);
     });
 
     it("validates strict YYYY-MM-DD calendar dates", () => {
