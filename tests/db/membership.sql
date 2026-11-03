@@ -179,6 +179,20 @@ begin
     null;
   end;
 
+  begin
+    update public.members set deleted_at = statement_timestamp() where id = target_member;
+    raise exception 'direct update on members must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  begin
+    insert into public.members (full_name) values ('Direct Insert Admin');
+    raise exception 'direct insert on members must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
+
   -- 3. Execute audited RPC admin_soft_delete_member
   del_res := public.admin_soft_delete_member(target_member);
   if del_res->>'deleted' <> 'true' then
@@ -188,6 +202,9 @@ begin
   -- 4. Member with deleted_at must not be readable via RLS
   if exists(select from public.members where id = target_member) then
     raise exception 'soft deleted member must not be visible in admin read query';
+  end if;
+  if exists(select from public.members where deleted_at is not null) then
+    raise exception 'soft deleted members must be filtered by RLS';
   end if;
 
   -- 5. Soft-deleted member cannot be deleted again (returns no_data_found)
@@ -213,6 +230,7 @@ begin
       and entity_type = 'member'
       and entity_id = target_member
       and actor_id = '00000000-0000-4000-8000-000000000001'
+      and session_id = '00000000-0000-4000-8000-000000000011'::uuid
       and old_values->>'status' = 'ACTIVE'
       and new_values->>'deleted_at' is not null
   ) then
@@ -246,6 +264,14 @@ begin
     raise exception 'non-admin should not be able to read registrations';
   end if;
 
+  -- Direct DML on members is blocked for non-admin
+  begin
+    delete from public.members where id = '00000000-0000-4000-8000-000000000001';
+    raise exception 'non-admin must not delete members';
+  exception when insufficient_privilege then
+    null;
+  end;
+
   -- Calling RPC raises insufficient_privilege
   begin
     perform public.admin_soft_delete_member('00000000-0000-4000-8000-000000000001');
@@ -272,6 +298,13 @@ begin
   begin
     perform id from public.registrations;
     raise exception 'anon should not have access to registrations';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  begin
+    delete from public.members where id = '00000000-0000-4000-8000-000000000001';
+    raise exception 'anon must not delete members';
   exception when insufficient_privilege then
     null;
   end;

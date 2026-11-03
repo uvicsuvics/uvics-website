@@ -1,5 +1,10 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import type { Database } from "@/types/database";
+import { AppError, databaseError } from "./errors";
 import { calendarDateSchema, httpUrlSchema } from "./validation";
+
+type Client = SupabaseClient<Database>;
 
 // Nilai tersimpan (D04); normalisasi input "08…" milik phoneSchema di validation.ts (#33).
 export const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
@@ -44,7 +49,7 @@ export const membershipHistorySchema = z
     id: z.string().uuid(),
     member_id: z.string().uuid(),
     organization_period_id: z.string().uuid(),
-    department_id: z.string().uuid().nullable(),
+    department_id: z.string().uuid().optional().nullable(),
     position_id: z.string().uuid(),
     start_date: calendarDateSchema.optional().nullable(),
     end_date: calendarDateSchema.optional().nullable(),
@@ -90,3 +95,21 @@ export const registrationSchema = z.object({
 export type Member = z.infer<typeof memberSchema>;
 export type MembershipHistory = z.infer<typeof membershipHistorySchema>;
 export type Registration = z.infer<typeof registrationSchema>;
+
+/**
+ * Soft delete member via SQL RPC (D13, D14, Issue #54).
+ * Memeriksa sesi admin aktif, mengisi deleted_at, dan mencatat audit persisten secara atomik.
+ */
+export async function softDeleteMember(client: Client, memberId: string) {
+  if (!z.string().uuid().safeParse(memberId).success) {
+    throw new AppError("NOT_FOUND");
+  }
+
+  const { data, error } = await client.rpc("admin_soft_delete_member", {
+    p_member_id: memberId,
+  });
+
+  if (error) databaseError(error);
+
+  return data as { id: string; deleted: boolean };
+}

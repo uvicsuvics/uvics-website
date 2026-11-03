@@ -49,8 +49,8 @@ Keputusan berikut menjawab pertanyaan PRD §79 atau bagian PRD yang ambigu, dan 
 | D10 | Registration tidak menerima upload CV. Portofolio berupa `portfolio_url`. | Q15 | #17 |
 | D11 | Design system resmi adalah `design.md` dengan token di `app/globals.css`. | Q19 | AGENTS.md |
 | D12 | Satu registration menghasilkan paling banyak satu member, dan hanya registration berstatus `ACCEPTED` yang boleh dikonversi. Ditegakkan di database (check constraint + trigger). | §24, §60 butir 6–7 | #17 |
-| D13 | Admin hanya membaca tabel organisasi dan membership secara langsung. Mutasi dilakukan lewat fungsi SQL yang memeriksa sesi admin dan menulis audit dalam satu transaksi. | §60 butir 15, §67 | #16, #17 |
-| D14 | Histori keanggotaan tidak pernah dihapus otomatis: FK `membership_histories` memakai `on delete restrict`; member memakai soft delete (`deleted_at`). | §29, §40 | #16, #17 |
+| D13 | Admin hanya membaca tabel organisasi dan membership secara langsung. Mutasi dilakukan lewat fungsi SQL yang memeriksa sesi admin dan menulis audit dalam satu transaksi. | §60 butir 15, §67 | #16, #17, #29, #54 |
+| D14 | Histori keanggotaan tidak pernah dihapus otomatis: FK `membership_histories` memakai `on delete restrict`; member memakai soft delete (`deleted_at`). | §29, §40 | #16, #17, #54 |
 | D15 | Competition hanya berisi informasi lomba, bukan tracking tim. Tracking tim tetap future enhancement. | Q9 | PRD §77 |
 | D16 | `development` adalah branch integrasi; `main` adalah branch rilis. Detail di [workflow pengembangan](DEVELOPMENT_WORKFLOW.md). | — | Sejak 4 Oktober 2026 |
 | D17 | Visibilitas konten publik memakai `content_status` (`DRAFT/PUBLISHED/ARCHIVED`, default `DRAFT`), terpisah dari lifecycle. `competitions`, `achievements`, dan `projects` memakai kolom `publication_status`; lifecycle tetap kolom `status` (`competition_status`, `project_status`). `achievements.published` tidak dipakai. Lifecycle `ARCHIVED` pada project berarti proyek tidak lagi dikelola dan tetap tampil bila `PUBLISHED`. Lifecycle dihitung dari tanggal belum diputuskan (T06). | §17–19, §60 butir 12 (dari U06) | #20 |

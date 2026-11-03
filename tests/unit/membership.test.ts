@@ -1,11 +1,25 @@
 import { describe, expect, it } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { AppError } from "@/lib/backend/errors";
 import {
   memberSchema,
   membershipHistorySchema,
   photoSchema,
   registrationSchema,
+  softDeleteMember,
 } from "@/lib/backend/membership";
 import type { Database } from "@/types/database";
+
+function fakeClient(result: { data: unknown; error: { code?: string; message?: string } | null }) {
+  const calls: [string, unknown][] = [];
+  const client = {
+    rpc: (fn: string, args: unknown) => {
+      calls.push([fn, args]);
+      return Promise.resolve(result);
+    },
+  } as unknown as SupabaseClient<Database>;
+  return { client, calls };
+}
 
 type Tables = Database["public"]["Tables"];
 const registrationRow: Pick<Tables["registrations"]["Row"], "converted_member_id" | "status" | "phone"> = {
@@ -82,9 +96,10 @@ describe("membership validations (Issue #54)", () => {
       expect(photoSchema.safeParse("uvics/members/photo-123.jpg").success).toBe(true);
     });
 
-    it("rejects external HTTP/HTTPS URLs", () => {
+    it("rejects external HTTP/HTTPS URLs (including uppercase)", () => {
       expect(photoSchema.safeParse("https://example.com/photo.jpg").success).toBe(false);
       expect(photoSchema.safeParse("http://example.com/photo.jpg").success).toBe(false);
+      expect(photoSchema.safeParse("HTTPS://EXAMPLE.COM/PHOTO.JPG").success).toBe(false);
     });
 
     it("rejects strings exceeding 500 characters", () => {
@@ -115,6 +130,15 @@ describe("membership validations (Issue #54)", () => {
       expect(
         membershipHistorySchema.safeParse({ ...validHistory, start_date: "2024-08-01", end_date: "2024-08-01" }).success,
       ).toBe(true);
+    });
+
+    it("accepts null or omitted department_id (pengurus inti tanpa departemen)", () => {
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, department_id: null }).success,
+      ).toBe(true);
+      const withoutDept = { ...validHistory };
+      delete (withoutDept as { department_id?: string | null }).department_id;
+      expect(membershipHistorySchema.safeParse(withoutDept).success).toBe(true);
     });
 
     it("rejects when end_date is before start_date", () => {
@@ -174,6 +198,74 @@ describe("membership validations (Issue #54)", () => {
     it("rejects invalid social URLs", () => {
       expect(memberSchema.safeParse({ ...baseMember, linkedin_url: "javascript:alert(1)" }).success).toBe(false);
       expect(memberSchema.safeParse({ ...baseMember, github_url: "not-a-url" }).success).toBe(false);
+      expect(memberSchema.safeParse({ ...baseMember, instagram_url: "https://" }).success).toBe(false);
+      expect(memberSchema.safeParse({ ...baseMember, github_url: "https://user:pass@github.com/test" }).success).toBe(false);
+    });
+  });
+
+  describe("softDeleteMember RPC wrapper", () => {
+    const memberId = "00000000-0000-4000-8000-000000000001";
+
+    it("successfully soft-deletes a member via RPC", async () => {
+      const { client, calls } = fakeClient({
+        data: { id: memberId, deleted: true },
+        error: null,
+      });
+      const result = await softDeleteMember(client, memberId);
+      expect(result).toEqual({ id: memberId, deleted: true });
+      expect(calls).toEqual([
+        ["admin_soft_delete_member", { p_member_id: memberId }],
+      ]);
+    });
+
+    it("rejects non-UUID memberId with NOT_FOUND without calling RPC", async () => {
+      const { client, calls } = fakeClient({ data: null, error: null });
+      await expect(softDeleteMember(client, "invalid-uuid")).rejects.toThrow(AppError);
+      try {
+        await softDeleteMember(client, "invalid-uuid");
+      } catch (err) {
+        expect((err as AppError).code).toBe("NOT_FOUND");
+      }
+      expect(calls).toHaveLength(0);
+    });
+
+    it("translates P0002 to NOT_FOUND", async () => {
+      const { client } = fakeClient({
+        data: null,
+        error: { code: "P0002", message: "Member tidak ditemukan atau sudah dihapus" },
+      });
+      try {
+        await softDeleteMember(client, memberId);
+        expect.unreachable("should throw");
+      } catch (err) {
+        expect((err as AppError).code).toBe("NOT_FOUND");
+      }
+    });
+
+    it("translates 42501 to FORBIDDEN", async () => {
+      const { client } = fakeClient({
+        data: null,
+        error: { code: "42501", message: "insufficient_privilege" },
+      });
+      try {
+        await softDeleteMember(client, memberId);
+        expect.unreachable("should throw");
+      } catch (err) {
+        expect((err as AppError).code).toBe("FORBIDDEN");
+      }
+    });
+
+    it("translates unexpected DB error to SERVICE_UNAVAILABLE", async () => {
+      const { client } = fakeClient({
+        data: null,
+        error: { code: "XX000", message: "internal crash" },
+      });
+      try {
+        await softDeleteMember(client, memberId);
+        expect.unreachable("should throw");
+      } catch (err) {
+        expect((err as AppError).code).toBe("SERVICE_UNAVAILABLE");
+      }
     });
   });
 });
