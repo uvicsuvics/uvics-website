@@ -191,5 +191,5 @@ Berlaku untuk `lib/backend/membership.ts` dan migration `20261103204000_member_s
 
 - **Soft Delete:** `public.admin_soft_delete_member(p_member_id uuid)`. Memeriksa sesi admin aktif, mengunci baris `public.members FOR UPDATE`, mengisi `deleted_at = statement_timestamp()`, dan mencatat audit `MEMBER_SOFT_DELETED`. Member dengan `deleted_at is not null` disaring oleh RLS `active_admin_read` sehingga tidak terlihat di query baca admin. Mencoba menghapus member yang sudah dihapus menghasilkan `P0002` (`NOT_FOUND`).
 - **Validasi Media Foto:** Kolom `photo` pada `members` berupa referensi media Cloudinary privat (maksimal 500 karakter), bukan URL eksternal (`!~* '^https?://'`).
-- **Validasi URL Sosial:** Kolom `linkedin_url`, `github_url`, dan `instagram_url` divalidasi hingga nama domain host (`linkedin.com`, `github.com`, `instagram.com`) dan path, bukan sekadar prefiks `^https?://`.
+- **Validasi URL Sosial:** Kolom `linkedin_url`, `github_url`, dan `instagram_url` divalidasi hingga format domain host HTTP/S lengkap dan path (menolak sekadar prefiks `^https?://`, format non-URL, atau IDN/punycode).
 - **Validasi Histori Keanggotaan:** `membership_histories` menegakkan constraint `end_date >= start_date` di tingkat basis data dan skema Zod `membershipHistorySchema`.

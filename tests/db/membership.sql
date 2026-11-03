@@ -96,6 +96,21 @@ begin
     null;
   end;
 
+  -- 5. Social URLs: reject string exceeding 2048 characters
+  begin
+    insert into public.members (full_name, linkedin_url) values ('Long LinkedIn', 'https://linkedin.com/' || repeat('a', 2040));
+    raise exception 'social URL exceeding 2048 chars must be rejected';
+  exception when check_violation then
+    null;
+  end;
+
+  -- 6. membership_histories same day start_date = end_date accepted
+  insert into public.membership_histories (
+    member_id, organization_period_id, department_id, position_id, start_date, end_date
+  ) values (
+    m, o, d, p, '2025-08-01', '2025-08-01'
+  );
+
   -- Test that converted_member_id prevents multiple registrations converting to same member
   update public.registrations set status = 'ACCEPTED', converted_member_id = m where id = r;
   
@@ -183,15 +198,25 @@ begin
     null;
   end;
 
-  -- 6. Audit log must exist for soft delete
+  -- 5b. Calling soft delete on non-existent member raises no_data_found
+  begin
+    perform public.admin_soft_delete_member('00000000-0000-4000-8000-999999999999');
+    raise exception 'calling soft delete on non-existent member must raise no_data_found';
+  exception when no_data_found then
+    null;
+  end;
+
+  -- 6. Audit log must exist for soft delete with complete payload
   if not exists(
     select from public.audit_logs
     where action = 'MEMBER_SOFT_DELETED'
       and entity_type = 'member'
       and entity_id = target_member
       and actor_id = '00000000-0000-4000-8000-000000000001'
+      and old_values->>'status' = 'ACTIVE'
+      and new_values->>'deleted_at' is not null
   ) then
-    raise exception 'audit log for MEMBER_SOFT_DELETED was not recorded';
+    raise exception 'audit log for MEMBER_SOFT_DELETED was not recorded or payload incomplete';
   end if;
 
   -- 7. Admin can read registrations but cannot direct-write

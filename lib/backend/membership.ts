@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { httpUrlSchema } from "./validation";
+import { calendarDateSchema, httpUrlSchema } from "./validation";
 
 // Nilai tersimpan (D04); normalisasi input "08…" milik phoneSchema di validation.ts (#33).
 export const storedPhoneSchema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
@@ -46,8 +46,8 @@ export const membershipHistorySchema = z
     organization_period_id: z.string().uuid(),
     department_id: z.string().uuid().nullable(),
     position_id: z.string().uuid(),
-    start_date: z.string().optional().nullable(),
-    end_date: z.string().optional().nullable(),
+    start_date: calendarDateSchema.optional().nullable(),
+    end_date: calendarDateSchema.optional().nullable(),
     notes: z.string().optional().nullable(),
     created_at: timestampSchema,
     updated_at: timestampSchema,

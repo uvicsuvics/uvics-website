@@ -128,6 +128,53 @@ describe("membership validations (Issue #54)", () => {
         expect(invalid.error.issues[0]?.path).toEqual(["end_date"]);
       }
     });
+
+    it("validates calendar date format YYYY-MM-DD", () => {
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, start_date: "2024/08/01" }).success,
+      ).toBe(false);
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, start_date: "not-a-date" }).success,
+      ).toBe(false);
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, end_date: "2024-02-30" }).success,
+      ).toBe(false);
+    });
+  });
+
+  describe("memberSchema with soft delete and social URLs", () => {
+    const baseMember = {
+      id: "00000000-0000-4000-8000-000000000001",
+      full_name: "Test Member",
+      status: "ACTIVE" as const,
+      created_at: "2026-10-10T08:00:00+00:00",
+      updated_at: "2026-10-10T08:00:00+00:00",
+      photo: "uvics/members/photo-1.jpg",
+      linkedin_url: "https://www.linkedin.com/in/testmember",
+      github_url: "https://github.com/testmember",
+      instagram_url: "https://instagram.com/testmember",
+      deleted_at: null,
+    };
+
+    it("accepts valid member with null or omitted deleted_at", () => {
+      expect(memberSchema.safeParse(baseMember).success).toBe(true);
+      const withoutDeletedAt = { ...baseMember };
+      delete (withoutDeletedAt as { deleted_at?: string | null }).deleted_at;
+      expect(memberSchema.safeParse(withoutDeletedAt).success).toBe(true);
+    });
+
+    it("accepts member with populated deleted_at timestamp", () => {
+      const deletedMember = {
+        ...baseMember,
+        deleted_at: "2026-11-03T12:00:00.123456+00:00",
+      };
+      expect(memberSchema.safeParse(deletedMember).success).toBe(true);
+    });
+
+    it("rejects invalid social URLs", () => {
+      expect(memberSchema.safeParse({ ...baseMember, linkedin_url: "javascript:alert(1)" }).success).toBe(false);
+      expect(memberSchema.safeParse({ ...baseMember, github_url: "not-a-url" }).success).toBe(false);
+    });
   });
 });
 
