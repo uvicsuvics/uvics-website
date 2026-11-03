@@ -46,6 +46,15 @@ describe("Organization domain schemas", () => {
       ).toBe(true);
     });
 
+    it("rejects invalid timestamps", () => {
+      expect(
+        departmentSchema.safeParse({ ...validDepartment, created_at: "not-a-timestamp" }).success,
+      ).toBe(false);
+      expect(
+        departmentSchema.safeParse({ ...validDepartment, updated_at: "2026-09-22" }).success,
+      ).toBe(false);
+    });
+
     it("enforces lowercase kebab-case for slug", () => {
       expect(
         departmentSchema.safeParse({ ...validDepartment, slug: "Software Engineering" }).success,
@@ -95,6 +104,15 @@ describe("Organization domain schemas", () => {
       ).toBe(true);
     });
 
+    it("rejects invalid timestamps", () => {
+      expect(
+        positionSchema.safeParse({ ...validPosition, created_at: "not-a-timestamp" }).success,
+      ).toBe(false);
+      expect(
+        positionSchema.safeParse({ ...validPosition, updated_at: "2026-09-22" }).success,
+      ).toBe(false);
+    });
+
     it("rejects invalid level or name lengths", () => {
       expect(positionSchema.safeParse({ ...validPosition, name: "" }).success).toBe(false);
       expect(positionSchema.safeParse({ ...validPosition, level: "" }).success).toBe(false);
@@ -125,6 +143,15 @@ describe("Organization domain schemas", () => {
           updated_at: "2026-09-22T10:00:00.000Z",
         }).success,
       ).toBe(true);
+    });
+
+    it("rejects invalid timestamps", () => {
+      expect(
+        organizationPeriodSchema.safeParse({ ...validPeriod, created_at: "not-a-timestamp" }).success,
+      ).toBe(false);
+      expect(
+        organizationPeriodSchema.safeParse({ ...validPeriod, updated_at: "2026-09-22" }).success,
+      ).toBe(false);
     });
 
     it("validates strict YYYY-MM-DD calendar dates", () => {
