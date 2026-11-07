@@ -68,7 +68,7 @@ export function DepartmentsHero({ breadcrumbs, eyebrow, title, titleHighlight, d
                   className="flex items-baseline justify-between gap-4 px-5 py-3 sm:flex-col sm:items-start sm:justify-start sm:gap-1 sm:px-7 sm:py-5"
                 >
                   <dt className="text-xs text-gray-600">{label}</dt>
-                  <dd className="font-(family-name:--font-heading) text-2xl font-bold text-primary-900 sm:text-3xl">
+                  <dd className="font-(family-name:--font-heading) text-2xl font-bold text-right text-primary-900 sm:text-3xl sm:text-left">
                     {value}
                   </dd>
                 </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DepartmentIndexItem } from "@/components/departments/DepartmentIndexItem";
+import { DepartmentSection } from "@/components/departments/DepartmentSection";
 import { DepartmentsHero } from "@/components/departments/DepartmentsHero";
 import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -42,44 +43,36 @@ export default async function DepartmentsPage() {
         stats={stats}
       />
 
-      <section id="departemen" aria-labelledby="departemen-heading" className="scroll-mt-16 pt-16 sm:pt-20">
-        <div className="mx-auto px-6 w-full max-w-7xl md:px-8">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 pb-5 border-b-2 border-primary-900">
-            <h2
-              id="departemen-heading"
-              className="font-heading text-2xl font-bold leading-tight text-primary-900 text-balance sm:text-3xl"
-            >
-              {page.list.title} <span className="text-primary">{page.list.titleHighlight}</span>
-            </h2>
-            {activePeriod && <p className="text-sm text-gray-600">{`${page.list.periodNote} ${activePeriod.name}`}</p>}
+      <DepartmentSection
+        id="departemen"
+        heading={page.list}
+        note={activePeriod ? `${page.list.periodNote} ${activePeriod.name}` : undefined}
+      >
+        {departments.length === 0 ? (
+          <div className="pt-10">
+            <EmptyState message={page.list.emptyMessage} />
           </div>
-
-          {departments.length === 0 ? (
-            <div className="pt-10">
-              <EmptyState message={page.list.emptyMessage} />
-            </div>
-          ) : (
-            <Reveal>
-              <ol>
-                {departments.map((department, index) => {
-                  const own = membersOf(department.name);
-                  return (
-                    <DepartmentIndexItem
-                      key={department.id}
-                      department={department}
-                      number={index + 1}
-                      // shortcut: koordinator dikenali dari nama posisi; ganti ke positions.level setelah U08 diputuskan.
-                      coordinator={own.find((member) => member.position === "Koordinator")?.name}
-                      memberCount={own.length}
-                      labels={page.list}
-                    />
-                  );
-                })}
-              </ol>
-            </Reveal>
-          )}
-        </div>
-      </section>
+        ) : (
+          <Reveal>
+            <ol>
+              {departments.map((department, index) => {
+                const own = membersOf(department.name);
+                return (
+                  <DepartmentIndexItem
+                    key={department.id}
+                    department={department}
+                    number={index + 1}
+                    // shortcut: koordinator dikenali dari nama posisi; ganti ke positions.level setelah U08 diputuskan.
+                    coordinator={own.find((member) => member.position === "Koordinator")?.name}
+                    memberCount={own.length}
+                    labels={page.list}
+                  />
+                );
+              })}
+            </ol>
+          </Reveal>
+        )}
+      </DepartmentSection>
 
       <ClosingCtaSection cta={page.cta} />
     </div>

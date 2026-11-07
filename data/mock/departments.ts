@@ -62,7 +62,17 @@ export interface DepartmentsPageContent {
   };
   cta: ClosingCtaContent;
   /** Halaman /departments/{slug}; judul pengurus diakhiri nama periode aktif. */
-  detail: { membersTitle: string; membersEmptyMessage: string; cta: ClosingCtaContent };
+  detail: {
+    /** Diikuti nomor urut resmi, mis. "Departemen 03". */
+    eyebrowPrefix: string;
+    breadcrumbParent: string;
+    stats: { coordinator: string; members: string; period: string };
+    programs: SectionHeading & { emptyMessage: string; linkLabel: string };
+    membersTitle: string;
+    membersEmptyMessage: string;
+    others: SectionHeading;
+    cta: ClosingCtaContent;
+  };
 }
 
 export const UVICS_DEPARTMENTS_PAGE: DepartmentsPageContent = {
@@ -99,8 +109,18 @@ export const UVICS_DEPARTMENTS_PAGE: DepartmentsPageContent = {
     secondaryCta: { label: "Lihat struktur organisasi", href: "/organization" },
   },
   detail: {
+    eyebrowPrefix: "Departemen",
+    breadcrumbParent: "Departemen",
+    stats: { coordinator: "Koordinator", members: "Pengurus", period: "Periode aktif" },
+    programs: {
+      title: "Program",
+      titleHighlight: "departemen",
+      emptyMessage: "Program departemen ini belum dijabarkan.",
+      linkLabel: "Lihat program",
+    },
     membersTitle: "Pengurus periode",
     membersEmptyMessage: "Belum ada data pengurus untuk departemen ini.",
+    others: { title: "Departemen", titleHighlight: "lainnya" },
     cta: {
       title: "Tertarik bergabung dengan departemen ini?",
       description: "Daftar sebagai anggota UVICS dan pilih departemen sesuai minatmu saat pendaftaran.",
