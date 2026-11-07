@@ -9,6 +9,8 @@ interface TextHeroProps {
   title: string;
   /** Kata penutup judul yang diberi warna biru. */
   titleHighlight?: string;
+  /** Kelas ukuran judul pengganti, mis. untuk judul berita yang panjang. */
+  titleClassName?: string;
   description: string;
   /** Ringkasan angka yang sudah dihitung dari data; tidak dipakai bila ada `media`. */
   stats?: { label: string; value: string }[];
@@ -27,6 +29,7 @@ export function TextHero({
   eyebrow,
   title,
   titleHighlight,
+  titleClassName,
   description,
   stats = [],
   media,
@@ -71,7 +74,10 @@ export function TextHero({
             <p className="text-xs font-bold tracking-[0.16em] uppercase text-primary">{eyebrow}</p>
             <h1
               id="text-hero-heading"
-              className="font-heading text-5xl font-bold leading-[1.05] text-primary-900 sm:text-6xl lg:text-7xl"
+              className={cn(
+                "font-heading text-5xl font-bold leading-[1.05] text-primary-900 sm:text-6xl lg:text-7xl",
+                titleClassName,
+              )}
             >
               {title}
               {titleHighlight && <span className="text-primary"> {titleHighlight}</span>}
