@@ -88,6 +88,16 @@ const PROFILE_PAGES = [
   { path: "/departments", title: "Departemen | UVICS" },
   { path: "/departments/software-engineering", title: "Software Engineering | Departemen UVICS" },
   { path: "/organization", title: "Struktur Organisasi | UVICS" },
+  { path: "/achievements", title: "Prestasi | UVICS" },
+  {
+    path: "/achievements/juara-1-national-ai-hackathon-2026",
+    title: "Juara 1 & Best Technical Innovation | Prestasi UVICS",
+  },
+  { path: "/projects", title: "Project | UVICS" },
+  {
+    path: "/projects/klabat-campus-superapp",
+    title: "Klabat Campus SuperApp & Academic Portal | Project UVICS",
+  },
 ];
 
 for (const { path, title } of PROFILE_PAGES) {
