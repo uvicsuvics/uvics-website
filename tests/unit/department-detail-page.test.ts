@@ -50,6 +50,16 @@ describe("halaman /departments/[slug] (Konsep A)", () => {
     expect(order).toEqual([...order].sort((a, b) => a - b));
   });
 
+  it("menampilkan struktur pengurus berurutan dari Steering Helper sampai Anggota", async () => {
+    const members = sectionOf(await render("web-development"), "pengurus");
+    expect(members).toMatch(/<ol[^>]*aria-label="Struktur pengurus Web Development"/);
+    const labels = ["Steering Helper", "Koordinator", "PIC", "Anggota"].map((position) =>
+      members.indexOf(`>${position}<`),
+    );
+    expect(labels.every((at) => at > -1)).toBe(true);
+    expect(labels).toEqual([...labels].sort((a, b) => a - b));
+  });
+
   it("menaut empat departemen lain dengan nomor resmi", async () => {
     const others = sectionOf(await render("web-development"), "departemen-lainnya");
     const slugs = [...others.matchAll(/href="\/departments\/([^"]+)"/g)].map((match) => match[1]);

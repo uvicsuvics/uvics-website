@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { DepartmentIndexItem } from "@/components/departments/DepartmentIndexItem";
 import { DepartmentSection } from "@/components/departments/DepartmentSection";
+import { DepartmentStructure } from "@/components/departments/DepartmentStructure";
 import { DepartmentsHero } from "@/components/departments/DepartmentsHero";
-import { MemberCard } from "@/components/organization/MemberCard";
 import { ProgramCard } from "@/components/programs/ProgramCard";
 import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -101,13 +101,7 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
           </div>
         ) : (
           <Reveal className="pt-10">
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {own.map((member) => (
-                <li key={`${member.name}-${member.position}`}>
-                  <MemberCard member={member} />
-                </li>
-              ))}
-            </ul>
+            <DepartmentStructure label={`${detail.structureLabel} ${department.name}`} members={own} />
           </Reveal>
         )}
       </DepartmentSection>

@@ -69,6 +69,8 @@ export interface DepartmentsPageContent {
     stats: { coordinator: string; members: string; period: string };
     programs: SectionHeading & { emptyMessage: string; linkLabel: string };
     membersTitle: string;
+    /** Diikuti nama departemen; nama bagan struktur untuk pembaca layar. */
+    structureLabel: string;
     membersEmptyMessage: string;
     others: SectionHeading;
     cta: ClosingCtaContent;
@@ -118,7 +120,8 @@ export const UVICS_DEPARTMENTS_PAGE: DepartmentsPageContent = {
       emptyMessage: "Program departemen ini belum dijabarkan.",
       linkLabel: "Lihat program",
     },
-    membersTitle: "Pengurus periode",
+    membersTitle: "Struktur pengurus periode",
+    structureLabel: "Struktur pengurus",
     membersEmptyMessage: "Belum ada data pengurus untuk departemen ini.",
     others: { title: "Departemen", titleHighlight: "lainnya" },
     cta: {
