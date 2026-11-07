@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { getCompetitions } from '@/lib/services/competitionService';
-import { listHref, orNotFound, readEnum, readPage, readSearch, type SearchParams } from '@/lib/services/query';
+import { orNotFound, readEnum, readPage, readSearch, type SearchParams } from '@/lib/services/query';
+import { listHref } from '@/lib/utils';
 import { COMPETITION_STATUSES } from '@/types/competition';
 
 // Sama dengan ITEMS_PER_PAGE sebelumnya; tidak muncul di URL.

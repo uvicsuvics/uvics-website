@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { listHref, paginate, readEnum, readPage, readSearch } from '@/lib/services/query';
+import { paginate, readEnum, readPage, readSearch } from '@/lib/services/query';
+import { listHref } from '@/lib/utils';
 
 describe('kontrak query dan pagination', () => {
   it('membaca page, search, dan enum dengan default aman', () => {

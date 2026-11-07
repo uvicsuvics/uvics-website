@@ -27,6 +27,16 @@ function findMockImports(source: string): string[] {
     .filter((specifier) => MOCK_SPECIFIER.test(specifier));
 }
 
+const SERVICE_SPECIFIER = /^@\/lib\/services\//;
+const USE_CLIENT = /^\s*(?:\/\*[\s\S]*?\*\/\s*|\/\/[^\n]*\n\s*)*["']use client["']/;
+
+/** Mengembalikan specifier service dari import nilai; `import type` dilewati. */
+function findServiceImports(source: string): string[] {
+  return [...source.matchAll(IMPORT_DECLARATION)]
+    .map((match) => match[1])
+    .filter((specifier) => SERVICE_SPECIFIER.test(specifier));
+}
+
 function listSourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = `${dir}/${entry.name}`;
@@ -51,6 +61,24 @@ describe("batas data publik", () => {
       "@/lib/mock-data/competitions",
     ]);
     expect(findMockImports('import { cn } from "@/lib/utils";')).toEqual([]);
+  });
+
+  it("pencocok service mengenali import nilai dan melewatkan import type", () => {
+    expect(findServiceImports('import type { A } from "@/lib/services/organizationService";')).toEqual([]);
+    expect(findServiceImports('import { getX } from "@/lib/services/query";')).toEqual([
+      "@/lib/services/query",
+    ]);
+    expect(findServiceImports('import { cn } from "@/lib/utils";')).toEqual([]);
+    expect(USE_CLIENT.test("'use client';\nimport a from 'b';")).toBe(true);
+    expect(USE_CLIENT.test('"use client"\n')).toBe(true);
+    expect(USE_CLIENT.test("import a from 'b';\n'use client';")).toBe(false);
+  });
+
+  it("komponen client tidak mengimpor nilai dari @/lib/services (menarik kode backend ke bundle)", () => {
+    const violations = uiFiles.filter(
+      (path) => USE_CLIENT.test(read(path)) && findServiceImports(read(path)).length > 0,
+    );
+    expect(violations).toEqual([]);
   });
 
   it("UI tidak mengimpor mock selain utang yang tercatat", () => {
