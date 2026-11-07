@@ -22,6 +22,19 @@ export const CMS_FIELD_MESSAGES: Record<string, string> = {
   meta_description: "Maksimal 500 karakter.",
   short_description: "Maksimal 500 karakter.",
   display_order: "Isi dengan bilangan bulat.",
+  organization_name: "Wajib memuat huruf atau angka, maksimal 255 karakter.",
+  website_title: "Wajib memuat huruf atau angka, maksimal 255 karakter.",
+  default_meta_title: "Wajib memuat huruf atau angka, maksimal 255 karakter.",
+  footer_text: "Wajib memuat huruf atau angka, maksimal 500 karakter.",
+  address: "Wajib memuat huruf atau angka, maksimal 500 karakter.",
+  default_meta_description:
+    "Wajib memuat huruf atau angka, maksimal 500 karakter.",
+  email: "Masukkan email yang valid, misalnya nama@domain.ac.id.",
+  phone: "Awali dengan kode negara, misalnya +6281234567890, atau 08.",
+  instagram_url: "Masukkan URL lengkap yang diawali https://, tanpa port.",
+  linkedin_url: "Masukkan URL lengkap yang diawali https://, tanpa port.",
+  github_url: "Masukkan URL lengkap yang diawali https://, tanpa port.",
+  youtube_url: "Masukkan URL lengkap yang diawali https://, tanpa port.",
 };
 const FIELD_FALLBACK = "Periksa kembali isian ini.";
 const SLUG_TAKEN = "Slug sudah dipakai. Pilih slug lain.";
