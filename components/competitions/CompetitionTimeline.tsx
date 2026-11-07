@@ -2,50 +2,24 @@ import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatDate, formatDayMonth } from '@/lib/format/date';
+import { DateTile, STATUS_TILE_CLASS, competitionDates } from '@/components/competitions/DateTile';
+import { formatDate } from '@/lib/format/date';
 import { COMPETITION_STATUS_LABELS, CONTENT_LEVEL_LABELS } from '@/lib/format/labels';
-import { cn } from '@/lib/utils';
 import type { Competition, CompetitionGroup, CompetitionStatus } from '@/types/competition';
 
 const ARCHIVED: readonly CompetitionStatus[] = ['CLOSED', 'FINISHED'];
 
-const TILE_CLASS: Record<CompetitionStatus, string> = {
-  OPEN: 'bg-primary text-white',
-  UPCOMING: 'bg-primary-50 text-primary',
-  ONGOING: 'bg-secondary text-gray-900',
-  CLOSED: 'bg-muted text-gray-700',
-  FINISHED: 'bg-muted text-gray-700',
-};
-
-// Ubin memakai tanggal yang sama dengan kunci urutan grup (groupCompetitions): batas pendaftaran
-// untuk yang masih bisa didaftar, tanggal pelaksanaan untuk yang pendaftarannya sudah tutup.
-const showsEventDate = (status: CompetitionStatus) => status !== 'OPEN' && status !== 'UPCOMING';
-
-function CompetitionTimelineRow({ competition }: { competition: Competition }) {
-  const { slug, title, organizer, level, category, status, registrationDeadline, competitionDate } = competition;
-  const eventFirst = showsEventDate(status);
-  const tileDate = eventFirst ? competitionDate : registrationDeadline;
-  const tile = tileDate ? formatDayMonth(tileDate) : null;
-  const otherDate = eventFirst ? registrationDeadline : competitionDate;
+/**
+ * Satu baris linimasa kompetisi: ubin tanggal, judul, penyelenggara, badge, tanggal lain, dan tautan detail.
+ * @param competition - Kompetisi yang ditampilkan
+ */
+export function CompetitionTimelineRow({ competition }: { competition: Competition }) {
+  const { slug, title, organizer, level, category, status } = competition;
+  const { primary, secondary } = competitionDates(competition);
 
   return (
     <li className="flex flex-wrap items-center gap-x-5 gap-y-3 py-4 border-b border-gray-200/90">
-      <span
-        className={cn(
-          'flex flex-col items-center justify-center shrink-0 w-16 h-16 rounded-lg leading-none',
-          TILE_CLASS[status],
-        )}
-      >
-        <span className="sr-only">{eventFirst ? 'Pelaksanaan' : 'Batas pendaftaran'}</span>
-        {tile ? (
-          <>
-            <span className="text-[11px] font-bold uppercase">{tile.month}</span>
-            <span className="font-heading text-2xl font-bold">{tile.day}</span>
-          </>
-        ) : (
-          <span className="px-1 text-[11px] font-semibold text-center leading-tight">Belum ditentukan</span>
-        )}
-      </span>
+      <DateTile date={primary.date} label={primary.label} className={STATUS_TILE_CLASS[status]} />
 
       <div className="flex flex-col flex-1 gap-1 min-w-0 basis-64">
         <h3 className="text-base font-semibold leading-snug text-gray-900">
@@ -63,9 +37,9 @@ function CompetitionTimelineRow({ competition }: { competition: Competition }) {
       </div>
 
       <p className="flex flex-col w-40 text-xs text-gray-500">
-        {eventFirst ? 'Batas pendaftaran' : 'Pelaksanaan'}
+        {secondary.label}
         <span className="text-sm font-semibold text-gray-800">
-          {otherDate ? formatDate(otherDate) : 'Belum ditentukan'}
+          {secondary.date ? formatDate(secondary.date) : 'Belum ditentukan'}
         </span>
       </p>
 

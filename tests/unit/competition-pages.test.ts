@@ -2,9 +2,11 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import NotFound from "@/app/(public)/not-found";
+import CompetitionDetailPage from "@/app/(public)/competitions/[slug]/page";
 import CompetitionsPage from "@/app/(public)/competitions/page";
-import { CompetitionCard } from "@/components/competitions/competition-card";
 import { CompetitionDetailContent } from "@/components/competitions/CompetitionDetailContent";
+import { CompetitionDetailHeader } from "@/components/competitions/CompetitionDetailHeader";
+import { competitionDates } from "@/components/competitions/DateTile";
 import { UVICS_COMPETITIONS } from "@/data/mock/competitions";
 import type { Competition } from "@/types/competition";
 
@@ -78,19 +80,66 @@ describe("halaman /competitions", () => {
   });
 });
 
-describe("komponen kompetisi", () => {
-  it("kartu dan detail aman untuk field nullable", () => {
+describe("halaman detail kompetisi", () => {
+  const renderDetail = async (slug: string) =>
+    renderToStaticMarkup(await CompetitionDetailPage({ params: Promise.resolve({ slug }) }));
+
+  it("menampilkan header, ringkasan pendaftaran, dan kompetisi terkait", async () => {
+    const competition = UVICS_COMPETITIONS.find((c) => c.status === "OPEN" && c.registrationUrl && c.guidebookUrl)!;
+    const html = await renderDetail(competition.slug);
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html).toContain('aria-label="Breadcrumb"');
+    expect(html).toContain('aria-label="Ringkasan pendaftaran"');
+    expect(html).toContain(`<a href="${competition.registrationUrl}" target="_blank" rel="noopener noreferrer"`);
+    expect(html).toContain(`href="${competition.guidebookUrl}"`);
+    expect(html).toContain(">Kompetisi terkait</h2>");
+    expect(html).toContain(">Lihat semua kompetisi</a>");
+  });
+
+  it("slug tidak dikenal menjadi 404", async () => {
+    await expect(renderDetail("tidak-ada")).rejects.toMatchObject({ digest: expect.stringContaining("404") });
+  });
+
+  it("header dan isi aman untuk field nullable", () => {
     const competition: Competition = {
       id: "x", slug: "x", title: "Judul X", organizer: "Penyelenggara X", description: "Deskripsi X",
       category: null, level: null, registrationDeadline: null, competitionDate: null,
       registrationUrl: null, guidebookUrl: null, poster: null, teamSize: null, eligibility: null,
       status: "OPEN", featured: false,
     };
-    for (const html of [
-      renderToStaticMarkup(createElement(CompetitionCard, { competition })),
+    const html = [
+      renderToStaticMarkup(createElement(CompetitionDetailHeader, { competition })),
       renderToStaticMarkup(createElement(CompetitionDetailContent, { competition })),
-    ]) {
-      expect(html).not.toMatch(/undefined|>null<|Invalid Date/);
+    ].join("");
+    expect(html).not.toMatch(/undefined|>null<|Invalid Date/);
+    expect(html).toContain("Belum ditentukan");
+    expect(html).not.toContain("Daftar Sekarang");
+    expect(html).not.toContain("Lihat Guidebook");
+    expect(html).not.toContain("Syarat dan format");
+  });
+
+  it("tautan daftar hanya membuka tab baru saat pendaftaran dibuka", () => {
+    const base: Competition = {
+      id: "y", slug: "y", title: "Judul Y", organizer: "Penyelenggara Y", description: "Deskripsi Y",
+      category: null, level: null, registrationDeadline: "2026-10-01", competitionDate: "2026-10-15",
+      registrationUrl: "https://contoh.test/daftar", guidebookUrl: null, poster: null, teamSize: null, eligibility: null,
+      status: "CLOSED", featured: false,
+    };
+    const closed = renderToStaticMarkup(createElement(CompetitionDetailContent, { competition: base }));
+    expect(closed).toContain('href="https://contoh.test/daftar"');
+    expect(closed).not.toContain('target="_blank"');
+    const open = renderToStaticMarkup(createElement(CompetitionDetailContent, { competition: { ...base, status: "OPEN" } }));
+    expect(open).toContain('<a href="https://contoh.test/daftar" target="_blank" rel="noopener noreferrer"');
+  });
+
+  it("menyorot batas pendaftaran selama masih bisa didaftar, lalu tanggal pelaksanaan", () => {
+    const dates = (status: Competition["status"]) =>
+      competitionDates({ ...UVICS_COMPETITIONS[0], status, registrationDeadline: "2026-10-01", competitionDate: "2026-11-01" });
+    for (const status of ["OPEN", "UPCOMING"] as const) {
+      expect(dates(status).primary).toEqual({ label: "Batas pendaftaran", date: "2026-10-01" });
+    }
+    for (const status of ["ONGOING", "CLOSED", "FINISHED"] as const) {
+      expect(dates(status).primary).toEqual({ label: "Pelaksanaan", date: "2026-11-01" });
     }
   });
 });
