@@ -2,11 +2,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import DepartmentDetailPage from "@/app/(public)/departments/[slug]/page";
 import { UVICS_DEPARTMENTS_PAGE } from "@/data/mock/departments";
-import { getActivePeriod } from "@/lib/services/organizationService";
+import { getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
 
 vi.mock("@/lib/services/organizationService", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/services/organizationService")>();
-  return { ...actual, getActivePeriod: vi.fn(actual.getActivePeriod) };
+  return {
+    ...actual,
+    getActivePeriod: vi.fn(actual.getActivePeriod),
+    getPeriodMembers: vi.fn(actual.getPeriodMembers),
+  };
 });
 
 const render = async (slug: string) =>
@@ -67,7 +71,17 @@ describe("halaman /departments/[slug] (Konsep A)", () => {
     expect(sectionOf(html, "pengurus")).toContain(UVICS_DEPARTMENTS_PAGE.detail.membersEmptyMessage);
   });
 
+  it("periode aktif tanpa pengurus departemen tidak menampilkan jumlah pengurus nol", async () => {
+    vi.mocked(getPeriodMembers).mockResolvedValueOnce([]);
+    const html = await render("web-development");
+    expect(html).not.toMatch(/<dt[^>]*>Pengurus<\/dt>/);
+    expect(html).toMatch(/<dt[^>]*>Periode aktif<\/dt><dd[^>]*>2025\/2026<\/dd>/);
+    expect(sectionOf(html, "pengurus")).toContain(UVICS_DEPARTMENTS_PAGE.detail.membersEmptyMessage);
+  });
+
   it("slug yang tidak ada berujung 404", async () => {
-    await expect(DepartmentDetailPage({ params: Promise.resolve({ slug: "tidak-ada" }) })).rejects.toThrow();
+    await expect(DepartmentDetailPage({ params: Promise.resolve({ slug: "tidak-ada" }) })).rejects.toMatchObject({
+      digest: "NEXT_HTTP_ERROR_FALLBACK;404",
+    });
   });
 });

@@ -56,7 +56,8 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
   const stats = activePeriod
     ? [
         ...(coordinator ? [{ label: detail.stats.coordinator, value: coordinator }] : []),
-        { label: detail.stats.members, value: String(own.length) },
+        // Periode baru bisa aktif sebelum membership diisi; "Pengurus 0" terbaca seperti departemen kosong.
+        ...(own.length > 0 ? [{ label: detail.stats.members, value: String(own.length) }] : []),
         { label: detail.stats.period, value: activePeriod.name },
       ]
     : [];
