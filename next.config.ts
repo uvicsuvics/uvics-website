@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Next dev logs Server Action arguments by default, including login credentials.
   logging: { serverFunctions: false },
-  // U09/K1 #52: /news kanonis; route template /blog diarahkan permanen.
+  // D30 (#52): /news kanonis; route template /blog diarahkan permanen.
   async redirects() {
     return [
       { source: "/blog", destination: "/news", permanent: true },
