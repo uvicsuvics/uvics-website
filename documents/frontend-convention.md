@@ -71,7 +71,7 @@ Aturan:
 - Mock bertipe DTO, bukan tipe lokal: `UVICS_<DOMAIN>S: <Domain>[]`, contoh `UVICS_COMPETITIONS: Competition[]` di `data/mock/competitions.ts`. Domain yang DTO-nya belum dipindah ke `types/` masih memakai `interface <Domain>Item` di file mock (lihat §10).
 - Nilai mengikuti backend: kode enum database (`OPEN`, `NASIONAL`), tanggal `YYYY-MM-DD`, field nullable bernilai `null`, dan urutan array mengikuti urutan backend.
 - Isinya nilai polos yang bisa diserialisasi: string, angka, boolean, array, object. Tidak ada fungsi, komponen ikon, atau `Date`, karena data dikirim dari Server ke Client Component.
-- Mock hanya dibaca service. Batas ini dijaga `tests/unit/public-data-boundary.test.ts`; allowlist `KNOWN_DEBT` mencatat utang yang masih ada: delapan section beranda (#51) dan `/batch` (U09, #49). Entri dihapus saat file dimigrasikan; tes gagal bila entri usang.
+- Mock hanya dibaca service. Batas ini dijaga `tests/unit/public-data-boundary.test.ts`; allowlist `KNOWN_DEBT` mencatat utang yang masih ada: delapan section beranda (#51) dan `/batch` (U09, #49). Entri dihapus saat file dimigrasikan; tes gagal bila entri usang. Tes e2e halaman publik yang harus berjalan di CI diberi nama berawalan `public navigation:`, karena CI hanya menjalankan `--grep 'guest routes|origin/method|public navigation'`.
 
 ## 6. State UI
 
@@ -122,7 +122,7 @@ Filter dan halaman daftar hidup di URL supaya bisa dibagikan dan tombol back bek
 
 - `formatDate`, `formatPeriod`, dan `getYear` (`lib/format/date.ts`) hanya menerima tanggal `YYYY-MM-DD`. `formatDate` melempar `RangeError` untuk datetime, karena `new Date()` pada zona waktu berbeda menggeser hari. Datetime berjam menunggu [T06](DECISIONS.md#d-isu-terbuka).
 - Label tampilan hanya dari `lib/format/labels.ts`: `CONTENT_LEVEL_LABELS`, `COMPETITION_STATUS_LABELS`, `PROJECT_STATUS_LABELS`. `toOptions(labels)` mengubahnya menjadi opsi filter dengan urutan key yang sama.
-- Satu kode punya satu label (keputusan K3 pada rencana eksekusi #24): badge dan filter memakai teks yang sama. Jangan membuat peta label lokal di komponen.
+- Satu kode punya satu label (keputusan PM untuk #24): badge dan filter memakai teks yang sama. Jangan membuat peta label lokal di komponen.
 - Level memakai kode `content_level` ([D20](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)); label dipetakan di sini, bukan di service.
 
 ## 10. Kontrak per domain
@@ -148,8 +148,3 @@ Contoh kompetisi (#26). Page dan komponen tidak berubah; hanya isi service, mapp
 4. Hapus filter dan `paginate` di memori dari service; backend yang menyaring dan memotong.
 5. Tes service memakai fake client (pola `tests/unit/content.test.ts`).
 6. Tambahkan fallback section beranda (`.catch` yang mencatat error dan mengembalikan list kosong, lihat §4).
-
-## 12. Tes
-
-- Unit: `tests/unit/<nama>.test.ts` (Vitest). Batas data publik dijaga `public-data-boundary.test.ts`.
-- E2E (Playwright, `tests/e2e/public.spec.ts`): CI hanya menjalankan tes dengan nama yang cocok `--grep 'guest routes|origin/method|public navigation'`. Tes e2e halaman publik yang harus berjalan di CI diberi nama berawalan `public navigation:`.
