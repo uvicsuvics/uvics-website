@@ -143,7 +143,7 @@ Catatan: memindahkan DTO Program, Department, dan periode organisasi ke `types/`
 Contoh kompetisi (#26). Page dan komponen tidak berubah; hanya isi service, mapper, dan tes.
 
 1. Tambah mapper `toCompetition(row)` yang mengubah snake_case menjadi DTO `Competition`, termasuk `poster` dari referensi media menjadi URL, dengan tes dari baris contoh.
-2. Ganti isi `getCompetitions` dengan `listPublicCompetitions(await serverClient(), query)` lalu petakan `items` dengan `toCompetition`; `pagination` diteruskan apa adanya.
+2. Ganti isi `getCompetitions` dengan `listPublicCompetitions(await serverClient(), query)` lalu petakan `items` dengan `toCompetition`; `pagination` diteruskan apa adanya. Backend membaca nilai berbentuk GET, jadi service mengubah `featured` menjadi string (`String(query.featured)`) sebelum memanggil backend; boolean ditolak `z.stringbool()` dengan VALIDATION_ERROR. Filter backend bersifat AND, sehingga `getRelatedCompetitions` (sama kategori ATAU sama level), juga `getRelatedAchievements` dan `getRelatedProjects`, butuh dua query lalu dedupe, atau aturan relasinya diputuskan ulang di #26.
 3. Di `getCompetitionBySlug`, tangkap `AppError` `NOT_FOUND` dari `getPublicCompetitionBySlug` lalu kembalikan `null`. Kegagalan lain dilempar.
 4. Hapus filter dan `paginate` di memori dari service; backend yang menyaring dan memotong.
 5. Tes service memakai fake client (pola `tests/unit/content.test.ts`).

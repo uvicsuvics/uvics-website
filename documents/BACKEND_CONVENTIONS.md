@@ -157,7 +157,7 @@ Pemetaan DTO competition ke `Competition` di `types/competition.ts` (kontrak #24
 | `poster` (referensi media) | `poster` (`string \| null`, URL atau path siap `next/image`) | Diubah menjadi URL oleh `toCompetition` lewat alur media publik |
 | `team_size`, `eligibility` | `teamSize`, `eligibility` | Nullable |
 | `status` | `status` | Nilai sama (`UPCOMING` ... `FINISHED`); label dari `COMPETITION_STATUS_LABELS` |
-| `featured` | `featured` | |
+| `featured` | `featured` | Parameter query backend berupa string GET (`z.stringbool()`); service mengubah boolean DTO dengan `String(query.featured)` |
 | `created_at`, `updated_at` | tidak ada di DTO | UI tidak memakainya |
 | Filter kosong (`status=`, `level=`) | Filter "Semua" | Hilangkan parameter; `ALL` ditolak |
 

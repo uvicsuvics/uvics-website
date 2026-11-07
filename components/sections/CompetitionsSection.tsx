@@ -21,8 +21,7 @@ export interface CompetitionsSectionProps {
 
 /**
  * Seksi 6: Featured Competitions (Homepage)
- * Mengimplementasikan Konsep 1: Modern Tournament Card Grid with Countdown & Status Badges.
- * Menampilkan poster turnamen, penyelenggara, tenggat pendaftaran, dan format tim.
+ * Grid kartu turnamen dengan lencana status. Menampilkan poster turnamen, penyelenggara, tenggat pendaftaran, dan format tim.
  * @param competitions - Kompetisi yang ditampilkan (maksimal 3 untuk pratinjau Beranda)
  */
 export function CompetitionsSection({ competitions }: CompetitionsSectionProps) {
