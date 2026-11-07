@@ -5,8 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { COMPETITION_STATUS_LABELS, toOptions } from '@/lib/format/labels';
-import { listHref } from '@/lib/services/query';
-import { cn } from '@/lib/utils';
+import { cn, listHref } from '@/lib/utils';
 import type { CompetitionStatus } from '@/types/competition';
 
 interface CompetitionFilterProps {
@@ -45,7 +44,16 @@ export function CompetitionFilter({ search, status, totalResults }: CompetitionF
     }
   }, [search]);
 
+  // Status terbaru untuk timer debounce; closure lama bisa membatalkan pilihan chip.
+  const statusRef = useRef(status);
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   function navigate(nextSearch: string, nextStatus: CompetitionStatus | undefined) {
+    // Navigasi baru membatalkan debounce yang tertunda supaya tidak menimpa pilihan terbaru.
+    clearTimeout(timer.current);
     lastSent.current = nextSearch;
     startTransition(() => {
       router.replace(listHref(pathname, { search: nextSearch || undefined, status: nextStatus }), {
@@ -57,8 +65,11 @@ export function CompetitionFilter({ search, status, totalResults }: CompetitionF
   useEffect(() => {
     const next = clean(value);
     if (next === lastSent.current) return;
-    const timer = setTimeout(() => navigate(next, status), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
+    const id = setTimeout(() => {
+      if (next !== lastSent.current) navigate(next, statusRef.current);
+    }, SEARCH_DEBOUNCE_MS);
+    timer.current = id;
+    return () => clearTimeout(id);
     // navigate hanya memakai ref dan setter yang stabil.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, status]);
