@@ -49,8 +49,18 @@ export const UVICS_DEPARTMENTS: DepartmentItem[] = [
 
 export interface DepartmentsPageContent {
   meta: PageMeta;
-  hero: PageHeroContent;
-  list: SectionHeading & { coordinatorLabel: string; linkLabel: string; emptyMessage: string };
+  /** `image` hanya dipakai hero halaman detail; listing memakai hero teks. */
+  hero: PageHeroContent & { eyebrow: string; breadcrumbHome: string };
+  stats: { departments: string; members: string; period: string };
+  list: SectionHeading & {
+    coordinatorLabel: string;
+    linkLabel: string;
+    emptyMessage: string;
+    /** Diikuti nama periode aktif. */
+    periodNote: string;
+    membersSuffix: string;
+  };
+  cta: ClosingCtaContent;
   /** Halaman /departments/{slug}; judul pengurus diakhiri nama periode aktif. */
   detail: { membersTitle: string; membersEmptyMessage: string; cta: ClosingCtaContent };
 }
@@ -61,6 +71,8 @@ export const UVICS_DEPARTMENTS_PAGE: DepartmentsPageContent = {
     description: "Lima departemen UVICS beserta program dan pengurusnya di Universitas Klabat.",
   },
   hero: {
+    eyebrow: "Struktur organisasi",
+    breadcrumbHome: "Beranda",
     title: "Departemen",
     titleHighlight: "UVICS",
     description:
@@ -70,12 +82,21 @@ export const UVICS_DEPARTMENTS_PAGE: DepartmentsPageContent = {
       alt: "Anggota UVICS berseragam biru berpose di bawah pepohonan kampus Universitas Klabat",
     },
   },
+  stats: { departments: "Departemen", members: "Pengurus departemen", period: "Periode aktif" },
   list: {
     title: "Departemen yang menjalankan",
     titleHighlight: "program UVICS",
     coordinatorLabel: "Koordinator",
     linkLabel: "Lihat departemen",
     emptyMessage: "Belum ada departemen yang tersedia saat ini.",
+    periodNote: "Koordinator periode",
+    membersSuffix: "pengurus",
+  },
+  cta: {
+    title: "Tertarik bergabung dengan UVICS?",
+    description: "Daftar sebagai anggota UVICS dan pilih departemen sesuai minatmu saat pendaftaran.",
+    primaryCta: { label: "Join UVICS", href: "/join" },
+    secondaryCta: { label: "Lihat struktur organisasi", href: "/organization" },
   },
   detail: {
     membersTitle: "Pengurus periode",

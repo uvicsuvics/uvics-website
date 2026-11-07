@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { DepartmentCard } from "@/components/departments/DepartmentCard";
-import { PageHero } from "@/components/sections/PageHero";
-import { ContentSection } from "@/components/sections/about/ContentSection";
+import { DepartmentIndexItem } from "@/components/departments/DepartmentIndexItem";
+import { DepartmentsHero } from "@/components/departments/DepartmentsHero";
+import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Reveal } from "@/components/ui/Reveal";
 import { getDepartments, getDepartmentsPage } from "@/lib/services/departmentService";
@@ -19,33 +19,62 @@ export default async function DepartmentsPage() {
     getActivePeriod(),
   ]);
   const members = activePeriod ? await getPeriodMembers(activePeriod.id) : [];
-  // shortcut: koordinator dikenali dari nama posisi; ganti ke positions.level setelah U08 diputuskan.
-  const coordinatorOf = (department: string) =>
-    members.find((member) => member.department === department && member.position === "Koordinator")?.name;
+  const membersOf = (department: string) => members.filter((member) => member.department === department);
+  const departmentMembers = departments.reduce((total, department) => total + membersOf(department.name).length, 0);
+  const stats = [
+    { label: page.stats.departments, value: String(departments.length) },
+    ...(activePeriod
+      ? [
+          { label: page.stats.members, value: String(departmentMembers) },
+          { label: page.stats.period, value: activePeriod.name },
+        ]
+      : []),
+  ];
 
   return (
     <div className="flex flex-col">
-      <PageHero hero={page.hero} />
-      <ContentSection id="departemen" heading={page.list}>
-        <Reveal>
+      <DepartmentsHero hero={page.hero} stats={stats} />
+
+      <section id="departemen" aria-labelledby="departemen-heading" className="scroll-mt-16 pt-16 sm:pt-20">
+        <div className="mx-auto px-6 w-full max-w-7xl md:px-8">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 pb-5 border-b-2 border-primary-900">
+            <h2
+              id="departemen-heading"
+              className="font-heading text-2xl font-bold leading-tight text-primary-900 text-balance sm:text-3xl"
+            >
+              {page.list.title} <span className="text-primary">{page.list.titleHighlight}</span>
+            </h2>
+            {activePeriod && <p className="text-sm text-gray-600">{`${page.list.periodNote} ${activePeriod.name}`}</p>}
+          </div>
+
           {departments.length === 0 ? (
-            <EmptyState message={page.list.emptyMessage} />
+            <div className="pt-10">
+              <EmptyState message={page.list.emptyMessage} />
+            </div>
           ) : (
-            <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {departments.map((department) => (
-                <li key={department.id}>
-                  <DepartmentCard
-                    department={department}
-                    coordinator={coordinatorOf(department.name)}
-                    coordinatorLabel={page.list.coordinatorLabel}
-                    linkLabel={page.list.linkLabel}
-                  />
-                </li>
-              ))}
-            </ul>
+            <Reveal>
+              <ol>
+                {departments.map((department, index) => {
+                  const own = membersOf(department.name);
+                  return (
+                    <DepartmentIndexItem
+                      key={department.id}
+                      department={department}
+                      number={index + 1}
+                      // shortcut: koordinator dikenali dari nama posisi; ganti ke positions.level setelah U08 diputuskan.
+                      coordinator={own.find((member) => member.position === "Koordinator")?.name}
+                      memberCount={own.length}
+                      labels={page.list}
+                    />
+                  );
+                })}
+              </ol>
+            </Reveal>
           )}
-        </Reveal>
-      </ContentSection>
+        </div>
+      </section>
+
+      <ClosingCtaSection cta={page.cta} />
     </div>
   );
 }
