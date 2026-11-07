@@ -1,4 +1,5 @@
 import type { CompetitionStatus } from '@/types/competition';
+import type { EventStatus } from '@/types/event';
 import type { ContentLevel, ProjectStatus } from '@/types/portfolio';
 
 // Urutan key mengikuti Constants.public.Enums karena menjadi urutan opsi filter.
@@ -22,6 +23,13 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   ONGOING: 'Berjalan',
   COMPLETED: 'Selesai',
   ARCHIVED: 'Diarsipkan',
+};
+
+export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
+  UPCOMING: 'Akan Datang',
+  ONGOING: 'Sedang Berlangsung',
+  FINISHED: 'Selesai',
+  CANCELLED: 'Dibatalkan',
 };
 
 /** Ubah record label menjadi opsi filter dengan urutan key yang sama. */
