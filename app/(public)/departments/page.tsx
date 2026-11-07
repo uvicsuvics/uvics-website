@@ -33,7 +33,14 @@ export default async function DepartmentsPage() {
 
   return (
     <div className="flex flex-col">
-      <DepartmentsHero hero={page.hero} stats={stats} />
+      <DepartmentsHero
+        breadcrumbs={[{ label: page.hero.breadcrumbHome, href: "/" }, { label: page.hero.title }]}
+        eyebrow={page.hero.eyebrow}
+        title={page.hero.title}
+        titleHighlight={page.hero.titleHighlight}
+        description={page.hero.description}
+        stats={stats}
+      />
 
       <section id="departemen" aria-labelledby="departemen-heading" className="scroll-mt-16 pt-16 sm:pt-20">
         <div className="mx-auto px-6 w-full max-w-7xl md:px-8">
