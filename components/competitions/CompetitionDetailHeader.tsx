@@ -1,6 +1,7 @@
 import { Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { StatusBadge } from '@/components/competitions/status-badge';
+import { CONTENT_LEVEL_LABELS } from '@/lib/format/labels';
 import type { Competition } from '@/types/competition';
 
 interface CompetitionDetailHeaderProps {
@@ -14,8 +15,8 @@ export function CompetitionDetailHeader({ competition }: CompetitionDetailHeader
     <section className="bg-primary text-white">
       <div className="max-w-7xl mx-auto w-full px-6 md:px-8 py-12 md:py-16 flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{category}</Badge>
-          <Badge variant="primary">{level}</Badge>
+          {category && <Badge variant="secondary">{category}</Badge>}
+          {level && <Badge variant="primary">{CONTENT_LEVEL_LABELS[level]}</Badge>}
           <StatusBadge status={status} />
         </div>
 

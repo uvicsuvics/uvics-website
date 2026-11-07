@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { BookOpen, Calendar, ExternalLink, Trophy, Users } from 'lucide-react';
+import { formatDate } from '@/lib/format/date';
 import { cn } from '@/lib/utils';
 import type { Competition } from '@/types/competition';
 
@@ -12,15 +13,6 @@ const CTA_VARIANTS = {
 
 interface CompetitionDetailContentProps {
   competition: Competition;
-}
-
-function formatDate(value: string | null) {
-  if (!value) return 'Belum ditentukan';
-  return new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(value));
 }
 
 export function CompetitionDetailContent({ competition }: CompetitionDetailContentProps) {
@@ -41,12 +33,12 @@ export function CompetitionDetailContent({ competition }: CompetitionDetailConte
     {
       icon: Calendar,
       label: 'Deadline Pendaftaran',
-      value: formatDate(registrationDeadline),
+      value: registrationDeadline ? formatDate(registrationDeadline, 'long') : 'Belum ditentukan',
     },
     {
       icon: Calendar,
       label: 'Tanggal Kompetisi',
-      value: formatDate(competitionDate),
+      value: competitionDate ? formatDate(competitionDate, 'long') : 'Belum ditentukan',
     },
     {
       icon: Users,

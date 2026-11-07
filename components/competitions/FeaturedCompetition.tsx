@@ -4,19 +4,12 @@ import { Building2, Calendar, CalendarDays, Sparkles, Trophy, Users } from 'luci
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/competitions/status-badge';
+import { formatDate } from '@/lib/format/date';
+import { CONTENT_LEVEL_LABELS } from '@/lib/format/labels';
 import type { Competition } from '@/types/competition';
 
 interface FeaturedCompetitionProps {
   competition: Competition;
-}
-
-function formatDate(value: string | null) {
-  if (!value) return 'Belum ditentukan';
-  return new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(value));
 }
 
 export function FeaturedCompetition({ competition }: FeaturedCompetitionProps) {
@@ -50,7 +43,7 @@ export function FeaturedCompetition({ competition }: FeaturedCompetitionProps) {
         </div>
 
         {/* Compact & Refined Featured Card */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 bg-card border border-gray-200/90 rounded-2xl shadow-xs overflow-hidden transition-all duration-200 hover:border-gray-300">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 bg-card border border-gray-200/90 rounded-xl shadow-xs overflow-hidden transition-all duration-200 hover:border-gray-300">
           {/* Image Column (~42% desktop width) */}
           <div className="md:col-span-5 relative w-full h-56 sm:h-64 md:h-full min-h-[220px] md:min-h-[320px] bg-primary-50 overflow-hidden">
             {poster ? (
@@ -75,8 +68,8 @@ export function FeaturedCompetition({ competition }: FeaturedCompetitionProps) {
               {/* Badges Row */}
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={status} />
-                <Badge variant="primary">{category}</Badge>
-                <Badge variant="secondary">{level}</Badge>
+                {category && <Badge variant="primary">{category}</Badge>}
+                {level && <Badge variant="secondary">{CONTENT_LEVEL_LABELS[level]}</Badge>}
               </div>
 
               {/* Title */}
@@ -106,7 +99,7 @@ export function FeaturedCompetition({ competition }: FeaturedCompetitionProps) {
                     Deadline Pendaftaran
                   </span>
                   <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                    {formatDate(registrationDeadline)}
+                    {registrationDeadline ? formatDate(registrationDeadline, 'long') : 'Belum ditentukan'}
                   </span>
                 </div>
               </div>
@@ -118,7 +111,7 @@ export function FeaturedCompetition({ competition }: FeaturedCompetitionProps) {
                     Pelaksanaan
                   </span>
                   <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                    {formatDate(competitionDate)}
+                    {competitionDate ? formatDate(competitionDate, 'long') : 'Belum ditentukan'}
                   </span>
                 </div>
               </div>

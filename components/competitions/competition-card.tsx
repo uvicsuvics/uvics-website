@@ -4,21 +4,14 @@ import { Building2, Calendar, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/competitions/status-badge';
+import { formatDate } from '@/lib/format/date';
+import { CONTENT_LEVEL_LABELS } from '@/lib/format/labels';
 import { cn } from '@/lib/utils';
 import type { Competition } from '@/types/competition';
 
 interface CompetitionCardProps {
   competition: Competition;
   className?: string;
-}
-
-function formatDeadline(deadline: string | null) {
-  if (!deadline) return 'Belum ditentukan';
-  return new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(deadline));
 }
 
 export function CompetitionCard({ competition, className }: CompetitionCardProps) {
@@ -36,7 +29,7 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
   return (
     <div
       className={cn(
-        'group flex flex-col h-full w-full bg-card border border-gray-200/90 rounded-2xl shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300 transition-all duration-200 ease-standard overflow-hidden',
+        'group flex flex-col h-full w-full bg-card border border-gray-200/90 rounded-xl shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300 transition-all duration-200 ease-standard overflow-hidden',
         className
       )}
     >
@@ -64,8 +57,8 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
       <div className="flex flex-col flex-1 p-5 gap-3">
         {/* Category & Level Badges */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <Badge variant="primary">{category}</Badge>
-          <Badge variant="secondary">{level}</Badge>
+          {category && <Badge variant="primary">{category}</Badge>}
+          {level && <Badge variant="secondary">{CONTENT_LEVEL_LABELS[level]}</Badge>}
         </div>
 
         {/* Title */}
@@ -82,7 +75,7 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
 
           <div className="flex items-center gap-2">
             <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-hidden="true" />
-            <span className="truncate">Deadline: {formatDeadline(registrationDeadline)}</span>
+            <span className="truncate">Deadline: {registrationDeadline ? formatDate(registrationDeadline) : 'Belum ditentukan'}</span>
           </div>
         </div>
 

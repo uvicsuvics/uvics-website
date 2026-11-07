@@ -93,6 +93,11 @@ const PROFILE_PAGES = [
     path: "/achievements/juara-1-national-ai-hackathon-2026",
     title: "Juara 1 & Best Technical Innovation | Prestasi UVICS",
   },
+  { path: "/competitions", title: "Kompetisi & Kejuaraan | UVICS UNKLAB" },
+  {
+    path: "/competitions/gemastik-xviii-pengembangan-aplikasi",
+    title: "Gemastik XVIII - Divisi Pengembangan Aplikasi | Kompetisi UVICS UNKLAB",
+  },
   { path: "/projects", title: "Project | UVICS" },
   {
     path: "/projects/klabat-campus-superapp",
@@ -142,4 +147,20 @@ test("public navigation: /join shows closed registration when settings are unava
     ),
   ).toBeVisible();
   await expect(page.getByRole("textbox", { name: "NIM" })).toHaveCount(0);
+});
+
+test("public navigation: /competitions keeps filter state in the URL", async ({ page }) => {
+  await page.goto("/competitions");
+  const search = page.getByRole("textbox", { name: "Cari kompetisi atau penyelenggara" });
+  await search.pressSequentially("hackathon", { delay: 20 });
+  await expect(page).toHaveURL(/search=hackathon/);
+  await expect(search).toHaveValue("hackathon");
+  await page
+    .getByRole("group", { name: "Filter status kompetisi" })
+    .getByRole("button", { name: "Pendaftaran Dibuka" })
+    .click();
+  await expect(page).toHaveURL(/status=OPEN/);
+  await expect(page).not.toHaveURL(/page=/);
+  expect((await page.goto("/competitions?page=99"))?.status()).toBe(404);
+  expect((await page.goto("/competitions?page=abc&status=foo"))?.status()).toBe(200);
 });
