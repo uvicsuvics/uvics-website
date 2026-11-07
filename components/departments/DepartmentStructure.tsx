@@ -114,7 +114,7 @@ function LeaderCard({ member, featured }: { member: PublicMember; featured: bool
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-3 overflow-hidden text-center text-white rounded-xl border-t-4 border-secondary shadow-lg",
+        "flex flex-col items-center gap-3 overflow-hidden text-center text-white rounded-xl shadow-lg",
         "bg-[repeating-linear-gradient(135deg,color-mix(in_srgb,white_6%,transparent)_0_1px,transparent_1px_14px)]",
         featured ? "px-8 py-8 w-72 bg-primary-900" : "px-6 py-6 w-60 bg-primary-800",
       )}
