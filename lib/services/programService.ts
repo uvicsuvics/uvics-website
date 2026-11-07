@@ -1,4 +1,5 @@
 import {
+  UVICS_PROGRAM_DEPARTMENTS,
   UVICS_PROGRAMS,
   UVICS_PROGRAMS_PAGE,
   type ProgramItem,
@@ -22,6 +23,16 @@ export async function getPrograms(options: ListOptions = {}): Promise<PublicProg
     description,
     image,
   }));
+}
+
+/** Program yang dikelola satu departemen, urut seperti `getPrograms()`; kosong bila tidak ada. */
+export async function getProgramsByDepartment(departmentSlug: string): Promise<PublicProgram[]> {
+  return (await getPrograms()).filter((program) => UVICS_PROGRAM_DEPARTMENTS[program.slug] === departmentSlug);
+}
+
+/** Slug departemen pengelola program, atau null bila programnya belum punya departemen (T07). */
+export async function getProgramDepartmentSlug(programSlug: string): Promise<string | null> {
+  return UVICS_PROGRAM_DEPARTMENTS[programSlug] ?? null;
 }
 
 export async function getProgramBySlug(slug: string): Promise<ProgramItem | null> {

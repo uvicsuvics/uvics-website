@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { DepartmentCard } from "@/components/departments/DepartmentCard";
-import { PageHero } from "@/components/sections/PageHero";
-import { ContentSection } from "@/components/sections/about/ContentSection";
+import { DepartmentIndexItem } from "@/components/departments/DepartmentIndexItem";
+import { DepartmentSection } from "@/components/departments/DepartmentSection";
+import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
+import { TextHero } from "@/components/sections/TextHero";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Reveal } from "@/components/ui/Reveal";
 import { getDepartments, getDepartmentsPage } from "@/lib/services/departmentService";
-import { getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
+import { departmentSummary, getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { meta } = await getDepartmentsPage();
@@ -19,33 +20,58 @@ export default async function DepartmentsPage() {
     getActivePeriod(),
   ]);
   const members = activePeriod ? await getPeriodMembers(activePeriod.id) : [];
-  // shortcut: koordinator dikenali dari nama posisi; ganti ke positions.level setelah U08 diputuskan.
-  const coordinatorOf = (department: string) =>
-    members.find((member) => member.department === department && member.position === "Koordinator")?.name;
+  const departmentMembers = departments.reduce(
+    (total, department) => total + departmentSummary(members, department.name).memberCount,
+    0,
+  );
+  const stats = [
+    { label: page.stats.departments, value: String(departments.length) },
+    ...(activePeriod
+      ? [
+          { label: page.stats.members, value: String(departmentMembers) },
+          { label: page.stats.period, value: activePeriod.name },
+        ]
+      : []),
+  ];
 
   return (
     <div className="flex flex-col">
-      <PageHero hero={page.hero} />
-      <ContentSection id="departemen" heading={page.list}>
-        <Reveal>
-          {departments.length === 0 ? (
+      <TextHero
+        breadcrumbs={[{ label: page.hero.breadcrumbHome, href: "/" }, { label: page.hero.title }]}
+        eyebrow={page.hero.eyebrow}
+        title={page.hero.title}
+        titleHighlight={page.hero.titleHighlight}
+        description={page.hero.description}
+        stats={stats}
+      />
+
+      <DepartmentSection
+        id="departemen"
+        heading={page.list}
+        note={activePeriod ? `${page.list.periodNote} ${activePeriod.name}` : undefined}
+      >
+        {departments.length === 0 ? (
+          <div className="pt-10">
             <EmptyState message={page.list.emptyMessage} />
-          ) : (
-            <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {departments.map((department) => (
-                <li key={department.id}>
-                  <DepartmentCard
-                    department={department}
-                    coordinator={coordinatorOf(department.name)}
-                    coordinatorLabel={page.list.coordinatorLabel}
-                    linkLabel={page.list.linkLabel}
-                  />
-                </li>
+          </div>
+        ) : (
+          <Reveal>
+            <ol>
+              {departments.map((department, index) => (
+                <DepartmentIndexItem
+                  key={department.id}
+                  department={department}
+                  number={index + 1}
+                  {...departmentSummary(members, department.name)}
+                  labels={page.list}
+                />
               ))}
-            </ul>
-          )}
-        </Reveal>
-      </ContentSection>
+            </ol>
+          </Reveal>
+        )}
+      </DepartmentSection>
+
+      <ClosingCtaSection cta={page.cta} />
     </div>
   );
 }

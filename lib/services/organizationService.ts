@@ -25,6 +25,21 @@ export async function getPeriodMembers(periodId: string): Promise<PublicMember[]
   return UVICS_MEMBERSHIPS.filter((row) => row.periodId === periodId).map((row) => toPublicMember(row));
 }
 
+/** shortcut: pengurus inti dikenali dari departemen "Pengurus Inti"; ganti setelah U01 diputuskan. */
+export async function getCoreTeam(periodId: string): Promise<PublicMember[]> {
+  return (await getPeriodMembers(periodId)).filter((member) => member.department === "Pengurus Inti");
+}
+
+/** Koordinator dan jumlah pengurus satu departemen, dari daftar pengurus satu periode. */
+export function departmentSummary(
+  members: PublicMember[],
+  department: string,
+): { coordinator?: string; memberCount: number } {
+  const own = members.filter((member) => member.department === department);
+  // shortcut: koordinator dikenali dari nama posisi; ganti ke positions.level setelah U08 diputuskan.
+  return { coordinator: own.find((member) => member.position === "Koordinator")?.name, memberCount: own.length };
+}
+
 export async function getOrganizationPage(): Promise<OrganizationPageContent> {
   return UVICS_ORGANIZATION_PAGE;
 }

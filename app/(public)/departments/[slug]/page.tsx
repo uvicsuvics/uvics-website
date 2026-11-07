@@ -1,13 +1,16 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { MemberCard } from "@/components/organization/MemberCard";
-import { PageHero } from "@/components/sections/PageHero";
+import { DepartmentIndexItem } from "@/components/departments/DepartmentIndexItem";
+import { DepartmentSection } from "@/components/departments/DepartmentSection";
+import { DepartmentStructure } from "@/components/departments/DepartmentStructure";
+import { ProgramGrid } from "@/components/programs/ProgramGrid";
 import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
-import { ContentSection } from "@/components/sections/about/ContentSection";
+import { TextHero } from "@/components/sections/TextHero";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Reveal } from "@/components/ui/Reveal";
 import { getDepartmentBySlug, getDepartments, getDepartmentsPage } from "@/lib/services/departmentService";
-import { getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
+import { departmentSummary, getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
+import { getProgramsByDepartment } from "@/lib/services/programService";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -19,54 +22,96 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const department = await getDepartmentBySlug((await params).slug);
+
   if (!department) {
     return { title: "Departemen Tidak Ditemukan | UVICS" };
   }
+
   return { title: `${department.name} | Departemen UVICS`, description: department.description };
 }
 
 export default async function DepartmentDetailPage({ params }: PageProps) {
-  const [department, page, activePeriod] = await Promise.all([
-    getDepartmentBySlug((await params).slug),
+  const { slug } = await params;
+  const [departments, page, activePeriod, programs] = await Promise.all([
+    getDepartments(),
     getDepartmentsPage(),
     getActivePeriod(),
+    getProgramsByDepartment(slug),
   ]);
-  if (!department) {
+  // Nomor tampilan mengikuti urutan resmi yang sama dengan /departments.
+  const index = departments.findIndex((department) => department.slug === slug);
+
+  if (index === -1) {
     notFound();
   }
-  const members = activePeriod
-    ? (await getPeriodMembers(activePeriod.id)).filter((member) => member.department === department.name)
+
+  const department = departments[index];
+  const { detail } = page;
+  const members = activePeriod ? await getPeriodMembers(activePeriod.id) : [];
+  const own = members.filter((member) => member.department === department.name);
+  const { coordinator } = departmentSummary(members, department.name);
+  const stats = activePeriod
+    ? [
+        ...(coordinator ? [{ label: detail.stats.coordinator, value: coordinator }] : []),
+        // Periode baru bisa aktif sebelum membership diisi; "Pengurus 0" terbaca seperti departemen kosong.
+        ...(own.length > 0 ? [{ label: detail.stats.members, value: String(own.length) }] : []),
+        { label: detail.stats.period, value: activePeriod.name },
+      ]
     : [];
 
   return (
     <div className="flex flex-col">
-      <PageHero
-        hero={{
-          title: page.hero.title,
-          titleHighlight: department.name,
-          description: department.description,
-          image: page.hero.image,
-        }}
+      <TextHero
+        breadcrumbs={[
+          { label: page.hero.breadcrumbHome, href: "/" },
+          { label: detail.breadcrumbParent, href: "/departments" },
+          { label: department.name },
+        ]}
+        eyebrow={`${detail.eyebrowPrefix} ${String(index + 1).padStart(2, "0")}`}
+        title={department.name}
+        description={department.description}
+        stats={stats}
       />
-      <ContentSection
-        id="pengurus"
-        heading={{ title: page.detail.membersTitle, titleHighlight: activePeriod?.name ?? "" }}
-      >
-        <Reveal>
-          {members.length === 0 ? (
-            <EmptyState message={page.detail.membersEmptyMessage} />
-          ) : (
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {members.map((member) => (
-                <li key={`${member.name}-${member.position}`}>
-                  <MemberCard member={member} />
-                </li>
-              ))}
-            </ul>
+
+      <DepartmentSection id="program" heading={detail.programs}>
+        {programs.length === 0 ? (
+          <div className="pt-10">
+            <EmptyState message={detail.programs.emptyMessage} />
+          </div>
+        ) : (
+          <ProgramGrid programs={programs} linkLabel={detail.programs.linkLabel} />
+        )}
+      </DepartmentSection>
+
+      <DepartmentSection id="pengurus" heading={{ title: detail.membersTitle, titleHighlight: activePeriod?.name ?? "" }}>
+        {own.length === 0 ? (
+          <div className="pt-10">
+            <EmptyState message={detail.membersEmptyMessage} />
+          </div>
+        ) : (
+          <Reveal className="pt-10">
+            <DepartmentStructure label={`${detail.structureLabel} ${department.name}`} members={own} />
+          </Reveal>
+        )}
+      </DepartmentSection>
+
+      <DepartmentSection id="departemen-lainnya" heading={detail.others}>
+        <ol>
+          {departments.map((other, otherIndex) =>
+            other.slug === slug ? null : (
+              <DepartmentIndexItem
+                key={other.id}
+                department={other}
+                number={otherIndex + 1}
+                {...departmentSummary(members, other.name)}
+                labels={page.list}
+              />
+            ),
           )}
-        </Reveal>
-      </ContentSection>
-      <ClosingCtaSection cta={page.detail.cta} />
+        </ol>
+      </DepartmentSection>
+
+      <ClosingCtaSection cta={detail.cta} />
     </div>
   );
 }
