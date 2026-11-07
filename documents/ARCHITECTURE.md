@@ -39,7 +39,7 @@ flowchart LR
 | `app/admin/login/`, `app/admin/(protected)/` | Login admin dan seluruh halaman dashboard yang dilindungi |
 | `app/(auth)/login`, `app/(dashboard)/` | Alias lama yang redirect ke `/admin/login` dan `/admin/dashboard` |
 | `app/api/admin/media/*` | Route Handler upload media: `signature`, `complete`, `[id]` |
-| `app/api/contact` | Stub; belum menyimpan atau mengirim pesan (lihat [U13](DECISIONS.md#u13--form-kontak)) |
+| `app/api/contact` | Stub; belum menyimpan atau mengirim pesan. Dihapus sesuai [D33](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima) |
 | `proxy.ts` | Menolak mutasi lintas origin dan menyegarkan cookie sesi Supabase setiap request |
 | `components/` | `layout/` (header, footer), `sections/` (blok halaman), `ui/` (primitif), `forms/`, `admin/`, `competitions/` |
 | `config/` | Navigasi publik dan admin |
@@ -90,7 +90,7 @@ Server Component → lib/supabase/server (tanpa sesi) → view/RPC/tabel yang di
 ```
 
 - Hanya data berstatus publikasi valid yang dikirim. Draft, NIM, kontak pribadi, jawaban registrasi, dan catatan admin tidak pernah keluar ([D02](DECISIONS.md#a-keputusan-teknis-d01d05-kontrak-3133)).
-- **Kondisi saat ini:** halaman publik membaca lewat `lib/services/` yang mengembalikan DTO dari `types/` (kontrak di [konvensi frontend](frontend-convention.md) §4 dan §10), tetapi sumbernya masih mock, dan role `anon` belum punya akses ke tabel organisasi. Jalur baca publik diputuskan di [U02](DECISIONS.md#u02--akses-publik-data-organisasi).
+- **Kondisi saat ini:** halaman publik membaca lewat `lib/services/` yang mengembalikan DTO dari `types/` (kontrak di [konvensi frontend](frontend-convention.md) §4 dan §10), tetapi sumbernya masih mock, dan role `anon` belum punya akses ke tabel organisasi. Jalur baca publik lewat view atau RPC berproyeksi field ([D25](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)), dikerjakan #48.
 
 ### 4.2 Admin login
 
