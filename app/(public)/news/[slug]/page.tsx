@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DepartmentSection } from "@/components/departments/DepartmentSection";
-import { NewsGrid } from "@/components/news/NewsCard";
-import { TextHero } from "@/components/sections/TextHero";
+import { CalendarDays, UserRound } from "lucide-react";
+import { NewsList, NewsListSection } from "@/components/news/NewsList";
+import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/format/date";
 import { getNewsBySlug, getRelatedNews } from "@/lib/services/newsService";
 import { toParagraphs } from "@/lib/utils";
@@ -29,60 +30,79 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     notFound();
   }
 
+  const { title, category, author, thumbnail, publishedAt, content } = article;
   const related = await getRelatedNews(slug);
-  const facts = [
-    { label: "Diterbitkan", value: formatDate(article.publishedAt, "long") },
-    ...(article.author ? [{ label: "Penulis", value: article.author }] : []),
-    ...(article.category ? [{ label: "Kategori", value: article.category }] : []),
-  ];
 
   return (
     <div className="flex flex-col pb-24">
-      <TextHero
-        breadcrumbs={[{ label: "Beranda", href: "/" }, { label: "Berita", href: "/news" }, { label: article.title }]}
-        eyebrow={article.category ? `Berita · ${article.category}` : "Berita"}
-        title={article.title}
-        titleClassName="text-4xl sm:text-5xl lg:text-6xl"
-        description={article.excerpt}
-        media={
-          article.thumbnail ? (
-            <div className="relative w-full overflow-hidden aspect-[4/3] rounded-2xl lg:shrink-0 lg:w-[34rem]">
-              <Image
-                src={article.thumbnail}
-                alt={article.title}
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 544px"
-                className="object-cover"
-              />
-            </div>
-          ) : undefined
-        }
-      />
+      <div className="bg-primary-50 border-b border-primary-100">
+        {/* pt-28 menjaga breadcrumb tetap di bawah navbar publik yang fixed. */}
+        <nav aria-label="Breadcrumb" className="mx-auto px-6 pt-28 pb-5 w-full max-w-7xl text-sm text-gray-600 md:px-8 md:pt-32">
+          <ol className="flex flex-wrap items-center gap-x-2">
+            <li>
+              <Link href="/" className="text-gray-600 transition-colors hover:text-primary">
+                Beranda
+              </Link>
+            </li>
+            <li aria-hidden="true" className="text-gray-400">/</li>
+            <li>
+              <Link href="/news" className="text-gray-600 transition-colors hover:text-primary">
+                Berita
+              </Link>
+            </li>
+            <li aria-hidden="true" className="text-gray-400">/</li>
+            <li aria-current="page" className="font-semibold text-primary">{title}</li>
+          </ol>
+        </nav>
+      </div>
 
-      <div className="flex flex-col gap-10 mx-auto px-6 pt-16 w-full max-w-7xl md:px-8 lg:flex-row lg:gap-16">
-        <aside aria-label="Info publikasi" className="lg:shrink-0 lg:w-64">
-          <dl className="border-t-2 border-primary-900">
-            {facts.map(({ label, value }) => (
-              <div key={label} className="flex flex-col gap-0.5 py-4 border-b border-gray-200">
-                <dt className="text-xs text-gray-600">{label}</dt>
-                <dd className="font-semibold text-gray-900">{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </aside>
+      <article className="flex flex-col items-center gap-8 mx-auto px-6 pt-14 w-full max-w-7xl md:px-8">
+        <header className="flex flex-col gap-4 w-full max-w-3xl">
+          {category && <Badge className="self-start font-semibold">{category}</Badge>}
+          <h1 className="font-heading text-4xl font-bold leading-tight text-primary-900 text-balance md:text-5xl">
+            {title}
+          </h1>
+          <p className="flex flex-wrap gap-x-5 gap-y-1 pb-5 text-sm text-gray-600 border-b border-gray-200">
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <time dateTime={publishedAt}>{formatDate(publishedAt, "long")}</time>
+            </span>
+            {author && (
+              <span className="inline-flex items-center gap-1.5">
+                <UserRound className="w-4 h-4 shrink-0" aria-hidden="true" />
+                {author}
+              </span>
+            )}
+          </p>
+        </header>
+
+        {thumbnail && (
+          <div className="relative w-full max-w-5xl overflow-hidden aspect-video rounded-xl">
+            <Image src={thumbnail} alt={title} fill priority sizes="(max-width: 1024px) 100vw, 1024px" className="object-cover" />
+          </div>
+        )}
+
         {/* Teks polos sampai renderer Tiptap ada; React meng-escape isi sehingga HTML tidak pernah dirender. */}
-        <div className="flex flex-col gap-5 min-w-0 max-w-3xl text-lg leading-relaxed text-gray-800">
-          {toParagraphs(article.content).map((paragraph, index) => (
+        <div className="flex flex-col gap-5 w-full max-w-3xl text-lg leading-relaxed text-gray-800">
+          {toParagraphs(content).map((paragraph, index) => (
             <p key={index}>{paragraph}</p>
           ))}
         </div>
-      </div>
+      </article>
 
       {related.length > 0 && (
-        <DepartmentSection id="berita-lainnya" heading={{ title: "Berita", titleHighlight: "lainnya" }}>
-          <NewsGrid articles={related} />
-        </DepartmentSection>
+        <NewsListSection
+          id="berita-lainnya"
+          title="Berita lainnya"
+          aside={
+            <Link href="/news" className="text-sm font-semibold text-primary transition-colors hover:text-primary-700">
+              Semua berita
+            </Link>
+          }
+          className="mx-auto px-6 pt-18 w-full max-w-7xl md:px-8"
+        >
+          <NewsList articles={related} compact />
+        </NewsListSection>
       )}
     </div>
   );

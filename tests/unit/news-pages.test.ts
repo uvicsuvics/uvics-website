@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import NewsPage from "@/app/(public)/news/(list)/page";
 import NewsDetailPage from "@/app/(public)/news/[slug]/page";
-import { NewsCard } from "@/components/news/NewsCard";
+import { NewsRow } from "@/components/news/NewsList";
 import { UVICS_NEWS } from "@/data/mock/news";
 import { getNews, getNewsBySlug } from "@/lib/services/newsService";
 import { paginate } from "@/lib/services/query";
@@ -34,7 +34,25 @@ const fixture: NewsArticle = {
   publishedAt: "2026-10-24",
 };
 
-describe("halaman /news (Konsep B)", () => {
+describe("halaman /news (Konsep A)", () => {
+  it("hero berpita berisi judul, form cari dengan tombol ikon, dan jumlah berita", async () => {
+    const html = await renderList();
+    expect(html).toMatch(/<h1[^>]*>Berita UVICS<\/h1>/);
+    expect(html).toMatch(/<button[^>]*aria-label="Cari"/);
+    expect(gridOf(html)).toContain(`>${UVICS_NEWS.length} berita<`);
+  });
+
+  it("sorotan berlabel Berita terbaru dan baris berisi ubin tanggal, kategori, serta thumbnail", async () => {
+    const html = await renderList();
+    const [latest] = UVICS_NEWS;
+    expect(html.slice(0, html.indexOf('id="semua-berita-heading"'))).toContain("Berita terbaru");
+    expect(html).toMatch(new RegExp(`href="/news/${latest.slug}"[^>]*>Baca berita`));
+    const grid = gridOf(html);
+    expect(grid).toMatch(/<time[^>]*datetime="2026-10-24"[^>]*>.*?>24<.*?Okt 2026/i);
+    expect(grid).toContain(">Kegiatan<");
+    expect(grid.match(/<img/g)?.length).toBeGreaterThan(0);
+  });
+
   it("menyorot berita terbaru di halaman 1 tanpa mengulangnya di grid", async () => {
     const html = await renderList();
     expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
@@ -78,8 +96,8 @@ describe("halaman /news (Konsep B)", () => {
   });
 });
 
-describe("halaman /news/[slug] (Konsep B)", () => {
-  it("menampilkan judul, info publikasi, isi per paragraf, dan berita lainnya", async () => {
+describe("halaman /news/[slug] (Konsep A)", () => {
+  it("menampilkan kategori, judul, tanggal dan penulis, isi per paragraf, dan berita lainnya", async () => {
     const article = UVICS_NEWS[1];
     const html = await renderDetail(article.slug);
     expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
@@ -89,8 +107,13 @@ describe("halaman /news/[slug] (Konsep B)", () => {
     expect(html).toContain("Pengurus UVICS");
     expect(html).toContain(article.category);
     expect(html.match(/<p[^>]*>Contoh paragraf/g)).toHaveLength(2);
-    expect(html).toContain('id="berita-lainnya-heading"');
-    expect(html.slice(html.indexOf('id="berita-lainnya-heading"')).match(/href="\/news\/[^"]+"/g)).toHaveLength(3);
+    expect(html).toMatch(/<time[^>]*datetime="2026-10-24"[^>]*>24 Oktober 2026<\/time>/i);
+    expect(html).not.toContain("Info publikasi");
+    const related = html.slice(html.indexOf('id="berita-lainnya-heading"'));
+    expect(related).toMatch(/href="\/news"[^>]*>Semua berita/);
+    expect(related.match(/href="\/news\/[^"]+"/g)).toHaveLength(3);
+    // Baris berita lainnya ringkas: tanpa ringkasan.
+    expect(related).not.toContain("Contoh ringkasan");
   });
 
   it("slug tidak dikenal menjadi 404", async () => {
@@ -104,12 +127,13 @@ describe("halaman /news/[slug] (Konsep B)", () => {
     expect(html).not.toContain("<script>alert");
   });
 
-  it("detail dan kartu aman untuk field nullable", async () => {
+  it("detail dan baris aman untuk field nullable", async () => {
     vi.mocked(getNewsBySlug).mockResolvedValueOnce(fixture);
     const detail = await renderDetail("x");
-    const card = renderToStaticMarkup(createElement(NewsCard, { article: fixture }));
-    for (const html of [detail, card]) expect(html).not.toMatch(/undefined|>null<|Invalid Date/);
-    expect(card).not.toContain("<img");
+    const row = renderToStaticMarkup(createElement(NewsRow, { article: fixture }));
+    for (const html of [detail, row]) expect(html).not.toMatch(/undefined|>null<|Invalid Date/);
+    expect(row).not.toContain("<img");
+    expect(detail.slice(0, detail.indexOf('id="berita-lainnya-heading"'))).not.toContain("<img");
     expect(detail).not.toContain(">Penulis<");
     expect(detail).not.toContain(">Kategori<");
     expect(detail).toContain("24 Oktober 2026");
