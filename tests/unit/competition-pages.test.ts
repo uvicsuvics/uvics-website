@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import NotFound from "@/app/(public)/not-found";
 import CompetitionsPage from "@/app/(public)/competitions/page";
 import { CompetitionCard } from "@/components/competitions/competition-card";
 import { CompetitionDetailContent } from "@/components/competitions/CompetitionDetailContent";
@@ -63,5 +64,14 @@ describe("komponen kompetisi", () => {
     ]) {
       expect(html).not.toMatch(/undefined|>null<|Invalid Date/);
     }
+  });
+});
+
+describe("not-found publik", () => {
+  it("menampilkan satu h1 dan tautan kembali ke beranda", () => {
+    const html = renderToStaticMarkup(createElement(NotFound));
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html).toContain("Halaman tidak ditemukan");
+    expect(html).toContain('href="/"');
   });
 });

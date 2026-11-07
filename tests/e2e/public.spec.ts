@@ -164,3 +164,10 @@ test("public navigation: /competitions keeps filter state in the URL", async ({ 
   expect((await page.goto("/competitions?page=99"))?.status()).toBe(404);
   expect((await page.goto("/competitions?page=abc&status=foo"))?.status()).toBe(200);
 });
+
+test("public navigation: unknown competition renders the public not-found page", async ({ page }) => {
+  const response = await page.goto("/competitions/tidak-ada");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
+  await expect(page.locator('a[href="/vision-mission"]').first()).toBeAttached();
+});
