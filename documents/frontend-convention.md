@@ -151,3 +151,16 @@ Contoh kompetisi (#26). Page dan komponen tidak berubah; hanya isi service, mapp
 4. Hapus filter dan `paginate` di memori dari `getCompetitions`; backend yang menyaring dan memotong. `getCompetitionBoard` dan `getCompetitionCategories` membaca lewat `getCompetitions({ page_size: 100 })`, jadi ikut berpindah tanpa perubahan; penyaringan dan pengurutan papan tetap di memori sampai backend mendukung urutan tanggal.
 5. Tes service memakai fake client (pola `tests/unit/content.test.ts`).
 6. Tambahkan fallback section beranda (`.catch` yang mencatat error dan mengembalikan list kosong, lihat §4).
+
+## 12. Modul admin CMS
+
+Pola #27 (Halaman, Program, Pengaturan Website), dipakai ulang untuk modul admin CRUD berikutnya. Tata letak mengikuti konsep desain A: daftar berupa tabel ringkas, form di route terpisah.
+
+| Bagian | Lokasi | Aturan |
+| --- | --- | --- |
+| Route | `app/admin/(protected)/<modul>/page.tsx`, `new/page.tsx`, `[id]/page.tsx`, `loading.tsx` | Server Component. Data dibaca dengan `loadForAdmin(fn)` dari `lib/admin/server.ts`: sesi bukan admin diarahkan ke login, galat lain menjadi `ErrorState` dengan pesan `toFailure`. `NOT_FOUND` di halaman edit memanggil `notFound()` (`app/admin/(protected)/not-found.tsx`). |
+| Mutasi | `app/admin/(protected)/<modul>/actions.ts` | Satu Server Action per mutasi lewat `mutate(path, run)`: memanggil fungsi domain `lib/backend/*` (requireAdmin, Zod, RPC ter-audit), `revalidatePath(path, "layout")`, lalu mengembalikan `OperationResult`. UI tidak pernah menampilkan teks provider. |
+| Daftar | `components/admin/cms/CmsIndex.tsx` | Tab status dan pencarian lewat URL (`status`, `search`, dibaca dengan `readEnum`/`readSearch`). Pencarian memakai form GET biasa. Filter dijalankan di server atas hasil daftar admin (komentar `shortcut:` di `lib/admin/cms.ts`). |
+| Aksi status | `CmsStatusAction`, `StatusActionButton`, `ConfirmDialog` | DRAFT: Terbitkan. PUBLISHED: Arsipkan (konfirmasi). ARCHIVED: Terbitkan ulang (konfirmasi). Sukses kembali ke URL yang sama dengan `notice`, yang ditampilkan `CmsBanner`. |
+| Form | `PageForm`, `ProgramForm`, `SettingsForm`, `CmsFormShell`, `FormField` | React Hook Form + `zodResolver(skema, { error: cmsErrorMap })`. Galat server dipetakan `cmsFailureView`: pesan Indonesia per field dari `CMS_FIELD_MESSAGES`, `CONFLICT` saat simpan menjadi galat slug, selain itu banner. Input membawa `defaultValue` agar HTML server sudah terisi sebelum hidrasi. Pakai `useWatch`, bukan `watch()` (React Compiler). |
+| Pengaturan | `lib/admin/settings.ts` | Hanya key yang berubah dikirim, karena setiap key ditulis ulang dan diaudit. Validasi klien mengikuti `read_public_settings()` (D03); ubah keduanya bersamaan. |
