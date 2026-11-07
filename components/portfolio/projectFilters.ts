@@ -1,4 +1,5 @@
-import { PROJECT_STATUS_OPTIONS, getYear } from '@/components/portfolio/portfolioLabels';
+import { getYear } from '@/lib/format/date';
+import { PROJECT_STATUS_LABELS, toOptions } from '@/lib/format/labels';
 import type { PortfolioFilterField } from '@/components/portfolio/PortfolioFilter';
 import type { Project, ProjectWithRelations } from '@/types/portfolio';
 
@@ -16,7 +17,7 @@ export function getProjectFilterFields(items: ProjectWithRelations[]): Portfolio
 
   return [
     { id: 'year', label: 'Tahun', options: years.map((year) => ({ value: String(year), label: String(year) })) },
-    { id: 'status', label: 'Status', options: PROJECT_STATUS_OPTIONS },
+    { id: 'status', label: 'Status', options: toOptions(PROJECT_STATUS_LABELS) },
   ];
 }
 

@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarDays, Trophy, Users } from 'lucide-react';
-import { formatPortfolioDate, summarizeMembers } from '@/components/portfolio/portfolioLabels';
+import { summarizeMembers } from '@/components/portfolio/portfolioLabels';
+import { formatDate } from '@/lib/format/date';
 import { cn } from '@/lib/utils';
 import type { Achievement } from '@/types/portfolio';
 
@@ -69,7 +70,7 @@ export function AchievementCard({ achievement, members = [], className }: Achiev
           ) : null}
           <div className="flex items-center gap-2">
             <CalendarDays className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-hidden="true" />
-            <time dateTime={achievementDate}>{formatPortfolioDate(achievementDate)}</time>
+            <time dateTime={achievementDate}>{formatDate(achievementDate)}</time>
           </div>
         </div>
       </div>

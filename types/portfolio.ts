@@ -1,10 +1,12 @@
+import type { Enums } from '@/types/database';
+
 // Bentuk data portfolio mengikuti tabel `achievements`, `projects`, `achievement_members`,
 // dan `project_members` (supabase/migrations/20261004080000_content_foundation.sql),
 // supaya mock bisa diganti data Supabase tanpa mengubah pemanggil.
 
-export type ContentLevel = 'INTERNAL' | 'REGIONAL' | 'NASIONAL' | 'INTERNASIONAL';
+export type ContentLevel = Enums<'content_level'>;
 
-export type ProjectStatus = 'PLANNED' | 'ONGOING' | 'COMPLETED' | 'ARCHIVED';
+export type ProjectStatus = Enums<'project_status'>;
 
 export interface Achievement {
   id: string;

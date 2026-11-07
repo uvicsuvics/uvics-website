@@ -1,4 +1,5 @@
-import { LEVEL_OPTIONS, getYear } from '@/components/portfolio/portfolioLabels';
+import { getYear } from '@/lib/format/date';
+import { CONTENT_LEVEL_LABELS, toOptions } from '@/lib/format/labels';
 import type { PortfolioFilterField } from '@/components/portfolio/PortfolioFilter';
 import type { AchievementWithRelations } from '@/types/portfolio';
 
@@ -13,7 +14,7 @@ export function getAchievementFilterFields(items: AchievementWithRelations[]): P
 
   return [
     { id: 'year', label: 'Tahun', options: years.map((year) => ({ value: String(year), label: String(year) })) },
-    { id: 'level', label: 'Level Kompetisi', options: LEVEL_OPTIONS },
+    { id: 'level', label: 'Level Kompetisi', options: toOptions(CONTENT_LEVEL_LABELS) },
     { id: 'ranking', label: 'Ranking', options: rankings.map((ranking) => ({ value: ranking, label: ranking })) },
   ];
 }

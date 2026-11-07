@@ -13,12 +13,11 @@ import {
   ArrowRight,
 } from "lucide-react";
 import {
-  LEVEL_LABELS,
-  formatPortfolioDate,
   getRankTier,
-  getYear,
   summarizeMembers,
 } from "@/components/portfolio/portfolioLabels";
+import { formatDate, getYear } from "@/lib/format/date";
+import { CONTENT_LEVEL_LABELS } from "@/lib/format/labels";
 import type { RankTier } from "@/components/portfolio/portfolioLabels";
 import { Button } from "@/components/ui/Button";
 import type { AchievementWithRelations } from "@/types/portfolio";
@@ -145,11 +144,11 @@ export function AchievementsSection({ achievements }: AchievementsSectionProps) 
                     {getRankBadge(item.tier, item.ranking)}
                     <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{formatPortfolioDate(item.achievementDate)}</span>
+                      <span>{formatDate(item.achievementDate)}</span>
                     </span>
                     {item.level ? (
                       <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                        Tingkat {LEVEL_LABELS[item.level]}
+                        Tingkat {CONTENT_LEVEL_LABELS[item.level]}
                       </span>
                     ) : null}
                   </div>

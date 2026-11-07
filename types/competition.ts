@@ -1,9 +1,6 @@
-export type CompetitionStatus =
-  | 'UPCOMING'
-  | 'OPEN'
-  | 'CLOSED'
-  | 'ONGOING'
-  | 'FINISHED';
+import type { Enums } from '@/types/database';
+
+export type CompetitionStatus = Enums<'competition_status'>;
 
 export type CompetitionLevel = 'Internal' | 'Nasional' | 'Internasional';
 
