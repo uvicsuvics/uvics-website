@@ -817,6 +817,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      admin_soft_delete_member: {
+        Args: {
+          p_member_id: string;
+        };
+        Returns: Json;
+      };
       begin_media_publication: {
         Args: {
           p_actor: string;
