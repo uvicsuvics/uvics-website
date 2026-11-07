@@ -158,7 +158,19 @@ export interface ProgramsPageContent {
   list: SectionHeading & { linkLabel: string; emptyMessage: string };
   cta: ClosingCtaContent;
   /** Halaman /programs/{slug}. */
-  detail: { cta: ClosingCtaContent };
+  detail: {
+    /** Diikuti nomor urut resmi, mis. "Program 01". */
+    eyebrowPrefix: string;
+    breadcrumbHome: string;
+    breadcrumbParent: string;
+    /** Diikuti nama departemen pengelola. */
+    managedByLabel: string;
+    department: SectionHeading;
+    /** Judul daftar program sedepartemen; sorotan judulnya nama departemen. */
+    siblingsTitle: string;
+    others: SectionHeading;
+    cta: ClosingCtaContent;
+  };
 }
 
 export const UVICS_PROGRAMS_PAGE: ProgramsPageContent = {
@@ -192,6 +204,13 @@ export const UVICS_PROGRAMS_PAGE: ProgramsPageContent = {
     secondaryCta: { label: "Lihat departemen", href: "/departments" },
   },
   detail: {
+    eyebrowPrefix: "Program",
+    breadcrumbHome: "Beranda",
+    breadcrumbParent: "Program",
+    managedByLabel: "Dikelola",
+    department: { title: "Departemen", titleHighlight: "pengelola" },
+    siblingsTitle: "Program lain dari",
+    others: { title: "Program", titleHighlight: "lainnya" },
     cta: {
       title: "Ingin ikut program ini?",
       description: "Bergabunglah sebagai anggota UVICS untuk mengikuti program dan kegiatan departemen.",

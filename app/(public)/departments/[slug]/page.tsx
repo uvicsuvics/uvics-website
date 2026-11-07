@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { DepartmentIndexItem } from "@/components/departments/DepartmentIndexItem";
 import { DepartmentSection } from "@/components/departments/DepartmentSection";
 import { DepartmentStructure } from "@/components/departments/DepartmentStructure";
-import { ProgramCard } from "@/components/programs/ProgramCard";
+import { ProgramGrid } from "@/components/programs/ProgramGrid";
 import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
 import { TextHero } from "@/components/sections/TextHero";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -79,15 +79,7 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
             <EmptyState message={detail.programs.emptyMessage} />
           </div>
         ) : (
-          <Reveal className="pt-10">
-            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {programs.map((program) => (
-                <li key={program.id}>
-                  <ProgramCard program={program} linkLabel={detail.programs.linkLabel} />
-                </li>
-              ))}
-            </ul>
-          </Reveal>
+          <ProgramGrid programs={programs} linkLabel={detail.programs.linkLabel} />
         )}
       </DepartmentSection>
 

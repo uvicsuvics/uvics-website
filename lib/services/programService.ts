@@ -30,6 +30,11 @@ export async function getProgramsByDepartment(departmentSlug: string): Promise<P
   return (await getPrograms()).filter((program) => UVICS_PROGRAM_DEPARTMENTS[program.slug] === departmentSlug);
 }
 
+/** Slug departemen pengelola program, atau null bila programnya belum punya departemen (T07). */
+export async function getProgramDepartmentSlug(programSlug: string): Promise<string | null> {
+  return UVICS_PROGRAM_DEPARTMENTS[programSlug] ?? null;
+}
+
 export async function getProgramBySlug(slug: string): Promise<ProgramItem | null> {
   return findBySlug(UVICS_PROGRAMS, slug);
 }
