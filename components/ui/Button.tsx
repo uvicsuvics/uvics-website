@@ -5,6 +5,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   href?: string;
+  /** Dengan `href`: tautan ke situs lain, dibuka di tab baru. */
+  external?: boolean;
   className?: string;
   children: React.ReactNode;
 }
@@ -13,6 +15,7 @@ export function Button({
   variant = 'primary',
   size = 'md',
   href,
+  external = false,
   className = '',
   children,
   ...props
@@ -36,9 +39,17 @@ export function Button({
 
   const combinedStyles = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`;
 
+  if (href && external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" aria-label={props['aria-label']} className={combinedStyles}>
+        {children}
+      </a>
+    );
+  }
+
   if (href) {
     return (
-      <Link href={href} className={combinedStyles}>
+      <Link href={href} aria-label={props['aria-label']} className={combinedStyles}>
         {children}
       </Link>
     );

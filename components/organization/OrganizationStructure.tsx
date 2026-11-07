@@ -29,7 +29,8 @@ export function OrganizationStructure({
   const [periodId, setPeriodId] = useState(defaultPeriodId);
 
   // Urutan grup mengikuti baris pertama tiap departemen, sehingga Pengurus Inti tampil lebih dulu.
-  const groups = new Map<string, PublicMember[]>();
+  // Kunci null = core team tanpa departemen (U01), tampil tanpa judul departemen.
+  const groups = new Map<string | null, PublicMember[]>();
   for (const member of membersByPeriod[periodId] ?? []) {
     groups.set(member.department, [...(groups.get(member.department) ?? []), member]);
   }
@@ -59,8 +60,8 @@ export function OrganizationStructure({
         <EmptyState message={emptyMessage} />
       ) : (
         [...groups].map(([department, members]) => (
-          <div key={department} className="flex flex-col gap-4">
-            <h3 className="font-heading text-xl font-bold text-gray-900">{department}</h3>
+          <div key={department ?? ""} className="flex flex-col gap-4">
+            {department && <h3 className="font-heading text-xl font-bold text-gray-900">{department}</h3>}
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {members.map((member) => (
                 <li key={`${member.name}-${member.position}`}>

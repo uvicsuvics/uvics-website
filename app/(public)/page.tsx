@@ -20,8 +20,8 @@ import { getPrograms } from "@/lib/services/programService";
 import { getProjects } from "@/lib/services/projectService";
 
 export default async function Home() {
-  const [competitions, projects, achievements, departments, programs, activePeriod] = await Promise.all([
-    getCompetitions(),
+  const [{ items: competitions }, projects, achievements, departments, programs, activePeriod] = await Promise.all([
+    getCompetitions({ page_size: 3 }),
     getProjects(),
     getAchievements(),
     getDepartments(),

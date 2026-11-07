@@ -3,23 +3,17 @@ import type { Metadata } from "next";
 import { CompetitionDetailHeader } from "@/components/competitions/CompetitionDetailHeader";
 import { CompetitionDetailContent } from "@/components/competitions/CompetitionDetailContent";
 import { RelatedCompetitions } from "@/components/competitions/RelatedCompetitions";
-import { MOCK_COMPETITIONS } from "@/lib/mock-data/competitions";
+import { getCompetitionBySlug, getRelatedCompetitions } from "@/lib/services/competitionService";
 
 interface CompetitionDetailPageProps {
   params: Promise<{ slug: string }>;
-}
-
-export async function generateStaticParams() {
-  return MOCK_COMPETITIONS.map((comp) => ({
-    slug: comp.slug,
-  }));
 }
 
 export async function generateMetadata({
   params,
 }: CompetitionDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const competition = MOCK_COMPETITIONS.find((item) => item.slug === slug);
+  const competition = await getCompetitionBySlug(slug);
 
   if (!competition) {
     return {
@@ -38,17 +32,13 @@ export default async function CompetitionDetailPage({
   params,
 }: CompetitionDetailPageProps) {
   const { slug } = await params;
-  const competition = MOCK_COMPETITIONS.find((item) => item.slug === slug);
+  const competition = await getCompetitionBySlug(slug);
 
   if (!competition) {
     notFound();
   }
 
-  const related = MOCK_COMPETITIONS.filter(
-    (item) =>
-      item.id !== competition.id &&
-      (item.category === competition.category || item.level === competition.level)
-  ).slice(0, 3);
+  const related = await getRelatedCompetitions(slug);
 
   return (
     <div>
