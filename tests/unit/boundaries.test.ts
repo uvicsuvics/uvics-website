@@ -5,7 +5,12 @@ import {
   slugSchema,
 } from "@/lib/backend/validation";
 import { assertOrigin, trustedIp } from "@/lib/backend/request";
-import { AppError, toFailure, httpFailure } from "@/lib/backend/errors";
+import {
+  AppError,
+  databaseError,
+  toFailure,
+  httpFailure,
+} from "@/lib/backend/errors";
 import { mediaPolicy, validateProviderAsset } from "@/lib/media/policy";
 
 describe("untrusted boundaries", () => {
@@ -72,6 +77,17 @@ describe("untrusted boundaries", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("45");
     expect(response.headers.get("Cache-Control")).toContain("no-store");
+  });
+  it("maps constraint violations to client errors and keeps unknown codes as outage", () => {
+    for (const [code, expected] of [
+      ["23503", "CONFLICT"],
+      ["23514", "VALIDATION_ERROR"],
+      ["XX000", "SERVICE_UNAVAILABLE"],
+    ] as const) {
+      expect(() => databaseError({ code })).toThrow(
+        expect.objectContaining({ code: expected }),
+      );
+    }
   });
 });
 
