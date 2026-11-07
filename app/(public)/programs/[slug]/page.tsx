@@ -1,173 +1,42 @@
-import React from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  Trophy,
-  Laptop,
-  Rocket,
-  Presentation,
-  Compass,
-  Users,
-  ArrowLeft,
-  CheckCircle2,
-  Clock,
-} from "lucide-react";
-import { getProgramBySlug, getPrograms, type ProgramItem } from "@/lib/services/programService";
-import { Button } from "@/components/ui/Button";
+import { PageHero } from "@/components/sections/PageHero";
+import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
+import { getProgramBySlug, getPrograms, getProgramsPage } from "@/lib/services/programService";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-const PROGRAM_ICONS: Record<
-  ProgramItem["iconName"],
-  React.ComponentType<{ className?: string }>
-> = {
-  Trophy,
-  Laptop,
-  Rocket,
-  Presentation,
-  Compass,
-  Users,
-};
-
 export async function generateStaticParams() {
-  const programs = await getPrograms();
-  return programs.map((item) => ({
-    slug: item.slug,
-  }));
+  return (await getPrograms()).map(({ slug }) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const program = await getProgramBySlug(slug);
-
+  const program = await getProgramBySlug((await params).slug);
   if (!program) {
-    return {
-      title: "Program Tidak Ditemukan | UVICS",
-      description: "Informasi program kerja yang dicari tidak tersedia.",
-    };
+    return { title: "Program Tidak Ditemukan | UVICS" };
   }
-
-  return {
-    title: `${program.title} | Program UVICS`,
-    description: program.description,
-  };
+  return { title: `${program.title} | Program UVICS`, description: program.description };
 }
 
 export default async function ProgramDetailPage({ params }: PageProps) {
-  const { slug } = await params;
-  const program = await getProgramBySlug(slug);
-
+  const [program, page] = await Promise.all([getProgramBySlug((await params).slug), getProgramsPage()]);
   if (!program) {
     notFound();
   }
 
-  const IconComp = PROGRAM_ICONS[program.iconName] || Trophy;
-
   return (
-    <div className="min-h-screen py-12 md:py-20 px-6 md:px-8 max-w-5xl mx-auto w-full">
-      {/* Tombol Kembali */}
-      <div className="mb-8">
-        <Link
-          href="/programs"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Semua Program</span>
-        </Link>
-      </div>
-
-      {/* Header Program */}
-      <div className="p-6 sm:p-10 rounded-2xl bg-white border border-gray-200 space-y-6 mb-10 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-primary text-white flex items-center justify-center shadow-primary shrink-0">
-            <IconComp className="w-8 h-8 sm:w-10 sm:h-10" />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-                Fase {program.stepNumber} • {program.category}
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 font-heading">
-              {program.title}
-            </h1>
-          </div>
-        </div>
-
-        <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-          {program.description}
-        </p>
-
-        {/* Foto Kegiatan Program */}
-        {program.image && (
-          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-gray-100">
-            <Image
-              src={program.image}
-              alt={`Dokumentasi kegiatan ${program.title}`}
-              fill
-              sizes="(max-width: 1024px) 100vw, 896px"
-              className="object-cover"
-              priority
-            />
-          </div>
-        )}
-
-        {/* Highlight Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-gray-100">
-          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-1">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
-              Frekuensi Kegiatan
-            </span>
-            <div className="flex items-center gap-2 text-sm font-bold text-gray-900">
-              <Clock className="w-4 h-4 text-primary shrink-0" />
-              <span>{program.frequency}</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-1">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
-              Sasaran Peserta
-            </span>
-            <div className="flex items-center gap-2 text-sm font-bold text-gray-900">
-              <Users className="w-4 h-4 text-primary shrink-0" />
-              <span>{program.targetAudience}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Target Capaian & Panduan Partisipasi */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-        <div className="p-6 sm:p-8 rounded-xl bg-white border border-gray-200 space-y-4">
-          <div className="flex items-center gap-2 text-primary font-bold text-base font-heading">
-            <CheckCircle2 className="w-5 h-5 text-primary" />
-            <span>Output & Tolok Ukur Keberhasilan</span>
-          </div>
-          <p className="text-sm text-gray-700 leading-relaxed font-medium">
-            {program.keyOutput}
-          </p>
-          <p className="text-xs text-gray-500">
-            Setiap peserta yang menuntaskan program ini memperoleh rekam jejak portofolio terverifikasi dan sertifikasi kegiatan dari UVICS FIK UNKLAB.
-          </p>
-        </div>
-
-        <div className="p-6 sm:p-8 rounded-xl bg-primary-50/50 border border-primary-200 space-y-4">
-          <div className="text-primary font-bold text-base font-heading">
-            <span>Cara Berpartisipasi</span>
-          </div>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            Program ini terbuka untuk seluruh anggota aktif UVICS. Pendaftaran dan jadwal sesi rutin diumumkan berkala melalui Discord dan grup koordinasi resmi.
-          </p>
-          <Button variant="primary" size="md" href="/join" className="w-full">
-            <span>Gabung UVICS Sekarang</span>
-          </Button>
-        </div>
-      </div>
+    <div className="flex flex-col">
+      <PageHero
+        hero={{
+          title: page.hero.title,
+          titleHighlight: program.title,
+          description: program.description,
+          image: { src: program.image, alt: program.title },
+        }}
+      />
+      <ClosingCtaSection cta={page.detail.cta} />
     </div>
   );
 }

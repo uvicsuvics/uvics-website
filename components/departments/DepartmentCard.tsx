@@ -1,32 +1,21 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  BrainCircuit,
-  Code2,
-  Megaphone,
-  Palette,
-  ShieldCheck,
-  Trophy,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Code2, Handshake, Megaphone, PenTool, Trophy, Users, type LucideIcon } from "lucide-react";
 import type { PublicDepartment } from "@/lib/services/departmentService";
 
 // Tabel departments tidak punya kolom ikon, jadi ikon dipetakan dari slug di sisi tampilan.
 const DEPARTMENT_ICONS: Record<string, LucideIcon> = {
-  "software-engineering": Code2,
-  "artificial-intelligence": BrainCircuit,
-  "ui-ux-design": Palette,
-  "competitive-programming": Trophy,
-  "cybersecurity-cloud": ShieldCheck,
   "public-relations": Megaphone,
+  "external-affairs": Handshake,
+  "web-development": Code2,
+  "competition-handler": Trophy,
+  editor: PenTool,
 };
 
 interface DepartmentCardProps {
   department: PublicDepartment;
   /** Nama koordinator periode aktif, bila ada. */
   coordinator?: string;
-  coordinatorLabel: string;
+  coordinatorLabel?: string;
   linkLabel: string;
 }
 

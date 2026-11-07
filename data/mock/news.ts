@@ -22,7 +22,7 @@ export const UVICS_NEWS: NewsItem[] = [
     slug: "uvics-buka-pendaftaran-open-recruitment-batch-2026",
     title: "UVICS Resmi Membuka Pendaftaran Open Recruitment Anggota Baru Batch 2026",
     excerpt:
-      "Kesempatan bagi mahasiswa Fakultas Ilmu Komputer UNKLAB untuk bergabung dalam wadah akselerasi riset, kompetisi teknologi, dan proyek kolaboratif industri berskala nasional.",
+      "Kesempatan bagi mahasiswa Universitas Klabat dari berbagai tingkat dan jurusan untuk bertumbuh dan berprestasi bersama di perlombaan.",
     category: "Rekrutmen",
     date: "20 September 2026",
     isoDate: "2026-09-20",

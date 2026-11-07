@@ -25,6 +25,11 @@ export async function getPeriodMembers(periodId: string): Promise<PublicMember[]
   return UVICS_MEMBERSHIPS.filter((row) => row.periodId === periodId).map((row) => toPublicMember(row));
 }
 
+/** shortcut: pengurus inti dikenali dari departemen "Pengurus Inti"; ganti setelah U01 diputuskan. */
+export async function getCoreTeam(periodId: string): Promise<PublicMember[]> {
+  return (await getPeriodMembers(periodId)).filter((member) => member.department === "Pengurus Inti");
+}
+
 export async function getOrganizationPage(): Promise<OrganizationPageContent> {
   return UVICS_ORGANIZATION_PAGE;
 }
