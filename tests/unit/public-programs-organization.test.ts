@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { UVICS_ORGANIZATION_PERIODS } from "@/data/mock/organization";
 import { getDepartmentBySlug, getDepartments } from "@/lib/services/departmentService";
 import {
+  departmentSummary,
   getActivePeriod,
   getCoreTeam,
   getOrganizationPeriods,
@@ -136,5 +137,19 @@ describe("program per departemen (PRD §14, K1)", () => {
       expect(got).toEqual([...got].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
     }
     expect(await getProgramsByDepartment("tidak-ada")).toEqual([]);
+  });
+});
+
+describe("ringkasan departemen", () => {
+  const row = (name: string, position: string, department: string) => ({ name, photo: null, position, department });
+
+  it("mengambil koordinator dan jumlah pengurus satu departemen", () => {
+    const members = [
+      row("Ana", "Koordinator", "Editor"),
+      row("Budi", "PIC", "Editor"),
+      row("Cici", "Koordinator", "Web Development"),
+    ];
+    expect(departmentSummary(members, "Editor")).toEqual({ coordinator: "Ana", memberCount: 2 });
+    expect(departmentSummary(members, "External Affairs")).toEqual({ coordinator: undefined, memberCount: 0 });
   });
 });

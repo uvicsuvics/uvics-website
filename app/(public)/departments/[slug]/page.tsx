@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 import { DepartmentIndexItem } from "@/components/departments/DepartmentIndexItem";
 import { DepartmentSection } from "@/components/departments/DepartmentSection";
 import { DepartmentStructure } from "@/components/departments/DepartmentStructure";
-import { DepartmentsHero } from "@/components/departments/DepartmentsHero";
 import { ProgramCard } from "@/components/programs/ProgramCard";
 import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
+import { TextHero } from "@/components/sections/TextHero";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Reveal } from "@/components/ui/Reveal";
 import { getDepartmentBySlug, getDepartments, getDepartmentsPage } from "@/lib/services/departmentService";
-import { getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
+import { departmentSummary, getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
 import { getProgramsByDepartment } from "@/lib/services/programService";
 
 interface PageProps {
@@ -48,11 +48,8 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
   const department = departments[index];
   const { detail } = page;
   const members = activePeriod ? await getPeriodMembers(activePeriod.id) : [];
-  const membersOf = (name: string) => members.filter((member) => member.department === name);
-  // shortcut: koordinator dikenali dari nama posisi; ganti ke positions.level setelah U08 diputuskan.
-  const coordinatorOf = (name: string) => membersOf(name).find((member) => member.position === "Koordinator")?.name;
-  const own = membersOf(department.name);
-  const coordinator = coordinatorOf(department.name);
+  const own = members.filter((member) => member.department === department.name);
+  const { coordinator } = departmentSummary(members, department.name);
   const stats = activePeriod
     ? [
         ...(coordinator ? [{ label: detail.stats.coordinator, value: coordinator }] : []),
@@ -64,7 +61,7 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col">
-      <DepartmentsHero
+      <TextHero
         breadcrumbs={[
           { label: page.hero.breadcrumbHome, href: "/" },
           { label: detail.breadcrumbParent, href: "/departments" },
@@ -114,8 +111,7 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
                 key={other.id}
                 department={other}
                 number={otherIndex + 1}
-                coordinator={coordinatorOf(other.name)}
-                memberCount={membersOf(other.name).length}
+                {...departmentSummary(members, other.name)}
                 labels={page.list}
               />
             ),

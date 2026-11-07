@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { DepartmentIndexItem } from "@/components/departments/DepartmentIndexItem";
 import { DepartmentSection } from "@/components/departments/DepartmentSection";
-import { DepartmentsHero } from "@/components/departments/DepartmentsHero";
 import { ClosingCtaSection } from "@/components/sections/about/ClosingCtaSection";
+import { TextHero } from "@/components/sections/TextHero";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Reveal } from "@/components/ui/Reveal";
 import { getDepartments, getDepartmentsPage } from "@/lib/services/departmentService";
-import { getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
+import { departmentSummary, getActivePeriod, getPeriodMembers } from "@/lib/services/organizationService";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { meta } = await getDepartmentsPage();
@@ -20,8 +20,10 @@ export default async function DepartmentsPage() {
     getActivePeriod(),
   ]);
   const members = activePeriod ? await getPeriodMembers(activePeriod.id) : [];
-  const membersOf = (department: string) => members.filter((member) => member.department === department);
-  const departmentMembers = departments.reduce((total, department) => total + membersOf(department.name).length, 0);
+  const departmentMembers = departments.reduce(
+    (total, department) => total + departmentSummary(members, department.name).memberCount,
+    0,
+  );
   const stats = [
     { label: page.stats.departments, value: String(departments.length) },
     ...(activePeriod
@@ -34,7 +36,7 @@ export default async function DepartmentsPage() {
 
   return (
     <div className="flex flex-col">
-      <DepartmentsHero
+      <TextHero
         breadcrumbs={[{ label: page.hero.breadcrumbHome, href: "/" }, { label: page.hero.title }]}
         eyebrow={page.hero.eyebrow}
         title={page.hero.title}
@@ -55,20 +57,15 @@ export default async function DepartmentsPage() {
         ) : (
           <Reveal>
             <ol>
-              {departments.map((department, index) => {
-                const own = membersOf(department.name);
-                return (
-                  <DepartmentIndexItem
-                    key={department.id}
-                    department={department}
-                    number={index + 1}
-                    // shortcut: koordinator dikenali dari nama posisi; ganti ke positions.level setelah U08 diputuskan.
-                    coordinator={own.find((member) => member.position === "Koordinator")?.name}
-                    memberCount={own.length}
-                    labels={page.list}
-                  />
-                );
-              })}
+              {departments.map((department, index) => (
+                <DepartmentIndexItem
+                  key={department.id}
+                  department={department}
+                  number={index + 1}
+                  {...departmentSummary(members, department.name)}
+                  labels={page.list}
+                />
+              ))}
             </ol>
           </Reveal>
         )}
