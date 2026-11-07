@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { getCompetitions } from '@/lib/services/competitionService';
 import { listHref, orNotFound, readEnum, readPage, readSearch, type SearchParams } from '@/lib/services/query';
-import { Constants } from '@/types/database';
+import { COMPETITION_STATUSES } from '@/types/competition';
 
 // Sama dengan ITEMS_PER_PAGE sebelumnya; tidak muncul di URL.
 const COMPETITIONS_PAGE_SIZE = 6;
@@ -21,7 +21,7 @@ interface CompetitionsPageProps {
 export default async function CompetitionsPage({ searchParams }: CompetitionsPageProps) {
   const params = await searchParams;
   const search = readSearch(params);
-  const status = readEnum(params, 'status', Constants.public.Enums.competition_status);
+  const status = readEnum(params, 'status', COMPETITION_STATUSES);
 
   const [{ items, pagination }, { items: featuredItems }] = await Promise.all([
     orNotFound(

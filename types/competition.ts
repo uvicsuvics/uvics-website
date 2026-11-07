@@ -1,7 +1,10 @@
 import type { ContentLevel } from '@/types/portfolio';
-import type { Enums } from '@/types/database';
+import { Constants, type Enums } from '@/types/database';
 
 export type CompetitionStatus = Enums<'competition_status'>;
+
+/** Kode status kompetisi yang valid, dipakai UI tanpa mengimpor `@/types/database`. */
+export const COMPETITION_STATUSES = Constants.public.Enums.competition_status;
 
 /** Kolom `competitions` yang dipakai UI; tanggal berformat YYYY-MM-DD. */
 export interface Competition {
