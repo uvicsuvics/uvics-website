@@ -34,3 +34,29 @@ export interface CompetitionQuery {
   status?: CompetitionStatus;
   featured?: boolean;
 }
+
+/** Urutan grup status di halaman kompetisi: yang masih bisa diikuti lebih dulu. */
+export const COMPETITION_STATUS_ORDER: readonly CompetitionStatus[] = ['OPEN', 'UPCOMING', 'ONGOING', 'CLOSED', 'FINISHED'];
+
+export interface CompetitionBoardFilters {
+  search?: string;
+  status?: CompetitionStatus;
+  level?: ContentLevel;
+  category?: string;
+}
+
+export interface CompetitionGroup {
+  status: CompetitionStatus;
+  items: Competition[];
+}
+
+/** Isi halaman /competitions: kompetisi per status beserta hitungan untuk filter. */
+export interface CompetitionBoard {
+  /** Urut `COMPETITION_STATUS_ORDER`; grup kosong tidak disertakan. */
+  groups: CompetitionGroup[];
+  /** Jumlah per status setelah filter pencarian, level, dan kategori (filter status diabaikan). */
+  statusCounts: Record<CompetitionStatus, number>;
+  total: number;
+  /** Kompetisi dibuka dengan batas pendaftaran terdekat yang belum lewat, tanpa melihat filter. */
+  nearestDeadline: Competition | null;
+}

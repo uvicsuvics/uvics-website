@@ -1,19 +1,18 @@
 import { SearchX } from 'lucide-react';
 import { CompetitionFilter } from '@/components/competitions/CompetitionFilter';
-import { CompetitionGrid } from '@/components/competitions/CompetitionGrid';
 import { CompetitionHero } from '@/components/competitions/CompetitionHero';
+import { CompetitionTimeline } from '@/components/competitions/CompetitionTimeline';
 import { FeaturedCompetition } from '@/components/competitions/FeaturedCompetition';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Pagination } from '@/components/ui/Pagination';
-import { getCompetitions } from '@/lib/services/competitionService';
-import { orNotFound, readEnum, readPage, readSearch, type SearchParams } from '@/lib/services/query';
-import { listHref } from '@/lib/utils';
+import {
+  getCompetitionBoard,
+  getCompetitionCategories,
+  getCompetitions,
+} from '@/lib/services/competitionService';
+import { readEnum, readSearch, type SearchParams } from '@/lib/services/query';
 import { COMPETITION_STATUSES } from '@/types/competition';
-
-// Sama dengan ITEMS_PER_PAGE sebelumnya; tidak muncul di URL.
-const COMPETITIONS_PAGE_SIZE = 6;
-const LISTING_ID = 'semua-kompetisi';
+import { CONTENT_LEVELS } from '@/types/portfolio';
 
 interface CompetitionsPageProps {
   searchParams: Promise<SearchParams>;
@@ -21,70 +20,65 @@ interface CompetitionsPageProps {
 
 export default async function CompetitionsPage({ searchParams }: CompetitionsPageProps) {
   const params = await searchParams;
-  const search = readSearch(params);
-  const status = readEnum(params, 'status', COMPETITION_STATUSES);
-
-  const [{ items, pagination }, { items: featuredItems }] = await Promise.all([
-    orNotFound(
-      getCompetitions({ page: readPage(params), search, status, page_size: COMPETITIONS_PAGE_SIZE }),
-    ),
+  const [categories, { items: featuredItems }] = await Promise.all([
+    getCompetitionCategories(),
     getCompetitions({ featured: true, page_size: 1 }),
   ]);
-  const featured = featuredItems[0];
-  const hasFilter = Boolean(search || status);
+  const filters = {
+    search: readSearch(params),
+    status: readEnum(params, 'status', COMPETITION_STATUSES),
+    level: readEnum(params, 'level', CONTENT_LEVELS),
+    category: readEnum(params, 'category', categories),
+  };
+  const hasFilter = Object.values(filters).some((value) => value !== undefined);
+
+  const board = await getCompetitionBoard(filters);
+  const featured = hasFilter ? undefined : featuredItems[0];
+  const shown = board.groups.reduce((sum, group) => sum + group.items.length, 0);
 
   return (
     <div className="min-h-screen bg-background">
-      <CompetitionHero />
+      <CompetitionHero nearest={board.nearestDeadline} />
 
-      {featured && <FeaturedCompetition competition={featured} />}
-
-      <section
-        id={LISTING_ID}
-        className="max-w-7xl mx-auto w-full px-6 md:px-8 py-10 md:py-14 flex flex-col gap-6 scroll-mt-24"
-        aria-labelledby="all-competitions-heading"
-      >
-        <div className="flex flex-col gap-1">
-          <h2
-            id="all-competitions-heading"
-            className="text-xl sm:text-2xl font-bold text-gray-900 font-heading"
-          >
-            Semua Kompetisi
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Temukan peluang prestasi yang sesuai berdasarkan nama kompetisi, penyelenggara, atau status pendaftaran.
-          </p>
-        </div>
-
-        <CompetitionFilter search={search} status={status} totalResults={pagination.total_items} />
-
-        {items.length > 0 ? (
-          <CompetitionGrid competitions={items} />
-        ) : (
-          <EmptyState
-            icon={SearchX}
-            message={
-              hasFilter
-                ? 'Belum ada kompetisi untuk filter yang dipilih.'
-                : 'Belum ada kompetisi yang tersedia saat ini.'
-            }
-            action={
-              hasFilter ? (
-                <Button variant="outline" size="md" href={`/competitions#${LISTING_ID}`}>
-                  Reset filter
-                </Button>
-              ) : undefined
-            }
-          />
-        )}
-
-        <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.total_pages}
-          label="Navigasi halaman kompetisi"
-          getHref={(page) => `${listHref('/competitions', { search, status, page })}#${LISTING_ID}`}
+      <div className="grid gap-10 mx-auto px-6 py-10 w-full max-w-7xl md:px-8 md:py-14 lg:grid-cols-4">
+        <CompetitionFilter
+          {...filters}
+          statusCounts={board.statusCounts}
+          total={board.total}
+          categories={categories}
         />
-      </section>
+
+        <div className="flex flex-col gap-8 min-w-0 lg:col-span-3">
+          {featured && <FeaturedCompetition competition={featured} />}
+
+          <p className="text-sm text-gray-600" aria-live="polite">
+            Menampilkan <strong className="font-semibold text-gray-900">{shown}</strong> kompetisi
+          </p>
+
+          {shown > 0 ? (
+            <CompetitionTimeline
+              groups={board.groups}
+              expandArchived={filters.status === 'CLOSED' || filters.status === 'FINISHED'}
+            />
+          ) : (
+            <EmptyState
+              icon={SearchX}
+              message={
+                hasFilter
+                  ? 'Belum ada kompetisi untuk filter yang dipilih.'
+                  : 'Belum ada kompetisi yang tersedia saat ini.'
+              }
+              action={
+                hasFilter ? (
+                  <Button variant="outline" size="md" href="/competitions">
+                    Reset filter
+                  </Button>
+                ) : undefined
+              }
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -4,9 +4,12 @@ import { describe, expect, it } from "vitest";
 import { CompetitionsSection } from "@/components/sections/CompetitionsSection";
 import { UVICS_COMPETITIONS } from "@/data/mock/competitions";
 import {
+  getCompetitionBoard,
   getCompetitionBySlug,
+  getCompetitionCategories,
   getCompetitions,
   getRelatedCompetitions,
+  groupCompetitions,
 } from "@/lib/services/competitionService";
 import { Constants } from "@/types/database";
 import type { Competition } from "@/types/competition";
@@ -63,6 +66,83 @@ describe("competition service", () => {
       if (c.level) expect(Constants.public.Enums.content_level).toContain(c.level);
       for (const d of [c.registrationDeadline, c.competitionDate]) if (d) expect(d).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
+  });
+});
+
+const fixture = (overrides: Partial<Competition>): Competition => ({
+  id: "x", slug: "x", title: "Judul X", organizer: "Penyelenggara X", description: "Deskripsi X",
+  category: null, level: null, registrationDeadline: null, competitionDate: null,
+  registrationUrl: null, guidebookUrl: null, poster: null, teamSize: null, eligibility: null,
+  status: "OPEN", featured: false, ...overrides,
+});
+
+describe("papan kompetisi", () => {
+  it("mengelompokkan per status dengan urutan tampilan dan tanpa grup kosong", () => {
+    const groups = groupCompetitions([
+      fixture({ id: "f", status: "FINISHED" }),
+      fixture({ id: "o", status: "OPEN" }),
+      fixture({ id: "u", status: "UPCOMING" }),
+    ]);
+    expect(groups.map((g) => g.status)).toEqual(["OPEN", "UPCOMING", "FINISHED"]);
+  });
+
+  it("mengurutkan deadline terdekat dulu, tanggal kosong di akhir", () => {
+    const [open] = groupCompetitions([
+      fixture({ id: "late", registrationDeadline: "2026-11-15" }),
+      fixture({ id: "none", registrationDeadline: null }),
+      fixture({ id: "early", registrationDeadline: "2026-10-05" }),
+    ]);
+    expect(open.items.map((c) => c.id)).toEqual(["early", "late", "none"]);
+  });
+
+  it("mengurutkan yang berlangsung menurut pelaksanaan, arsip menurut pelaksanaan terbaru", () => {
+    const groups = groupCompetitions([
+      fixture({ id: "ongoing-late", status: "ONGOING", competitionDate: "2026-12-01" }),
+      fixture({ id: "ongoing-early", status: "ONGOING", competitionDate: "2026-09-10" }),
+      fixture({ id: "closed-none", status: "CLOSED", registrationDeadline: "2026-10-30", competitionDate: null }),
+      fixture({ id: "closed-old", status: "CLOSED", registrationDeadline: "2026-10-20", competitionDate: "2026-11-05" }),
+      fixture({ id: "closed-new", status: "CLOSED", registrationDeadline: "2026-10-01", competitionDate: "2026-12-10" }),
+      fixture({ id: "done-old", status: "FINISHED", competitionDate: "2025-01-10" }),
+      fixture({ id: "done-new", status: "FINISHED", competitionDate: "2025-12-15" }),
+    ]);
+    expect(groups.map((g) => g.status)).toEqual(["ONGOING", "CLOSED", "FINISHED"]);
+    expect(groups[0].items.map((c) => c.id)).toEqual(["ongoing-early", "ongoing-late"]);
+    expect(groups[1].items.map((c) => c.id)).toEqual(["closed-new", "closed-old", "closed-none"]);
+    expect(groups[2].items.map((c) => c.id)).toEqual(["done-new", "done-old"]);
+  });
+
+  it("hitungan status mengabaikan filter status tetapi mengikuti filter lain", async () => {
+    const board = await getCompetitionBoard({ status: "OPEN", level: "NASIONAL" });
+    expect(board.groups.map((g) => g.status)).toEqual(["OPEN"]);
+    expect(board.groups[0].items.every((c) => c.level === "NASIONAL")).toBe(true);
+    const nasional = UVICS_COMPETITIONS.filter((c) => c.level === "NASIONAL");
+    expect(board.statusCounts.CLOSED).toBe(nasional.filter((c) => c.status === "CLOSED").length);
+    expect(board.total).toBe(nasional.length);
+  });
+
+  it("memfilter pencarian dan kategori seperti backend", async () => {
+    const board = await getCompetitionBoard({ search: "HACKATHON%", category: "Hackathon" });
+    const items = board.groups.flatMap((g) => g.items);
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((c) => c.category === "Hackathon" && /hackathon/i.test(`${c.title} ${c.organizer}`))).toBe(true);
+  });
+
+  it("deadline terdekat: kompetisi dibuka yang batasnya belum lewat, tanpa melihat filter", async () => {
+    const today = "2026-10-10";
+    const upcoming = UVICS_COMPETITIONS.filter(
+      (c) => c.status === "OPEN" && c.registrationDeadline !== null && c.registrationDeadline >= today,
+    ).sort((a, b) => a.registrationDeadline!.localeCompare(b.registrationDeadline!));
+    expect(upcoming.length).toBeGreaterThan(0);
+    const board = await getCompetitionBoard({ status: "FINISHED" }, { today });
+    expect(board.nearestDeadline?.id).toBe(upcoming[0].id);
+    expect(board.nearestDeadline!.registrationDeadline! >= today).toBe(true);
+    expect((await getCompetitionBoard({}, { today: "2099-01-01" })).nearestDeadline).toBeNull();
+  });
+
+  it("daftar kategori unik dan terurut", async () => {
+    const categories = await getCompetitionCategories();
+    expect(categories).toEqual([...new Set(categories)].sort((a, b) => a.localeCompare(b)));
+    expect(categories).toContain("Hackathon");
   });
 });
 

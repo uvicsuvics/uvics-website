@@ -1,12 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import NotFound from "@/app/(public)/not-found";
 import CompetitionsPage from "@/app/(public)/competitions/page";
 import { CompetitionCard } from "@/components/competitions/competition-card";
 import { CompetitionDetailContent } from "@/components/competitions/CompetitionDetailContent";
 import { UVICS_COMPETITIONS } from "@/data/mock/competitions";
-import * as competitionService from "@/lib/services/competitionService";
 import type { Competition } from "@/types/competition";
 
 vi.mock("next/navigation", async (importOriginal) => ({
@@ -15,38 +14,67 @@ vi.mock("next/navigation", async (importOriginal) => ({
   usePathname: () => "/competitions",
 }));
 
-afterEach(() => vi.restoreAllMocks());
+
+const render = async (params: Record<string, string>) =>
+  renderToStaticMarkup(await CompetitionsPage({ searchParams: Promise.resolve(params) }));
+const slugOf = (match: (c: Competition) => boolean) => UVICS_COMPETITIONS.find(match)!.slug;
+// Daftar dimulai dari ringkasan hasil; header dan banner unggulan juga menaut ke detail kompetisi.
+const listOf = (html: string) => html.slice(html.indexOf('aria-live="polite"'));
 
 describe("halaman /competitions", () => {
-  it("hanya menampilkan kartu berstatus yang difilter", async () => {
-    // Label status tidak dipakai sebagai bukti karena chip filter merender semua label.
-    const html = renderToStaticMarkup(await CompetitionsPage({ searchParams: Promise.resolve({ status: "OPEN" }) }));
-    const finished = UVICS_COMPETITIONS.find(({ status, featured }) => status === "FINISHED" && !featured)!;
-    expect(html).not.toContain(`href="/competitions/${finished.slug}"`);
-    expect(html).toContain(`href="/competitions/${UVICS_COMPETITIONS.find(({ status, featured }) => status === "OPEN" && !featured)!.slug}"`);
+  it("menampilkan grup aktif berurutan dan menyimpan arsip di balik details", async () => {
+    const html = await render({});
+    const open = html.indexOf(">Pendaftaran Dibuka</h2>");
+    const upcoming = html.indexOf(">Segera Dibuka</h2>");
+    const ongoing = html.indexOf(">Sedang Berlangsung</h2>");
+    expect(open).toBeGreaterThan(-1);
+    expect(open).toBeLessThan(upcoming);
+    expect(upcoming).toBeLessThan(ongoing);
+    const archived = UVICS_COMPETITIONS.filter((c) => c.status === "CLOSED" || c.status === "FINISHED").length;
+    expect(html).toMatch(new RegExp(`Kompetisi yang sudah ditutup atau selesai \\((<!-- -->)?${archived}(<!-- -->)?\\)`));
+    expect(html.indexOf("<details")).toBeLessThan(html.indexOf(`href="/competitions/${slugOf((c) => c.status === "FINISHED")}"`));
+    expect(html).not.toMatch(/<details[^>]*open/);
+  });
+
+  it("membuka arsip bila hanya arsip yang cocok", async () => {
+    const finished = UVICS_COMPETITIONS.find((c) => c.status === "FINISHED")!;
+    const html = await render({ search: finished.title });
+    expect(html).toMatch(/<details[^>]*open/);
+    expect(html).toContain(`href="/competitions/${finished.slug}"`);
+  });
+
+  it("filter kategori hanya menampilkan kategori itu", async () => {
+    const list = listOf(await render({ category: "Hackathon" }));
+    for (const c of UVICS_COMPETITIONS) {
+      const linked = list.includes(`href="/competitions/${c.slug}"`);
+      expect(linked).toBe(c.category === "Hackathon");
+    }
+  });
+
+  it("filter status hanya menampilkan grup itu dan membuka arsip yang dipilih", async () => {
+    const html = await render({ status: "CLOSED" });
+    expect(html).toContain(">Pendaftaran Ditutup</h2>");
+    expect(html).not.toContain(">Pendaftaran Dibuka</h2>");
+    expect(html).not.toContain("<details");
+    expect(listOf(html)).not.toContain(`href="/competitions/${slugOf((c) => c.status === "OPEN" && !c.featured)}"`);
+  });
+
+  it("menyembunyikan kompetisi unggulan saat filter aktif", async () => {
+    const featured = slugOf((c) => c.featured);
+    expect((await render({})).match(new RegExp(`href="/competitions/${featured}"`, "g"))!.length).toBeGreaterThan(1);
+    expect((await render({ level: "INTERNASIONAL" }))).not.toContain(`href="/competitions/${featured}"`);
   });
 
   it("menampilkan empty state filter dengan tombol reset", async () => {
-    const html = renderToStaticMarkup(await CompetitionsPage({ searchParams: Promise.resolve({ search: "tidakadayangcocok" }) }));
+    const html = await render({ search: "tidakadayangcocok" });
     expect(html).toContain("Belum ada kompetisi untuk filter yang dipilih.");
-    expect(html).toContain('href="/competitions#semua-kompetisi"');
+    expect(html).toContain('href="/competitions"');
   });
 
-  it("tautan pagination mempertahankan filter", async () => {
-    const real = competitionService.getCompetitions;
-    vi.spyOn(competitionService, "getCompetitions").mockImplementation(async (query) => {
-      const result = await real(query);
-      return query?.featured ? result : { ...result, pagination: { page: 1, page_size: 6, total_items: 14, total_pages: 3 } };
-    });
-    const html = renderToStaticMarkup(await CompetitionsPage({ searchParams: Promise.resolve({ search: "ai", status: "OPEN" }) }));
-    expect(html).toContain('href="/competitions?search=ai&amp;status=OPEN&amp;page=2#semua-kompetisi"');
-  });
-
-  it("parameter rusak jatuh ke default, halaman di luar total menjadi 404", async () => {
-    await expect(CompetitionsPage({ searchParams: Promise.resolve({ page: "abc", status: "foo" }) })).resolves.toBeTruthy();
-    await expect(CompetitionsPage({ searchParams: Promise.resolve({ page: "99" }) })).rejects.toMatchObject({
-      digest: expect.stringContaining("404"),
-    });
+  it("parameter rusak jatuh ke default", async () => {
+    const html = await render({ status: "foo", level: "bar", category: "tidak-ada", page: "abc" });
+    expect(html).toContain(">Pendaftaran Dibuka</h2>");
+    expect(html).not.toContain("Belum ada kompetisi untuk filter yang dipilih.");
   });
 });
 

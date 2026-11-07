@@ -60,7 +60,7 @@ Aturan:
 - Service bersifat `async` walau sumbernya mock, supaya pemanggil tidak berubah saat sumber diganti.
 - Daftar berpagination: `get<Domain>s(query?): Promise<Paginated<T>>`, contoh `getCompetitions`. Domain kecil yang tidak dipaginasi: `Promise<T[]>`.
 - Detail: `get<Domain>BySlug(slug): Promise<T | null>` dibungkus `cache()` dari `react`, dengan `notFound()` di halaman bila `null`.
-- Halaman daftar yang page-nya di luar jangkauan membungkus pemanggilan dengan `orNotFound` (sumber melempar `AppError` `NOT_FOUND`, helper mengubahnya menjadi `notFound()`). Kegagalan sumber data lain dilempar ke `error.tsx`.
+- Halaman daftar berpagination (belum ada di produksi; pola untuk Prestasi dan Project di #26) yang page-nya di luar jangkauan membungkus pemanggilan dengan `orNotFound` (sumber melempar `AppError` `NOT_FOUND`, helper mengubahnya menjadi `notFound()`). Kegagalan sumber data lain dilempar ke `error.tsx`.
 - Halaman komposit (beranda): kegagalan satu section tidak boleh menjatuhkan seluruh halaman. Data section ditangkap dengan `.catch` yang mencatat error di server dan mengembalikan list kosong. Pola ini ditambahkan saat sumber data berpindah ke backend (§11); sumber mock tidak gagal.
 - Baca publik dari backend memakai `serverClient()` (`lib/supabase/server.ts`) dan fungsi `lib/backend/content.ts` (`listPublicCompetitions`, `getPublicCompetitionBySlug`, dan sejenisnya).
 - Tidak ada `generateStaticParams` yang membaca database, karena build CI tidak punya database.
@@ -102,21 +102,24 @@ Aplikasi full-stack Next.js; tidak ada API terpisah, jadi tidak ada `API_BASE_UR
 
 ## 8. Query: filter dan pagination lewat URL
 
-Filter dan halaman daftar hidup di URL supaya bisa dibagikan dan tombol back bekerja. Page membaca `searchParams` (tipe `SearchParams`, berupa `Promise` di versi Next.js ini) lalu meneruskan nilai tervalidasi ke service. Contoh lengkap: `app/(public)/competitions/page.tsx`.
+Filter dan halaman daftar hidup di URL supaya bisa dibagikan dan tombol back bekerja. Page membaca `searchParams` (tipe `SearchParams`, berupa `Promise` di versi Next.js ini) lalu meneruskan nilai tervalidasi ke service. Contoh filter di URL: `app/(public)/competitions/page.tsx` dan `CompetitionFilter`. Belum ada halaman produksi yang memakai `page`, `readPage`, `orNotFound`, dan `Pagination` mode `getHref`; bagian di bawah adalah pola untuk daftar berpagination berikutnya (Prestasi dan Project di #26).
 
 | Parameter | Pembaca (`lib/services/query.ts`) | Aturan |
 | --- | --- | --- |
-| `page` | `readPage` | Bilangan bulat positif; selain itu menjadi 1 |
+| `page` | `readPage` | Bilangan bulat positif; selain itu menjadi 1. Hanya untuk halaman daftar berpagination |
 | `search` | `readSearch` | Dirapikan, maksimal 100 karakter; kosong menjadi `undefined` |
 | `status` | `readEnum(params, 'status', COMPETITION_STATUSES)` | Harus termasuk daftar nilai; selain itu `undefined` (jatuh ke default, bukan error) |
+| `level` | `readEnum(params, 'level', CONTENT_LEVELS)` | Kode `content_level`; `CONTENT_LEVELS` diekspor `types/portfolio.ts` |
+| `category` | `readEnum(params, 'category', categories)` | Harus termasuk daftar dari service (`getCompetitionCategories`); selain itu diabaikan |
 | `featured` | tidak dibaca dari URL | Dipakai internal oleh page (mis. kompetisi unggulan), bukan filter pengguna |
 
-- `page_size` adalah konstanta per halaman (`COMPETITIONS_PAGE_SIZE = 6`), tidak muncul di URL. Default service `DEFAULT_PAGE_SIZE` (20) menyamai default backend.
+- `page_size` adalah konstanta per halaman, tidak muncul di URL. Default service `DEFAULT_PAGE_SIZE` (20) menyamai default backend.
 - Filter "Semua" berarti parameter dihilangkan. Jangan mengirim `status=ALL`.
 - Href dibuat dengan `listHref(pathname, params)`: nilai kosong dan `page=1` dibuang, urutan key dipertahankan.
-- Filter yang berubah selalu kembali ke halaman 1 (`CompetitionFilter` tidak menyertakan `page` saat `router.replace`). Pencarian di-debounce 300 ms dan memakai `router.replace` agar riwayat tidak penuh.
-- `Pagination` (`components/ui/Pagination.tsx`) punya dua mode: callback `onPageChange`, atau mode tautan `getHref`. Komponen ini tanpa `'use client'`, sehingga Server Component boleh meneruskan `getHref`. Anchor `#semua-kompetisi` pada href menjaga posisi scroll di daftar.
-- Service memotong dengan `paginate(items, page, page_size)`. Page di luar jangkauan melempar `AppError` `NOT_FOUND` (menyamai PostgREST `PGRST103`), dan page memakai `orNotFound`. Karena `loading.tsx` ada di `competitions`, hasilnya soft 404 (lihat §6); route tanpa `loading.tsx` menghasilkan 404 sungguhan.
+- Saat filter berubah, `page` tidak disertakan sehingga daftar kembali ke halaman 1. Pencarian di-debounce 300 ms dan memakai `router.replace` agar riwayat tidak penuh; contohnya `CompetitionFilter`.
+- `Pagination` (`components/ui/Pagination.tsx`) punya dua mode: callback `onPageChange`, atau mode tautan `getHref`. Komponen ini tanpa `'use client'`, sehingga Server Component boleh meneruskan `getHref`.
+- Service berpagination memotong dengan `paginate(items, page, page_size)`. Page di luar jangkauan melempar `AppError` `NOT_FOUND` (menyamai PostgREST `PGRST103`), dan page memakai `orNotFound`. Di segment dengan `loading.tsx` hasilnya soft 404 (lihat §6); tanpa `loading.tsx` menghasilkan 404 sungguhan.
+- `/competitions` tidak berpagination: halaman ini memakai `getCompetitionBoard(filters)` yang mengelompokkan kompetisi per status (`COMPETITION_STATUS_ORDER`) dan mengurutkannya menurut tanggal. Backend belum bisa mengurutkan menurut tanggal, jadi service mengambil semua kompetisi publik sekali (maksimal 100) lalu menyaring dan mengurutkan di memori. Hitungan status untuk filter mengabaikan filter status tetapi mengikuti pencarian, tingkat, dan kategori. Bila data melewati 100, ganti dengan query per status (komentar `shortcut:` di service). Kartu "Deadline terdekat" hanya memilih kompetisi berstatus dibuka yang batas pendaftarannya belum lewat menurut tanggal WITA (`todayInWita`), karena status masih diubah manual ([T06](DECISIONS.md#d-isu-terbuka)). Keputusan tata letak ini tercatat sebagai [D23](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima).
 
 ## 9. Tanggal dan label
 
@@ -129,7 +132,7 @@ Filter dan halaman daftar hidup di URL supaya bisa dibagikan dan tombol back bek
 
 | Domain | DTO (lokasi sekarang) | Service | Sumber sekarang | Fungsi backend publik | Penghambat |
 | --- | --- | --- | --- | --- | --- |
-| Kompetisi | `Competition`, `CompetitionQuery` di `types/competition.ts` | `getCompetitions`, `getCompetitionBySlug`, `getRelatedCompetitions` | `data/mock/competitions.ts` | `listPublicCompetitions`, `getPublicCompetitionBySlug` | #26 |
+| Kompetisi | `Competition`, `CompetitionQuery`, `CompetitionBoard` di `types/competition.ts` | `getCompetitions`, `getCompetitionBySlug`, `getRelatedCompetitions`, `getCompetitionBoard`, `getCompetitionCategories` | `data/mock/competitions.ts` | `listPublicCompetitions`, `getPublicCompetitionBySlug` | #26 |
 | Prestasi | `Achievement`, `AchievementWithRelations` di `types/portfolio.ts` | `getAchievements`, `getAchievementBySlug`, `getRelatedAchievements` | `data/mock/achievements.ts` | `listPublicAchievements`, `getPublicAchievementBySlug` | U22 / #26 |
 | Project | `Project`, `ProjectWithRelations` di `types/portfolio.ts` | `getProjects`, `getProjectBySlug`, `getRelatedProjects` | `data/mock/projects.ts` | `listPublicProjects`, `getPublicProjectBySlug` | U22 / #26 |
 | Program | `PublicProgram` di `lib/services/programService.ts` (diturunkan dari `ProgramItem`) | `getPrograms`, `getProgramBySlug` | `data/mock/programs.ts` | belum ada | U05 / #30 |
@@ -145,6 +148,6 @@ Contoh kompetisi (#26). Page dan komponen tidak berubah; hanya isi service, mapp
 1. Tambah mapper `toCompetition(row)` yang mengubah snake_case menjadi DTO `Competition`, termasuk `poster` dari referensi media menjadi URL, dengan tes dari baris contoh.
 2. Ganti isi `getCompetitions` dengan `listPublicCompetitions(await serverClient(), query)` lalu petakan `items` dengan `toCompetition`; `pagination` diteruskan apa adanya. Backend membaca nilai berbentuk GET, jadi service mengubah `featured` menjadi string (`String(query.featured)`) sebelum memanggil backend; boolean ditolak `z.stringbool()` dengan VALIDATION_ERROR. Filter backend bersifat AND, sehingga `getRelatedCompetitions` (sama kategori ATAU sama level), juga `getRelatedAchievements` dan `getRelatedProjects`, butuh dua query lalu dedupe, atau aturan relasinya diputuskan ulang di #26.
 3. Di `getCompetitionBySlug`, tangkap `AppError` `NOT_FOUND` dari `getPublicCompetitionBySlug` lalu kembalikan `null`. Kegagalan lain dilempar.
-4. Hapus filter dan `paginate` di memori dari service; backend yang menyaring dan memotong.
+4. Hapus filter dan `paginate` di memori dari `getCompetitions`; backend yang menyaring dan memotong. `getCompetitionBoard` dan `getCompetitionCategories` membaca lewat `getCompetitions({ page_size: 100 })`, jadi ikut berpindah tanpa perubahan; penyaringan dan pengurutan papan tetap di memori sampai backend mendukung urutan tanggal.
 5. Tes service memakai fake client (pola `tests/unit/content.test.ts`).
 6. Tambahkan fallback section beranda (`.catch` yang mencatat error dan mengembalikan list kosong, lihat §4).

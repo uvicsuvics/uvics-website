@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatPeriod, getYear } from '@/lib/format/date';
+import { formatDate, formatDayMonth, formatPeriod, getYear, todayInWita } from '@/lib/format/date';
 import {
   COMPETITION_STATUS_LABELS,
   CONTENT_LEVEL_LABELS,
@@ -24,6 +24,19 @@ describe('format date', () => {
     expect(formatPeriod('2025-08-01', '2026-03-31')).toMatch(/2025 – .*2026/);
     expect(formatPeriod('2026-05-01', null)).toMatch(/2026 – sekarang/);
     expect(formatPeriod(null, null)).toBeNull();
+  });
+});
+
+describe('format day-month', () => {
+  it('memecah tanggal YYYY-MM-DD untuk ubin tanggal', () => {
+    expect(formatDayMonth('2026-10-05')).toEqual({ day: '5', month: 'Okt' });
+    expect(formatDayMonth('2026-01-31')).toEqual({ day: '31', month: 'Jan' });
+    expect(() => formatDayMonth('2026-10-05T23:00:00Z')).toThrow(RangeError);
+  });
+
+  it('memberi tanggal hari ini menurut WITA (UTC+8)', () => {
+    expect(todayInWita(new Date('2026-11-06T15:59:00Z'))).toBe('2026-11-06');
+    expect(todayInWita(new Date('2026-11-06T16:00:00Z'))).toBe('2026-11-07');
   });
 });
 

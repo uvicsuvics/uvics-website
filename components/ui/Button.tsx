@@ -41,7 +41,7 @@ export function Button({
 
   if (href && external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={combinedStyles}>
+      <a href={href} target="_blank" rel="noopener noreferrer" aria-label={props['aria-label']} className={combinedStyles}>
         {children}
       </a>
     );
@@ -49,7 +49,7 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} className={combinedStyles}>
+      <Link href={href} aria-label={props['aria-label']} className={combinedStyles}>
         {children}
       </Link>
     );

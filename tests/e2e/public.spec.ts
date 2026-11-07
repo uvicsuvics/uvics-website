@@ -150,24 +150,21 @@ test("public navigation: /join shows closed registration when settings are unava
 });
 
 test("public navigation: /competitions keeps filter state in the URL", async ({ page }) => {
-  await page.goto("/competitions?page=2");
+  await page.goto("/competitions?level=NASIONAL");
   const search = page.getByRole("textbox", { name: "Cari kompetisi atau penyelenggara" });
   await search.pressSequentially("hack", { delay: 20 });
   await expect(page).toHaveURL(/search=hack(?!athon)/);
   await search.pressSequentially("athon", { delay: 20 });
   await expect(search).toHaveValue("hackathon");
   await expect(page).toHaveURL(/search=hackathon/);
-  expect(page.url()).not.toContain("page=");
-  await page
-    .getByRole("group", { name: "Filter status kompetisi" })
-    .getByRole("button", { name: "Pendaftaran Dibuka" })
-    .click();
+  await expect(page).toHaveURL(/level=NASIONAL/);
+  await page.getByRole("radio", { name: /Pendaftaran Dibuka/ }).check();
   await expect(page).toHaveURL(/status=OPEN/);
-  await expect(page).not.toHaveURL(/page=/);
-  await page.goto("/competitions?page=99");
-  await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
-  await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
-  expect((await page.goto("/competitions?page=abc&status=foo"))?.status()).toBe(200);
+  await expect(search).toHaveValue("hackathon");
+  await expect(page.getByRole("heading", { level: 2, name: "Pendaftaran Dibuka" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Segera Dibuka" })).toHaveCount(0);
+  expect((await page.goto("/competitions?status=foo&level=bar&category=zzz"))?.status()).toBe(200);
+  await expect(page.getByRole("heading", { level: 2, name: "Pendaftaran Dibuka" })).toBeVisible();
 });
 
 test("public navigation: unknown competition renders the public not-found page", async ({ page }) => {

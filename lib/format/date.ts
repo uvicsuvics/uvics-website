@@ -21,6 +21,24 @@ export function formatDate(date: string, month: 'short' | 'long' = 'short'): str
   }).format(new Date(date));
 }
 
+// en-CA memformat tanggal sebagai YYYY-MM-DD; UVICS berada di zona WITA (Asia/Makassar).
+const WITA_DATE = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Makassar' });
+
+/** Tanggal hari ini di WITA sebagai YYYY-MM-DD, untuk dibandingkan dengan kolom `date`. */
+export function todayInWita(now: Date = new Date()): string {
+  return WITA_DATE.format(now);
+}
+
+const DAY = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone: 'UTC' });
+const SHORT_MONTH = new Intl.DateTimeFormat('id-ID', { month: 'short', timeZone: 'UTC' });
+
+/** Hari dan bulan singkat dari tanggal YYYY-MM-DD untuk ubin tanggal, mis. { day: "5", month: "Okt" }. */
+export function formatDayMonth(date: string): { day: string; month: string } {
+  assertDateOnly(date);
+  const value = new Date(date);
+  return { day: DAY.format(value), month: SHORT_MONTH.format(value) };
+}
+
 const MONTH_YEAR = new Intl.DateTimeFormat('id-ID', { month: 'short', year: 'numeric', timeZone: 'UTC' });
 
 /** "Agu 2025 – Mar 2026"; tanpa endDate menjadi "Agu 2025 – sekarang"; keduanya kosong menghasilkan null. */

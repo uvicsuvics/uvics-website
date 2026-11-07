@@ -1,34 +1,71 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useTransition } from 'react';
+import React, { useEffect, useOptimistic, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
-import { COMPETITION_STATUS_LABELS, toOptions } from '@/lib/format/labels';
+import { COMPETITION_STATUS_LABELS, CONTENT_LEVEL_LABELS, toOptions } from '@/lib/format/labels';
 import { cn, listHref } from '@/lib/utils';
-import type { CompetitionStatus } from '@/types/competition';
+import { COMPETITION_STATUS_ORDER, type CompetitionStatus } from '@/types/competition';
+import type { ContentLevel } from '@/types/portfolio';
 
-interface CompetitionFilterProps {
-  search?: string;
+interface Filters {
   status?: CompetitionStatus;
-  totalResults: number;
+  level?: ContentLevel;
+  category?: string;
+}
+
+interface CompetitionFilterProps extends Filters {
+  search?: string;
+  /** Jumlah per status setelah filter lain diterapkan. */
+  statusCounts: Record<CompetitionStatus, number>;
+  total: number;
+  categories: string[];
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
-const STATUS_OPTIONS: { value: CompetitionStatus | undefined; label: string }[] = [
-  { value: undefined, label: 'Semua' },
-  ...toOptions(COMPETITION_STATUS_LABELS),
-];
+const LEVEL_OPTIONS = toOptions(CONTENT_LEVEL_LABELS);
 
 const clean = (value: string) => value.trim().replace(/\s+/g, ' ');
 
+function RadioOption({
+  name,
+  label,
+  count,
+  checked,
+  onSelect,
+}: {
+  name: string;
+  label: string;
+  count?: number;
+  checked: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <label
+      className={cn(
+        'flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors',
+        checked ? 'bg-primary-50 font-semibold text-primary-900' : 'text-gray-700 hover:bg-muted',
+      )}
+    >
+      <span className="flex items-center gap-2.5">
+        <input type="radio" name={name} checked={checked} onChange={onSelect} className="accent-primary" />
+        {label}
+      </span>
+      {count !== undefined && (
+        <span className={cn('text-xs font-normal', checked ? 'text-primary-900' : 'text-gray-500')}>{count}</span>
+      )}
+    </label>
+  );
+}
+
 /**
- * Pencarian dan filter status yang disimpan di URL. Perubahan filter selalu kembali ke halaman 1.
+ * Filter halaman kompetisi yang disimpan di URL: pencarian, status, tingkat, dan kategori.
  * @param search - Kata kunci aktif dari URL
- * @param status - Status aktif dari URL
- * @param totalResults - Jumlah hasil untuk ringkasan
+ * @param statusCounts - Jumlah per status untuk label radio
+ * @param categories - Pilihan kategori dari service
  */
-export function CompetitionFilter({ search, status, totalResults }: CompetitionFilterProps) {
+export function CompetitionFilter({ search, status, level, category, statusCounts, total, categories }: CompetitionFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
@@ -44,53 +81,66 @@ export function CompetitionFilter({ search, status, totalResults }: CompetitionF
     }
   }, [search]);
 
-  // Status terbaru untuk timer debounce; closure lama bisa membatalkan pilihan chip.
-  const statusRef = useRef(status);
+  // Filter terbaru untuk timer debounce; closure lama bisa membatalkan pilihan yang baru dibuat.
+  const filtersRef = useRef<Filters>({ status, level, category });
   useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
+    filtersRef.current = { status, level, category };
+  }, [status, level, category]);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // Pilihan tampil seketika selama navigasi berjalan; tanpa ini radio kembali ke nilai lama
+  // sampai server membalas dengan props baru.
+  const [shown, setShown] = useOptimistic<Filters>({ status, level, category });
 
-  function navigate(nextSearch: string, nextStatus: CompetitionStatus | undefined) {
-    // Navigasi baru membatalkan debounce yang tertunda supaya tidak menimpa pilihan terbaru.
+  function navigate(nextSearch: string, next: Filters) {
+    // Navigasi baru membatalkan debounce yang tertunda, dan pilihan baru langsung tercatat
+    // supaya ketikan berikutnya tidak memakai filter lama selama server belum membalas.
     clearTimeout(timer.current);
     lastSent.current = nextSearch;
+    filtersRef.current = next;
     startTransition(() => {
-      router.replace(listHref(pathname, { search: nextSearch || undefined, status: nextStatus }), {
-        scroll: false,
-      });
+      setShown(next);
+      router.replace(listHref(pathname, { search: nextSearch || undefined, ...next }), { scroll: false });
     });
   }
+
+  const change = (patch: Filters) => navigate(clean(value), { ...filtersRef.current, ...patch });
 
   useEffect(() => {
     const next = clean(value);
     if (next === lastSent.current) return;
     const id = setTimeout(() => {
-      if (next !== lastSent.current) navigate(next, statusRef.current);
+      if (next !== lastSent.current) navigate(next, filtersRef.current);
     }, SEARCH_DEBOUNCE_MS);
     timer.current = id;
     return () => clearTimeout(id);
     // navigate hanya memakai ref dan setter yang stabil.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, status]);
+  }, [value]);
+
+  const hasFilter = Boolean(search || status || level || category);
+  const activeCount = [shown.status, shown.level, shown.category].filter(Boolean).length;
+  // Di layar kecil filter dilipat supaya daftar kompetisi tidak terdorong jauh ke bawah (spesifikasi §26).
+  const [showFilters, setShowFilters] = useState(false);
 
   return (
-    <div
-      aria-busy={isPending}
-      className="flex flex-col gap-3.5 bg-white p-4 sm:p-5 rounded-xl border border-gray-200/90 shadow-2xs"
-    >
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="relative w-full lg:max-w-md">
+    <aside aria-label="Filter kompetisi" aria-busy={isPending} className="flex flex-col gap-7 lg:self-start">
+      <div className="flex flex-col gap-2">
+        <label htmlFor="cari-kompetisi" className="text-sm font-semibold text-gray-800">
+          Cari
+        </label>
+        <div className="relative">
           <Search
             className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
             aria-hidden="true"
           />
           <Input
+            id="cari-kompetisi"
             type="text"
-            placeholder="Cari kompetisi atau penyelenggara..."
+            placeholder="Nama atau penyelenggara"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            className="h-10 pl-9 pr-9 text-sm rounded-lg border-gray-200 focus-visible:border-primary focus-visible:ring-primary/20"
+            maxLength={100}
+            className="h-11 pl-9 pr-9 text-sm rounded-lg border-gray-300 focus-visible:border-primary focus-visible:ring-primary/20"
             aria-label="Cari kompetisi atau penyelenggara"
           />
           {value && (
@@ -104,52 +154,82 @@ export function CompetitionFilter({ search, status, totalResults }: CompetitionF
             </button>
           )}
         </div>
+      </div>
 
-        <div
-          role="group"
-          aria-label="Filter status kompetisi"
-          className="flex items-center gap-1.5 overflow-x-auto pb-1.5 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0 sm:flex-wrap"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      <button
+        type="button"
+        onClick={() => setShowFilters((open) => !open)}
+        aria-expanded={showFilters}
+        aria-controls="filter-kompetisi-lanjutan"
+        className="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-800 lg:hidden"
+      >
+        <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+        {showFilters ? 'Sembunyikan filter' : activeCount > 0 ? `Filter (${activeCount} aktif)` : 'Filter'}
+      </button>
+
+      <div
+        id="filter-kompetisi-lanjutan"
+        className={cn('flex-col gap-7', showFilters ? 'flex' : 'hidden', 'lg:flex')}
+      >
+        <fieldset className="flex flex-col gap-1">
+          <legend className="mb-2 text-sm font-semibold text-gray-800">Status</legend>
+          <RadioOption name="status" label="Semua status" count={total} checked={!shown.status} onSelect={() => change({ status: undefined })} />
+          {COMPETITION_STATUS_ORDER.map((code) => (
+            <RadioOption
+              key={code}
+              name="status"
+              label={COMPETITION_STATUS_LABELS[code]}
+              count={statusCounts[code]}
+              checked={shown.status === code}
+              onSelect={() => change({ status: code })}
+            />
+          ))}
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-1">
+          <legend className="mb-2 text-sm font-semibold text-gray-800">Tingkat</legend>
+          <RadioOption name="level" label="Semua tingkat" checked={!shown.level} onSelect={() => change({ level: undefined })} />
+          {LEVEL_OPTIONS.map((option) => (
+            <RadioOption
+              key={option.value}
+              name="level"
+              label={option.label}
+              checked={shown.level === option.value}
+              onSelect={() => change({ level: option.value })}
+            />
+          ))}
+        </fieldset>
+
+        <label className="flex flex-col gap-2 text-sm font-semibold text-gray-800">
+          Kategori
+          <select
+            value={shown.category ?? ''}
+            onChange={(e) => change({ category: e.target.value || undefined })}
+            className="h-11 px-3 rounded-lg border border-gray-300 bg-white text-sm font-normal text-gray-800 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+          >
+            <option value="">Semua kategori</option>
+            {categories.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {hasFilter && (
+        <button
+          type="button"
+          onClick={() => {
+            setValue('');
+            navigate('', {});
+          }}
+          className="inline-flex items-center gap-2 self-start text-sm font-semibold text-primary hover:text-primary-600"
         >
-          {STATUS_OPTIONS.map((option) => {
-            const isSelected = status === option.value;
-            return (
-              <button
-                key={option.label}
-                type="button"
-                onClick={() => navigate(clean(value), option.value)}
-                aria-pressed={isSelected}
-                className={cn(
-                  'shrink-0 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium border transition-all duration-200 ease-standard cursor-pointer select-none',
-                  isSelected
-                    ? 'bg-primary text-white border-primary shadow-xs'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-primary-50 hover:text-primary hover:border-primary-100',
-                )}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-gray-100 text-xs text-gray-500">
-        <div>
-          <span>
-            Menampilkan <strong className="font-semibold text-gray-900">{totalResults}</strong> kompetisi
-          </span>
-          {status && (
-            <span className="ml-1 text-gray-500">
-              &bull; Status: <strong className="font-semibold text-primary">{COMPETITION_STATUS_LABELS[status]}</strong>
-            </span>
-          )}
-          {search && (
-            <span className="ml-1 text-gray-500">
-              &bull; Kata kunci: &quot;<strong className="font-semibold text-gray-900">{search}</strong>&quot;
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
+          <RotateCcw className="w-4 h-4" aria-hidden="true" />
+          Reset filter
+        </button>
+      )}
+    </aside>
   );
 }

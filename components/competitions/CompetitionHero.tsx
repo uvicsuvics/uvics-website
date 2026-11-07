@@ -1,42 +1,54 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { formatDayMonth } from '@/lib/format/date';
+import type { Competition } from '@/types/competition';
 
-export function CompetitionHero() {
+interface CompetitionHeroProps {
+  /** Kompetisi dibuka dengan batas pendaftaran terdekat; null bila tidak ada. */
+  nearest: Competition | null;
+}
+
+/**
+ * Header halaman kompetisi: breadcrumb, judul, dan pintasan ke deadline terdekat.
+ * @param nearest - Kompetisi dengan batas pendaftaran terdekat
+ */
+export function CompetitionHero({ nearest }: CompetitionHeroProps) {
+  const deadline = nearest?.registrationDeadline ? formatDayMonth(nearest.registrationDeadline) : null;
+
   return (
-    <section className="relative w-full overflow-hidden bg-slate-950 text-white min-h-[380px] md:min-h-[440px] flex items-center justify-center">
-      {/* 1. Gambar Latar Belakang UVICS dengan Overlay Gelap Transparan */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/images/img/foto-1.webp"
-          alt="Anggota UVICS berkolaborasi dalam persiapan kompetisi dan delegasi mahasiswa"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
-        {/* Background Gelap (Transparan agar gambar UVICS tetap terlihat jelas) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/80" />
-      </div>
+    <section className="bg-primary-50 border-b border-primary-100">
+      <div className="flex flex-col gap-8 mx-auto px-6 pt-28 pb-10 w-full max-w-7xl md:px-8 md:pt-32 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-3 min-w-0 max-w-2xl">
+          <nav aria-label="Breadcrumb" className="text-sm text-gray-600">
+            <Link href="/" className="text-gray-600 transition-colors hover:text-primary">
+              Beranda
+            </Link>
+            <span aria-hidden="true" className="mx-2 text-gray-400">/</span>
+            <span aria-current="page" className="font-semibold text-primary">Kompetisi</span>
+          </nav>
+          <h1 className="font-heading text-4xl font-bold leading-tight text-primary-900 md:text-5xl">
+            Kompetisi &amp; Kejuaraan
+          </h1>
+          <p className="text-base leading-relaxed text-gray-700">
+            Semua lomba yang diikuti UVICS, dikelompokkan menurut status. Yang masih dibuka diurutkan dari batas pendaftaran terdekat supaya timmu tidak ketinggalan.
+          </p>
+        </div>
 
-      {/* 2. Grid Kotak-Kotak (Hanya Setengah Bagian: dari Atas ke Bawah) */}
-      <div
-        className="absolute top-0 inset-x-0 h-1/2 pointer-events-none z-[1]
-        bg-[linear-gradient(to_right,rgba(255,255,255,0.14)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.14)_1px,transparent_1px)]
-        bg-[size:4rem_4rem] sm:bg-[size:5rem_5rem]
-        [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_0%,rgba(0,0,0,0.85)_40%,transparent_100%)]"
-        aria-hidden="true"
-      />
-
-      {/* 3. Konten Teks di Tengah */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-4xl mx-auto px-6 py-20 md:py-24 w-full">
-        {/* Heading Utama */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white font-heading leading-tight sm:leading-tight drop-shadow-md">
-          Kompetisi & Kejuaraan <span className="text-blue-400 drop-shadow-[0_2px_16px_rgba(0,102,255,0.45)]">UVICS</span>
-        </h1>
-
-        {/* Deskripsi Subtitle yang Inklusif (Teknologi & Bisnis) */}
-        <p className="mt-4 sm:mt-5 max-w-3xl text-sm sm:text-base md:text-lg text-slate-200 leading-relaxed font-sans drop-shadow-sm">
-          Wadah akselerasi talenta Universitas Klabat untuk menguji kapabilitas inovasi, membangun sinergi tim delegasi, dan menorehkan prestasi kompetitif pada berbagai ajang bereputasi nasional hingga internasional.
-        </p>
+        {nearest && deadline && (
+          <Link
+            href={`/competitions/${nearest.slug}`}
+            className="flex items-center gap-4 p-4 w-full bg-white rounded-xl border border-primary-100 shadow-2xs transition-shadow hover:shadow-md lg:max-w-sm"
+          >
+            <span className="flex flex-col items-center justify-center shrink-0 w-14 h-14 rounded-lg bg-secondary text-gray-900 leading-none">
+              <span className="text-[11px] font-bold uppercase">{deadline.month}</span>
+              <span className="font-heading text-2xl font-bold">{deadline.day}</span>
+            </span>
+            <span className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-gray-700">Deadline terdekat</span>
+              <span className="font-semibold text-gray-900 line-clamp-1">{nearest.title}</span>
+              <span className="text-sm text-gray-600 line-clamp-1">{nearest.organizer}</span>
+            </span>
+          </Link>
+        )}
       </div>
     </section>
   );

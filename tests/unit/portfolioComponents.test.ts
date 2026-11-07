@@ -262,6 +262,13 @@ describe('Button tautan eksternal', () => {
     expect(html).toContain('href="/projects"');
     expect(html).not.toContain('target=');
   });
+
+  it('meneruskan aria-label ke tautan internal dan eksternal', () => {
+    for (const external of [false, true]) {
+      const html = renderToStaticMarkup(Button({ href: '/x', external, 'aria-label': 'Lihat detail X', children: 'Detail' }));
+      expect(html).toContain('aria-label="Lihat detail X"');
+    }
+  });
 });
 
 describe('halaman daftar tanpa data', () => {
