@@ -1,6 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { memberSchema, registrationSchema } from "@/lib/backend/membership";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { AppError } from "@/lib/backend/errors";
+import {
+  memberSchema,
+  membershipHistorySchema,
+  photoSchema,
+  registrationSchema,
+  softDeleteMember,
+} from "@/lib/backend/membership";
 import type { Database } from "@/types/database";
+
+function fakeClient(result: { data: unknown; error: { code?: string; message?: string } | null }) {
+  const calls: [string, unknown][] = [];
+  const client = {
+    rpc: (fn: string, args: unknown) => {
+      calls.push([fn, args]);
+      return Promise.resolve(result);
+    },
+  } as unknown as SupabaseClient<Database>;
+  return { client, calls };
+}
 
 type Tables = Database["public"]["Tables"];
 const registrationRow: Pick<Tables["registrations"]["Row"], "converted_member_id" | "status" | "phone"> = {
@@ -67,6 +86,188 @@ describe("membership row schemas (D04 stored phone)", () => {
       expect(memberSchema.shape.phone.safeParse(phone).success).toBe(false);
     },
   );
+});
+
+describe("membership validations (Issue #54)", () => {
+  describe("photoSchema", () => {
+    it("accepts media reference key, null, and undefined", () => {
+      expect(photoSchema.safeParse(null).success).toBe(true);
+      expect(photoSchema.safeParse(undefined).success).toBe(true);
+      expect(photoSchema.safeParse("uvics/members/photo-123.jpg").success).toBe(true);
+    });
+
+    it("rejects external HTTP/HTTPS URLs (including uppercase)", () => {
+      expect(photoSchema.safeParse("https://example.com/photo.jpg").success).toBe(false);
+      expect(photoSchema.safeParse("http://example.com/photo.jpg").success).toBe(false);
+      expect(photoSchema.safeParse("HTTPS://EXAMPLE.COM/PHOTO.JPG").success).toBe(false);
+    });
+
+    it("rejects strings exceeding 500 characters", () => {
+      const longRef = "a".repeat(501);
+      expect(photoSchema.safeParse(longRef).success).toBe(false);
+    });
+  });
+
+  describe("membershipHistorySchema", () => {
+    const validHistory = {
+      id: "00000000-0000-4000-8000-000000000001",
+      member_id: "00000000-0000-4000-8000-000000000002",
+      organization_period_id: "00000000-0000-4000-8000-000000000003",
+      department_id: null,
+      position_id: "00000000-0000-4000-8000-000000000004",
+      start_date: "2024-08-01",
+      end_date: "2025-07-31",
+      notes: "Active contributor",
+      created_at: "2026-10-10T00:00:00Z",
+      updated_at: "2026-10-10T00:00:00Z",
+    };
+
+    it("accepts valid date range or null dates", () => {
+      expect(membershipHistorySchema.safeParse(validHistory).success).toBe(true);
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, start_date: null, end_date: null }).success,
+      ).toBe(true);
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, start_date: "2024-08-01", end_date: "2024-08-01" }).success,
+      ).toBe(true);
+    });
+
+    it("accepts null or omitted department_id (pengurus inti tanpa departemen)", () => {
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, department_id: null }).success,
+      ).toBe(true);
+      const withoutDept = { ...validHistory };
+      delete (withoutDept as { department_id?: string | null }).department_id;
+      expect(membershipHistorySchema.safeParse(withoutDept).success).toBe(true);
+    });
+
+    it("rejects when end_date is before start_date", () => {
+      const invalid = membershipHistorySchema.safeParse({
+        ...validHistory,
+        start_date: "2025-08-01",
+        end_date: "2024-08-01",
+      });
+      expect(invalid.success).toBe(false);
+      if (!invalid.success) {
+        expect(invalid.error.issues[0]?.path).toEqual(["end_date"]);
+      }
+    });
+
+    it("validates calendar date format YYYY-MM-DD", () => {
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, start_date: "2024/08/01" }).success,
+      ).toBe(false);
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, start_date: "not-a-date" }).success,
+      ).toBe(false);
+      expect(
+        membershipHistorySchema.safeParse({ ...validHistory, end_date: "2024-02-30" }).success,
+      ).toBe(false);
+    });
+  });
+
+  describe("memberSchema with soft delete and social URLs", () => {
+    const baseMember = {
+      id: "00000000-0000-4000-8000-000000000001",
+      full_name: "Test Member",
+      status: "ACTIVE" as const,
+      created_at: "2026-10-10T08:00:00+00:00",
+      updated_at: "2026-10-10T08:00:00+00:00",
+      photo: "uvics/members/photo-1.jpg",
+      linkedin_url: "https://www.linkedin.com/in/testmember",
+      github_url: "https://github.com/testmember",
+      instagram_url: "https://instagram.com/testmember",
+      deleted_at: null,
+    };
+
+    it("accepts valid member with null or omitted deleted_at", () => {
+      expect(memberSchema.safeParse(baseMember).success).toBe(true);
+      const withoutDeletedAt = { ...baseMember };
+      delete (withoutDeletedAt as { deleted_at?: string | null }).deleted_at;
+      expect(memberSchema.safeParse(withoutDeletedAt).success).toBe(true);
+    });
+
+    it("accepts member with populated deleted_at timestamp", () => {
+      const deletedMember = {
+        ...baseMember,
+        deleted_at: "2026-11-03T12:00:00.123456+00:00",
+      };
+      expect(memberSchema.safeParse(deletedMember).success).toBe(true);
+    });
+
+    it("rejects invalid social URLs", () => {
+      expect(memberSchema.safeParse({ ...baseMember, linkedin_url: "javascript:alert(1)" }).success).toBe(false);
+      expect(memberSchema.safeParse({ ...baseMember, github_url: "not-a-url" }).success).toBe(false);
+      expect(memberSchema.safeParse({ ...baseMember, instagram_url: "https://" }).success).toBe(false);
+      expect(memberSchema.safeParse({ ...baseMember, github_url: "https://user:pass@github.com/test" }).success).toBe(false);
+    });
+  });
+
+  describe("softDeleteMember RPC wrapper", () => {
+    const memberId = "00000000-0000-4000-8000-000000000001";
+
+    it("successfully soft-deletes a member via RPC", async () => {
+      const { client, calls } = fakeClient({
+        data: { id: memberId, deleted: true },
+        error: null,
+      });
+      const result = await softDeleteMember(client, memberId);
+      expect(result).toEqual({ id: memberId, deleted: true });
+      expect(calls).toEqual([
+        ["admin_soft_delete_member", { p_member_id: memberId }],
+      ]);
+    });
+
+    it("rejects non-UUID memberId with NOT_FOUND without calling RPC", async () => {
+      const { client, calls } = fakeClient({ data: null, error: null });
+      await expect(softDeleteMember(client, "invalid-uuid")).rejects.toThrow(AppError);
+      try {
+        await softDeleteMember(client, "invalid-uuid");
+      } catch (err) {
+        expect((err as AppError).code).toBe("NOT_FOUND");
+      }
+      expect(calls).toHaveLength(0);
+    });
+
+    it("translates P0002 to NOT_FOUND", async () => {
+      const { client } = fakeClient({
+        data: null,
+        error: { code: "P0002", message: "Member tidak ditemukan atau sudah dihapus" },
+      });
+      try {
+        await softDeleteMember(client, memberId);
+        expect.unreachable("should throw");
+      } catch (err) {
+        expect((err as AppError).code).toBe("NOT_FOUND");
+      }
+    });
+
+    it("translates 42501 to FORBIDDEN", async () => {
+      const { client } = fakeClient({
+        data: null,
+        error: { code: "42501", message: "insufficient_privilege" },
+      });
+      try {
+        await softDeleteMember(client, memberId);
+        expect.unreachable("should throw");
+      } catch (err) {
+        expect((err as AppError).code).toBe("FORBIDDEN");
+      }
+    });
+
+    it("translates unexpected DB error to SERVICE_UNAVAILABLE", async () => {
+      const { client } = fakeClient({
+        data: null,
+        error: { code: "XX000", message: "internal crash" },
+      });
+      try {
+        await softDeleteMember(client, memberId);
+        expect.unreachable("should throw");
+      } catch (err) {
+        expect((err as AppError).code).toBe("SERVICE_UNAVAILABLE");
+      }
+    });
+  });
 });
 
 describe("database types mirror membership migration", () => {
