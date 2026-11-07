@@ -5,14 +5,11 @@ import { describe, expect, it } from "vitest";
 
 /** Utang yang tercatat: file UI yang masih mengimpor mock, dengan issue pemiliknya. */
 const KNOWN_DEBT: Record<string, string> = {
-  "components/sections/DepartmentsSection.tsx": "#51",
   "components/sections/EventsSection.tsx": "#51",
   "components/sections/GlanceSection.tsx": "#51",
   "components/sections/JoinCTASection.tsx": "#51",
   "components/sections/NewsSection.tsx": "#51",
-  "components/sections/OrganizationPreviewSection.tsx": "#51",
   "components/sections/PartnersSection.tsx": "#51",
-  "components/sections/ProgramsSection.tsx": "#51",
   "app/(public)/batch/page.tsx": "U09 (#49)",
 };
 
