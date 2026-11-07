@@ -8,27 +8,25 @@ import {
   Users,
   ArrowRight,
   ExternalLink,
-  Award,
   Clock,
+  Trophy,
 } from "lucide-react";
-import { CompetitionItem, UVICS_COMPETITIONS } from "@/data/mock/competitions";
 import { Button } from "@/components/ui/Button";
+import { formatDate } from "@/lib/format/date";
+import type { Competition } from "@/types/competition";
 
 export interface CompetitionsSectionProps {
-  competitions?: CompetitionItem[];
+  competitions: Competition[];
 }
 
 /**
  * Seksi 6: Featured Competitions (Homepage)
- * Mengimplementasikan Konsep 1: Modern Tournament Card Grid with Countdown & Status Badges.
- * Menampilkan poster turnamen visual dengan indikator status (OPEN/CLOSED), level kejuaraan,
- * penghitung mundur sisa hari pendaftaran, serta rincian prize pool.
+ * Grid kartu turnamen dengan lencana status. Menampilkan poster turnamen, penyelenggara, tenggat pendaftaran, dan format tim.
+ * @param competitions - Kompetisi yang ditampilkan (maksimal 3 untuk pratinjau Beranda)
  */
-export function CompetitionsSection({
-  competitions = UVICS_COMPETITIONS,
-}: CompetitionsSectionProps) {
+export function CompetitionsSection({ competitions }: CompetitionsSectionProps) {
   // Empty state handling
-  if (!competitions || competitions.length === 0) {
+  if (competitions.length === 0) {
     return (
       <section className="py-20 px-6 md:px-8 max-w-7xl mx-auto w-full">
         <div className="p-8 text-center bg-gray-50 rounded-2xl border border-gray-200">
@@ -39,9 +37,6 @@ export function CompetitionsSection({
       </section>
     );
   }
-
-  // Tampilkan 3 kompetisi terdepan untuk pratinjau Beranda
-  const displayCompetitions = competitions.slice(0, 3);
 
   return (
     <section className="py-24 px-6 md:px-8 max-w-7xl mx-auto w-full">
@@ -86,7 +81,7 @@ export function CompetitionsSection({
 
       {/* Grid 3 Kartu Turnamen */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {displayCompetitions.map((comp, index) => {
+        {competitions.map((comp, index) => {
           return (
             <motion.div
               key={comp.id}
@@ -103,27 +98,17 @@ export function CompetitionsSection({
               <div>
                 {/* Poster Image Container dengan Overlay Status */}
                 <div className="relative w-full h-52 overflow-hidden bg-gray-100">
-                  <Image
-                    src={comp.poster}
-                    alt={comp.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-950/70 via-transparent to-transparent" />
-
-                  {/* Bottom Image Overlay: Prize Pool & Countdown */}
-                  {comp.prizePool && (
-                    <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs text-white">
-                      <span className="flex items-center gap-1.5 font-semibold text-secondary">
-                        <Award className="w-4 h-4" />
-                        <span>Prize: {comp.prizePool}</span>
-                      </span>
-                      {comp.daysRemaining && comp.daysRemaining > 0 && (
-                        <span className="text-[11px] font-mono bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm">
-                          {comp.daysRemaining} hari lagi
-                        </span>
-                      )}
+                  {comp.poster ? (
+                    <Image
+                      src={comp.poster}
+                      alt={comp.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full bg-primary-50">
+                      <Trophy className="w-12 h-12 text-primary-200" aria-hidden="true" />
                     </div>
                   )}
                 </div>
@@ -151,7 +136,7 @@ export function CompetitionsSection({
                         Tenggat Daftar:
                       </span>
                       <span className="font-semibold text-gray-900">
-                        {comp.registrationDeadline}
+                        {comp.registrationDeadline ? formatDate(comp.registrationDeadline) : "Belum ditentukan"}
                       </span>
                     </div>
 
@@ -161,7 +146,7 @@ export function CompetitionsSection({
                         Format Tim:
                       </span>
                       <span className="font-medium text-gray-800">
-                        {comp.teamSize}
+                        {comp.teamSize ?? "Belum ditentukan"}
                       </span>
                     </div>
                   </div>

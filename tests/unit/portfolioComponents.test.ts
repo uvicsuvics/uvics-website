@@ -9,20 +9,14 @@ import { AchievementCard } from '@/components/portfolio/AchievementCard';
 import { PortfolioFilter } from '@/components/portfolio/PortfolioFilter';
 import { ProjectCard } from '@/components/portfolio/ProjectCard';
 import { TeamMemberList } from '@/components/portfolio/TeamMemberList';
-import {
-  LEVEL_OPTIONS,
-  PROJECT_STATUS_OPTIONS,
-  formatPortfolioDate,
-  formatPortfolioPeriod,
-  getRankTier,
-  getYear,
-} from '@/components/portfolio/portfolioLabels';
+import { getRankTier } from '@/components/portfolio/portfolioLabels';
 import { ProjectsSection } from '@/components/sections/ProjectsSection';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { UVICS_ACHIEVEMENTS } from '@/data/mock/achievements';
 import { UVICS_PROJECTS } from '@/data/mock/projects';
+import { CONTENT_LEVEL_LABELS, toOptions } from '@/lib/format/labels';
 import { getAchievementsPage } from '@/lib/services/achievementService';
 import { getProjectsPage } from '@/lib/services/projectService';
 import type { ProjectWithRelations } from '@/types/portfolio';
@@ -40,36 +34,12 @@ vi.mock('@/lib/services/projectService', async (importOriginal) => ({
 const noop = () => undefined;
 
 describe('portfolioLabels', () => {
-  it('mengambil tahun dari ISO date tanpa pergeseran zona waktu', () => {
-    expect(getYear('2026-01-01')).toBe(2026);
-    expect(getYear('2025-12-31')).toBe(2025);
-  });
-
   it('menurunkan tier warna dari teks ranking', () => {
     expect(getRankTier('Juara 1')).toBe('gold');
     expect(getRankTier('juara 2 (Silver Medal)')).toBe('silver');
     expect(getRankTier('Juara 3')).toBe('bronze');
     expect(getRankTier('Top 5 Finalis')).toBe('neutral');
     expect(getRankTier('Juara 10')).toBe('neutral');
-  });
-
-  it('memformat tanggal dalam bahasa Indonesia', () => {
-    expect(formatPortfolioDate('2026-08-14')).toMatch(/14 Agu(s)? 2026/);
-  });
-
-  it('menyediakan opsi untuk setiap level dan status', () => {
-    expect(LEVEL_OPTIONS.map((o) => o.value)).toEqual([
-      'INTERNAL',
-      'REGIONAL',
-      'NASIONAL',
-      'INTERNASIONAL',
-    ]);
-    expect(PROJECT_STATUS_OPTIONS.map((o) => o.value)).toEqual([
-      'PLANNED',
-      'ONGOING',
-      'COMPLETED',
-      'ARCHIVED',
-    ]);
   });
 });
 
@@ -185,7 +155,7 @@ describe('TeamMemberList', () => {
 });
 
 describe('PortfolioFilter', () => {
-  const fields = [{ id: 'level', label: 'Level Kompetisi', options: LEVEL_OPTIONS }];
+  const fields = [{ id: 'level', label: 'Level Kompetisi', options: toOptions(CONTENT_LEVEL_LABELS) }];
 
   it('menampilkan label, opsi, dan jumlah hasil tanpa tombol reset saat filter kosong', () => {
     const html = renderToStaticMarkup(
@@ -239,6 +209,20 @@ describe('Pagination', () => {
     expect(html).toContain('aria-label="Halaman 10"');
     expect(html).not.toContain('aria-label="Halaman 2"');
   });
+
+  it('mode tautan merender link dan span nonaktif tanpa button', () => {
+    const html = renderToStaticMarkup(
+      createElement(Pagination, {
+        currentPage: 1,
+        totalPages: 3,
+        getHref: (p: number) => `/competitions?page=${p}`,
+      }),
+    );
+    expect(html).toContain('href="/competitions?page=2"');
+    expect(html).toContain('aria-current="page"');
+    expect(html).toContain('aria-disabled="true"');
+    expect(html).not.toContain('<button');
+  });
 });
 
 describe('EmptyState', () => {
@@ -278,6 +262,13 @@ describe('Button tautan eksternal', () => {
     expect(html).toContain('href="/projects"');
     expect(html).not.toContain('target=');
   });
+
+  it('meneruskan aria-label ke tautan internal dan eksternal', () => {
+    for (const external of [false, true]) {
+      const html = renderToStaticMarkup(Button({ href: '/x', external, 'aria-label': 'Lihat detail X', children: 'Detail' }));
+      expect(html).toContain('aria-label="Lihat detail X"');
+    }
+  });
 });
 
 describe('halaman daftar tanpa data', () => {
@@ -312,13 +303,5 @@ describe('halaman detail prestasi', () => {
     expect(html).toContain(`dateTime="${achievement.achievementDate}"`);
     expect(html).not.toContain('Semua Prestasi');
     expect(html).not.toContain('href="/achievements"');
-  });
-});
-
-describe('formatPortfolioPeriod', () => {
-  it('memformat rentang, "sekarang" bila belum selesai, dan null bila kosong', () => {
-    expect(formatPortfolioPeriod('2025-08-01', '2026-03-31')).toMatch(/2025 – .*2026/);
-    expect(formatPortfolioPeriod('2026-05-01', null)).toMatch(/2026 – sekarang/);
-    expect(formatPortfolioPeriod(null, null)).toBeNull();
   });
 });

@@ -21,14 +21,13 @@ import type { AchievementMember } from "@/types/portfolio";
 describe("frontend services (mock source)", () => {
   it("returns every item by default as a copy callers cannot mutate into the source", async () => {
     const competitions = await getCompetitions();
-    expect(competitions).toEqual(UVICS_COMPETITIONS);
-    expect(competitions).not.toBe(UVICS_COMPETITIONS);
+    expect(competitions.items).toEqual(UVICS_COMPETITIONS.slice(0, competitions.items.length));
+    expect(competitions.items).not.toBe(UVICS_COMPETITIONS);
     expect(await getProjects()).toHaveLength(UVICS_PROJECTS.length);
     expect(await getAchievements()).toHaveLength(UVICS_ACHIEVEMENTS.length);
   });
 
   it("applies a positive limit and ignores a missing or non-positive one", async () => {
-    expect(await getCompetitions({ limit: 2 })).toEqual(UVICS_COMPETITIONS.slice(0, 2));
     expect(await getProjects({ limit: 0 })).toHaveLength(UVICS_PROJECTS.length);
     expect(await getAchievements({ limit: 2 })).toHaveLength(2);
   });

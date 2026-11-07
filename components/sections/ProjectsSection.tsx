@@ -9,7 +9,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { IconBrandGithub } from "@tabler/icons-react";
-import { PROJECT_STATUS_CONFIG, formatPortfolioPeriod } from "@/components/portfolio/portfolioLabels";
+import { formatPeriod } from "@/lib/format/date";
+import { PROJECT_STATUS_LABELS } from "@/lib/format/labels";
 import { Button } from "@/components/ui/Button";
 import type { ProjectWithRelations } from "@/types/portfolio";
 
@@ -63,7 +64,7 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
       <div className="space-y-24">
         {displayProjects.map(({ project }, index) => {
           const isEven = index % 2 === 0;
-          const period = formatPortfolioPeriod(project.startDate, project.endDate);
+          const period = formatPeriod(project.startDate, project.endDate);
 
           return (
             <motion.div
@@ -95,7 +96,7 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 
                 <div className="absolute top-4 left-4">
                   <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/95 text-gray-900 shadow-xs">
-                    {PROJECT_STATUS_CONFIG[project.status].label}
+                    {PROJECT_STATUS_LABELS[project.status]}
                   </span>
                 </div>
 

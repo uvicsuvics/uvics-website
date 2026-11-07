@@ -93,6 +93,11 @@ const PROFILE_PAGES = [
     path: "/achievements/juara-1-national-ai-hackathon-2026",
     title: "Juara 1 & Best Technical Innovation | Prestasi UVICS",
   },
+  { path: "/competitions", title: "Kompetisi & Kejuaraan | UVICS UNKLAB" },
+  {
+    path: "/competitions/gemastik-xviii-pengembangan-aplikasi",
+    title: "Gemastik XVIII - Divisi Pengembangan Aplikasi | Kompetisi UVICS UNKLAB",
+  },
   { path: "/projects", title: "Project | UVICS" },
   {
     path: "/projects/klabat-campus-superapp",
@@ -142,4 +147,38 @@ test("public navigation: /join shows closed registration when settings are unava
     ),
   ).toBeVisible();
   await expect(page.getByRole("textbox", { name: "NIM" })).toHaveCount(0);
+});
+
+test("public navigation: /competitions keeps filter state in the URL", async ({ page }) => {
+  await page.goto("/competitions?level=NASIONAL");
+  const search = page.getByRole("textbox", { name: "Cari kompetisi atau penyelenggara" });
+  await search.pressSequentially("hack", { delay: 20 });
+  await expect(page).toHaveURL(/search=hack(?!athon)/);
+  await search.pressSequentially("athon", { delay: 20 });
+  await expect(search).toHaveValue("hackathon");
+  await expect(page).toHaveURL(/search=hackathon/);
+  await expect(page).toHaveURL(/level=NASIONAL/);
+  await page.getByRole("radio", { name: /Pendaftaran Dibuka/ }).check();
+  await expect(page).toHaveURL(/status=OPEN/);
+  await expect(search).toHaveValue("hackathon");
+  await expect(page.getByRole("heading", { level: 2, name: "Pendaftaran Dibuka" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Segera Dibuka" })).toHaveCount(0);
+  expect((await page.goto("/competitions?status=foo&level=bar&category=zzz"))?.status()).toBe(200);
+  await expect(page.getByRole("heading", { level: 2, name: "Pendaftaran Dibuka" })).toBeVisible();
+});
+
+test("public navigation: unknown competition renders the public not-found page", async ({ page }) => {
+  // Status is a streamed 200 because competitions/loading.tsx exists; noindex marks the not-found.
+  await page.goto("/competitions/tidak-ada");
+  await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
+  await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
+  await expect(page.locator('a[href="/vision-mission"]').first()).toBeAttached();
+});
+
+test("public navigation: unknown achievement and project return a real 404", async ({ page }) => {
+  for (const path of ["/achievements/tidak-ada", "/projects/tidak-ada"]) {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
+  }
 });

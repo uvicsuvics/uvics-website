@@ -2,7 +2,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarDays, FolderGit2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { PROJECT_STATUS_CONFIG, getYear } from '@/components/portfolio/portfolioLabels';
+import { PROJECT_STATUS_CONFIG } from '@/components/portfolio/portfolioLabels';
+import { getYear } from '@/lib/format/date';
+import { PROJECT_STATUS_LABELS } from '@/lib/format/labels';
 import { cn } from '@/lib/utils';
 import type { Project } from '@/types/portfolio';
 
@@ -19,7 +21,8 @@ interface ProjectCardProps {
  */
 export function ProjectCard({ project, className }: ProjectCardProps) {
   const { slug, title, summary, coverImage, status, startDate, endDate } = project;
-  const { label: statusLabel, badgeClassName } = PROJECT_STATUS_CONFIG[status];
+  const { badgeClassName } = PROJECT_STATUS_CONFIG[status];
+  const statusLabel = PROJECT_STATUS_LABELS[status];
   const referenceDate = startDate ?? endDate;
 
   return (

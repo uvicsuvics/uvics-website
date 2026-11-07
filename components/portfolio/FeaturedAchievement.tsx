@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, CalendarDays, Trophy } from 'lucide-react';
-import { formatPortfolioDate } from '@/components/portfolio/portfolioLabels';
+import { formatDate } from '@/lib/format/date';
 import { cn } from '@/lib/utils';
 import type { Achievement } from '@/types/portfolio';
 
@@ -54,7 +54,7 @@ export function FeaturedAchievement({ achievement, className }: FeaturedAchievem
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 mt-2 border-t border-gray-100">
           <span className="flex items-center gap-2 text-sm text-gray-600">
             <CalendarDays className="w-4 h-4 text-gray-400" aria-hidden="true" />
-            <time dateTime={achievementDate}>{formatPortfolioDate(achievementDate)}</time>
+            <time dateTime={achievementDate}>{formatDate(achievementDate)}</time>
           </span>
           <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary" aria-hidden="true">
             Lihat detail

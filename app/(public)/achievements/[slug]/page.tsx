@@ -5,7 +5,8 @@ import { Building2, CalendarDays, Flag, Medal, Trophy } from "lucide-react";
 import { AchievementCard } from "@/components/portfolio/AchievementCard";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
 import { TeamMemberList } from "@/components/portfolio/TeamMemberList";
-import { LEVEL_LABELS, formatPortfolioDate } from "@/components/portfolio/portfolioLabels";
+import { formatDate } from "@/lib/format/date";
+import { CONTENT_LEVEL_LABELS } from "@/lib/format/labels";
 import {
   getAchievementBySlug,
   getAchievements,
@@ -55,11 +56,11 @@ export default async function AchievementDetailPage({ params }: AchievementDetai
   const competitionInfo = [
     { icon: Flag, label: "Kompetisi", value: competitionName },
     organizer ? { icon: Building2, label: "Penyelenggara", value: organizer } : null,
-    level ? { icon: Medal, label: "Level", value: LEVEL_LABELS[level] } : null,
+    level ? { icon: Medal, label: "Level", value: CONTENT_LEVEL_LABELS[level] } : null,
     {
       icon: CalendarDays,
       label: "Tanggal",
-      value: <time dateTime={achievementDate}>{formatPortfolioDate(achievementDate)}</time>,
+      value: <time dateTime={achievementDate}>{formatDate(achievementDate)}</time>,
     },
   ].filter((row) => row !== null);
 

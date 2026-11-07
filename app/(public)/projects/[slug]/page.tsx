@@ -7,7 +7,9 @@ import { IconBrandGithub } from "@tabler/icons-react";
 import { AchievementCard } from "@/components/portfolio/AchievementCard";
 import { ProjectCard } from "@/components/portfolio/ProjectCard";
 import { TeamMemberList } from "@/components/portfolio/TeamMemberList";
-import { PROJECT_STATUS_CONFIG, formatPortfolioPeriod } from "@/components/portfolio/portfolioLabels";
+import { PROJECT_STATUS_CONFIG } from "@/components/portfolio/portfolioLabels";
+import { formatPeriod } from "@/lib/format/date";
+import { PROJECT_STATUS_LABELS } from "@/lib/format/labels";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { getProjectBySlug, getProjects, getRelatedProjects } from "@/lib/services/projectService";
@@ -49,8 +51,9 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   const { project, members, achievements } = detail;
   const { title, summary, description, coverImage, status, startDate, endDate, projectUrl, repositoryUrl } = project;
-  const { label: statusLabel, badgeClassName } = PROJECT_STATUS_CONFIG[status];
-  const period = formatPortfolioPeriod(startDate, endDate);
+  const { badgeClassName } = PROJECT_STATUS_CONFIG[status];
+  const statusLabel = PROJECT_STATUS_LABELS[status];
+  const period = formatPeriod(startDate, endDate);
   const relatedProjects = await getRelatedProjects(slug);
 
   const links = [

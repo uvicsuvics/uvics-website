@@ -1,6 +1,6 @@
 # Catatan Keputusan UVICS
 
-**Diperbarui:** 29 Oktober 2026
+**Diperbarui:** 7 November 2026
 **Rujukan:** [PRD](PRD.md) · [Spesifikasi halaman publik](UVICS_Public_Website_Page_Specification.md) · [Tech stack](TECH_STACK.md) · [Kontrak backend](BACKEND_CONVENTIONS.md)
 
 Dokumen ini adalah satu-satunya tempat mencatat keputusan produk, data, dan teknis yang tidak tertulis jelas di PRD atau spesifikasi. Jika PRD, spesifikasi, dan dokumen ini berbeda, keputusan berstatus **Diterima** di sini yang berlaku sampai PRD diperbarui.
@@ -59,6 +59,7 @@ Keputusan berikut menjawab pertanyaan PRD §79 atau bagian PRD yang ambigu, dan 
 | D20 | `competitions.level` dan `achievements.level` (nullable) memakai enum `public.content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL`. Label tampilan dipetakan di frontend. Setelah migration diterapkan ke hosted, perubahan nilai butuh migration baru. | Kontrak awal #11, review PR #20 M2 (dari U17) | #36 (`20261004080000_content_foundation.sql`); pemetaan label FE di #26 |
 | D21 | `certificate_file` disimpan di `achievement_certificates` yang hanya terbaca admin aktif. `member_id` pada konten `PUBLISHED` tetap terbaca `authenticated` non-admin sebagai risiko yang diterima sementara (UUID tanpa data pribadi; signup publik mati, D08) dan ditutup lewat RPC/view admin saat mutasi admin konten dibangun. `anon` tidak bisa membaca `member_id`. | Review PR #20 M4 (dari U18) | #36 |
 | D22 | *Achievers Guidebook* 2026 (Main Rules Batch 3.5) adalah sumber resmi konten organisasi: identitas, visi, misi, culture & value, struktur, departemen, program, dan ketentuan keanggotaan. Ringkasannya ada di PRD §9.1, §12.1, §13, §14, §21A, dan §31. Konten lain (sejarah selain tahun berdiri 2024, tonggak, statistik) tidak boleh dikarang sampai ada data resmi. Aturan internal guidebook tidak dipublikasikan. | Guidebook diserahkan pengguna, 25 Oktober 2026 | Dokumen (PRD v1.2, spesifikasi). Mock data dan konten halaman publik belum diselaraskan. |
+| D23 | Halaman `/competitions` memakai tata letak linimasa per status (desain "Konsep B"), bukan grid kartu dengan pagination seperti spesifikasi §12. Urutan grup: dibuka, segera dibuka, berlangsung, lalu ditutup dan selesai yang dilipat. Filter di URL: `search`, `status`, `level`, `category`. Tanpa pagination: service mengambil semua kompetisi publik sekali (maksimal 100) lalu mengelompokkan dan mengurutkan menurut tanggal di memori, sampai backend mendukung urutan tanggal. "Deadline terdekat" hanya memilih batas yang belum lewat menurut tanggal WITA. | Spesifikasi §12 (Competition), pilihan PM (Dion) atas tiga konsep desain, 7 November 2026 | Branch `feature/competitions-timeline` (di atas #66) |
 
 ## C. Usulan yang menunggu keputusan PM
 

@@ -143,22 +143,23 @@ Berlaku untuk `lib/backend/content.ts` (competition, achievement, project). Fiel
 - **Pencarian:** competition mencari `title` dan `organizer`, achievement mencari `title` dan `competition_name`, project mencari `title`. Karakter `, ( ) " ' \ * % _ :` dibuang dari kata kunci; hasil kosong berarti tanpa filter.
 - **Pagination:** page di luar total baris (PostgREST `PGRST103`) menghasilkan `NOT_FOUND` 404. Mapping ini ada di `databaseError()` sehingga berlaku untuk semua domain.
 
-Pemetaan DTO competition ke `types/competition.ts` (frontend #15), untuk issue integrasi frontend:
+Pemetaan DTO competition ke `Competition` di `types/competition.ts` (kontrak #24). Mapper `toCompetition` ditulis #26 saat sumber service berpindah dari mock ke backend; langkahnya ada di [konvensi frontend](frontend-convention.md) §11:
 
 | DTO backend | `Competition` frontend | Catatan |
 | --- | --- | --- |
 | `id` (UUID string) | `id` | Mock memakai `comp-1`; ganti ke UUID |
 | `title`, `slug`, `organizer`, `description` | sama | |
-| `category` (nullable) | `category` (wajib) | Tangani `null` |
-| `level` (`NASIONAL`, …; nullable) | `level` (`'Nasional'`, …) | Petakan kode ke label; `REGIONAL` belum ada di union frontend |
-| `registration_deadline` (`YYYY-MM-DD`) | `registrationDeadline` (datetime berjam) | Tanpa jam; aturan zona waktu WITA menunggu [T06](DECISIONS.md#d-isu-terbuka) |
-| `competition_date` (`YYYY-MM-DD`, nullable) | `competitionDate` (wajib) | Sama seperti di atas; tangani `null` |
-| `registration_url`, `guidebook_url` | `registrationUrl`, `guidebookUrl` | |
-| `poster` (referensi media) | `poster` (path gambar) | Diubah menjadi URL lewat alur media publik |
-| `team_size`, `eligibility` | `teamSize`, `eligibility` | |
-| `status` | `status` | Nilai sama (`UPCOMING` … `FINISHED`) |
-| `featured`, `created_at`, `updated_at` | `featured`, `createdAt`, `updatedAt` | |
-| Filter kosong (`status=`, `level=`) | Filter `'ALL'` | Kirim kosong atau hilangkan parameter; `ALL` ditolak |
+| `category` (nullable) | `category` (`string \| null`) | Tetap nullable; UI menangani `null` |
+| `level` (`NASIONAL`, ...; nullable) | `level` (`ContentLevel \| null`, kode `content_level`) | Kode dibawa apa adanya; label dari `lib/format/labels.ts` (`CONTENT_LEVEL_LABELS`) |
+| `registration_deadline` (`YYYY-MM-DD`, nullable) | `registrationDeadline` (`string \| null`, `YYYY-MM-DD`) | Tanpa jam; aturan zona waktu WITA menunggu [T06](DECISIONS.md#d-isu-terbuka) |
+| `competition_date` (`YYYY-MM-DD`, nullable) | `competitionDate` (`string \| null`, `YYYY-MM-DD`) | Sama seperti di atas |
+| `registration_url`, `guidebook_url` | `registrationUrl`, `guidebookUrl` | Nullable |
+| `poster` (referensi media) | `poster` (`string \| null`, URL atau path siap `next/image`) | Diubah menjadi URL oleh `toCompetition` lewat alur media publik |
+| `team_size`, `eligibility` | `teamSize`, `eligibility` | Nullable |
+| `status` | `status` | Nilai sama (`UPCOMING` ... `FINISHED`); label dari `COMPETITION_STATUS_LABELS` |
+| `featured` | `featured` | Parameter query backend berupa string GET (`z.stringbool()`); service mengubah boolean DTO dengan `String(query.featured)` |
+| `created_at`, `updated_at` | tidak ada di DTO | UI tidak memakainya |
+| Filter kosong (`status=`, `level=`) | Filter "Semua" | Hilangkan parameter; `ALL` ditolak |
 
 ## Registration publik #28
 
