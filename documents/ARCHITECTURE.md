@@ -49,7 +49,7 @@ flowchart LR
 | `lib/media/` | Kebijakan kategori, intent upload, integrasi Cloudinary, publikasi |
 | `lib/env/` | Pembacaan environment publik dan server |
 | `lib/services/` | Fungsi pengambil data untuk halaman publik; sumbernya mock sampai diganti Supabase ([konvensi frontend](frontend-convention.md)) |
-| `data/`, `lib/mock-data/` | Data mock sementara; diganti data Supabase selama Sprint 2 |
+| `data/` | Data mock sementara; diganti data Supabase selama Sprint 2 |
 | `supabase/migrations/` | Seluruh schema, RLS, dan fungsi SQL |
 | `scripts/` | Tooling operator: migrate, provisioning admin, generate types, seed, test DB |
 | `tests/unit/`, `tests/db/`, `tests/e2e/` | Vitest, tes SQL di PostgreSQL disposable, Playwright |
@@ -90,7 +90,7 @@ Server Component → lib/supabase/server (tanpa sesi) → view/RPC/tabel yang di
 ```
 
 - Hanya data berstatus publikasi valid yang dikirim. Draft, NIM, kontak pribadi, jawaban registrasi, dan catatan admin tidak pernah keluar ([D02](DECISIONS.md#a-keputusan-teknis-d01d05-kontrak-3133)).
-- **Kondisi saat ini:** halaman publik masih memakai data mock, dan role `anon` belum punya akses ke tabel organisasi. Jalur baca publik diputuskan di [U02](DECISIONS.md#u02--akses-publik-data-organisasi).
+- **Kondisi saat ini:** halaman publik membaca lewat `lib/services/` yang mengembalikan DTO dari `types/` (kontrak di [konvensi frontend](frontend-convention.md) §4 dan §10), tetapi sumbernya masih mock, dan role `anon` belum punya akses ke tabel organisasi. Jalur baca publik diputuskan di [U02](DECISIONS.md#u02--akses-publik-data-organisasi).
 
 ### 4.2 Admin login
 
