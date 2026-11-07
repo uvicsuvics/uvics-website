@@ -1,32 +1,33 @@
+import type { ContentLevel } from '@/types/portfolio';
 import type { Enums } from '@/types/database';
 
 export type CompetitionStatus = Enums<'competition_status'>;
 
-export type CompetitionLevel = 'Internal' | 'Nasional' | 'Internasional';
-
+/** Kolom `competitions` yang dipakai UI; tanggal berformat YYYY-MM-DD. */
 export interface Competition {
   id: string;
-  title: string;
   slug: string;
+  title: string;
   organizer: string;
   description: string;
-  category: string;
-  level: CompetitionLevel;
+  category: string | null;
+  level: ContentLevel | null;
   registrationDeadline: string | null;
-  competitionDate: string;
+  competitionDate: string | null;
   registrationUrl: string | null;
   guidebookUrl: string | null;
+  /** URL atau path siap next/image; pemetaan referensi media milik #26. */
   poster: string | null;
   teamSize: string | null;
   eligibility: string | null;
   status: CompetitionStatus;
   featured: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
-export interface CompetitionFilters {
-  status?: CompetitionStatus | 'ALL';
-  category?: string | 'ALL';
-  level?: CompetitionLevel | 'ALL';
+export interface CompetitionQuery {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  status?: CompetitionStatus;
+  featured?: boolean;
 }
