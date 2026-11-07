@@ -133,6 +133,25 @@ export const UVICS_PROGRAMS: ProgramItem[] = [
   },
 ];
 
+/**
+ * Pengelola program: slug program ke slug departemen (PRD §14). Program tanpa entri
+ * (Internal Development dan Officer, T07) tidak punya departemen di bagan.
+ * shortcut: relasi program-departemen dari PRD §14, ganti ke kolom relasi setelah U05/T07 (#30).
+ */
+export const UVICS_PROGRAM_DEPARTMENTS: Record<string, string> = {
+  "uvics-activity-content": "public-relations",
+  "educational-content": "public-relations",
+  "fun-trends-content": "public-relations",
+  "interact-with-followers": "public-relations",
+  "content-summary": "public-relations",
+  "website-building": "web-development",
+  devhub: "web-development",
+  "mentor-community": "competition-handler",
+  "competition-finder": "competition-handler",
+  template: "editor",
+  "editing-documentation": "editor",
+};
+
 export interface ProgramsPageContent {
   meta: PageMeta;
   hero: PageHeroContent;

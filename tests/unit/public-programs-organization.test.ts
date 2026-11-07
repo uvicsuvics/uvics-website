@@ -7,7 +7,7 @@ import {
   getOrganizationPeriods,
   getPeriodMembers,
 } from "@/lib/services/organizationService";
-import { getProgramBySlug, getPrograms } from "@/lib/services/programService";
+import { getProgramBySlug, getPrograms, getProgramsByDepartment } from "@/lib/services/programService";
 
 // Posisi resmi Achievers Guidebook 2026, urut dari atas (PRD §31).
 const POSITION_ORDER = ["Ketua", "Bendahara", "Sekretaris", "Steering Helper", "Koordinator", "PIC", "Anggota"];
@@ -110,5 +110,31 @@ describe("organization profile follows the Achievers Guidebook 2026 (D22)", () =
         expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
       }
     }
+  });
+});
+
+describe("program per departemen (PRD §14, K1)", () => {
+  it("maps each department to its official programs (PRD §14)", async () => {
+    const EXPECTED: Record<string, string[]> = {
+      "public-relations": [
+        "UVICS Activity Content",
+        "Educational Content",
+        "Fun Trends Content",
+        "Interact with Followers",
+        "Content Summary",
+      ],
+      "external-affairs": [],
+      "web-development": ["Website Building", "DevHub"],
+      "competition-handler": ["Mentor Community", "Competition Finder"],
+      editor: ["Template", "Editing & Documentation"],
+    };
+    const order = (await getPrograms()).map((program) => program.title);
+
+    for (const [slug, titles] of Object.entries(EXPECTED)) {
+      const got = (await getProgramsByDepartment(slug)).map((program) => program.title);
+      expect([...got].sort()).toEqual([...titles].sort());
+      expect(got).toEqual([...got].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
+    }
+    expect(await getProgramsByDepartment("tidak-ada")).toEqual([]);
   });
 });
