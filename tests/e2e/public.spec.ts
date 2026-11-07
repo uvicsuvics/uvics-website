@@ -161,13 +161,24 @@ test("public navigation: /competitions keeps filter state in the URL", async ({ 
     .click();
   await expect(page).toHaveURL(/status=OPEN/);
   await expect(page).not.toHaveURL(/page=/);
-  expect((await page.goto("/competitions?page=99"))?.status()).toBe(404);
+  await page.goto("/competitions?page=99");
+  await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
+  await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
   expect((await page.goto("/competitions?page=abc&status=foo"))?.status()).toBe(200);
 });
 
 test("public navigation: unknown competition renders the public not-found page", async ({ page }) => {
-  const response = await page.goto("/competitions/tidak-ada");
-  expect(response?.status()).toBe(404);
+  // Status is a streamed 200 because competitions/loading.tsx exists; noindex marks the not-found.
+  await page.goto("/competitions/tidak-ada");
+  await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
   await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
   await expect(page.locator('a[href="/vision-mission"]').first()).toBeAttached();
+});
+
+test("public navigation: unknown achievement and project return a real 404", async ({ page }) => {
+  for (const path of ["/achievements/tidak-ada", "/projects/tidak-ada"]) {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
+  }
 });
