@@ -150,11 +150,14 @@ test("public navigation: /join shows closed registration when settings are unava
 });
 
 test("public navigation: /competitions keeps filter state in the URL", async ({ page }) => {
-  await page.goto("/competitions");
+  await page.goto("/competitions?page=2");
   const search = page.getByRole("textbox", { name: "Cari kompetisi atau penyelenggara" });
-  await search.pressSequentially("hackathon", { delay: 20 });
-  await expect(page).toHaveURL(/search=hackathon/);
+  await search.pressSequentially("hack", { delay: 20 });
+  await expect(page).toHaveURL(/search=hack(?!athon)/);
+  await search.pressSequentially("athon", { delay: 20 });
   await expect(search).toHaveValue("hackathon");
+  await expect(page).toHaveURL(/search=hackathon/);
+  expect(page.url()).not.toContain("page=");
   await page
     .getByRole("group", { name: "Filter status kompetisi" })
     .getByRole("button", { name: "Pendaftaran Dibuka" })

@@ -23,7 +23,7 @@ describe("halaman /competitions", () => {
     const html = renderToStaticMarkup(await CompetitionsPage({ searchParams: Promise.resolve({ status: "OPEN" }) }));
     const finished = UVICS_COMPETITIONS.find(({ status, featured }) => status === "FINISHED" && !featured)!;
     expect(html).not.toContain(`href="/competitions/${finished.slug}"`);
-    expect(html).toContain(`href="/competitions/${UVICS_COMPETITIONS.find(({ status }) => status === "OPEN")!.slug}"`);
+    expect(html).toContain(`href="/competitions/${UVICS_COMPETITIONS.find(({ status, featured }) => status === "OPEN" && !featured)!.slug}"`);
   });
 
   it("menampilkan empty state filter dengan tombol reset", async () => {
