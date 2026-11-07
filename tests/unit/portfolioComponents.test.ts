@@ -209,6 +209,20 @@ describe('Pagination', () => {
     expect(html).toContain('aria-label="Halaman 10"');
     expect(html).not.toContain('aria-label="Halaman 2"');
   });
+
+  it('mode tautan merender link dan span nonaktif tanpa button', () => {
+    const html = renderToStaticMarkup(
+      createElement(Pagination, {
+        currentPage: 1,
+        totalPages: 3,
+        getHref: (p: number) => `/competitions?page=${p}`,
+      }),
+    );
+    expect(html).toContain('href="/competitions?page=2"');
+    expect(html).toContain('aria-current="page"');
+    expect(html).toContain('aria-disabled="true"');
+    expect(html).not.toContain('<button');
+  });
 });
 
 describe('EmptyState', () => {
