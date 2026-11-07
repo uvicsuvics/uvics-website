@@ -13,7 +13,7 @@ export function CompetitionDetailHeader({ competition }: CompetitionDetailHeader
 
   return (
     <section className="bg-primary text-white">
-      <div className="max-w-7xl mx-auto w-full px-6 md:px-8 py-12 md:py-16 flex flex-col gap-4">
+      <div className="max-w-7xl mx-auto w-full px-6 md:px-8 pt-28 pb-12 md:pt-32 md:pb-16 flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
           {category && <Badge variant="secondary">{category}</Badge>}
           {level && <Badge variant="primary">{CONTENT_LEVEL_LABELS[level]}</Badge>}
