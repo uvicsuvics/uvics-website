@@ -1,3 +1,4 @@
+import type { ContentStatus } from '@/types/cms';
 import type { CompetitionStatus } from '@/types/competition';
 import type { ContentLevel, ProjectStatus } from '@/types/portfolio';
 
@@ -21,6 +22,12 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   PLANNED: 'Direncanakan',
   ONGOING: 'Berjalan',
   COMPLETED: 'Selesai',
+  ARCHIVED: 'Diarsipkan',
+};
+
+export const CONTENT_STATUS_LABELS: Record<ContentStatus, string> = {
+  DRAFT: 'Draf',
+  PUBLISHED: 'Terbit',
   ARCHIVED: 'Diarsipkan',
 };
 

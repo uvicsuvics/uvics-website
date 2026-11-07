@@ -93,6 +93,8 @@ export interface AdminBreadcrumbItem {
   isCurrent?: boolean;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const COMMON_NESTED_ACTIONS: Record<string, string> = {
   create: "Tambah",
   new: "Tambah",
@@ -144,7 +146,10 @@ export function getAdminBreadcrumbs(pathname: string): AdminBreadcrumbItem[] {
       currentPath += `/${segment}`;
       const isLast = index === remainingSegments.length - 1;
       const lower = segment.toLowerCase();
-      const label = COMMON_NESTED_ACTIONS[lower] || decodeURIComponent(segment);
+      // Segmen UUID adalah halaman edit entri (mis. /admin/pages/<id>).
+      const label = UUID.test(segment)
+        ? COMMON_NESTED_ACTIONS.edit
+        : COMMON_NESTED_ACTIONS[lower] || decodeURIComponent(segment);
       crumbs.push({
         label: label.charAt(0).toUpperCase() + label.slice(1),
         href: currentPath,
