@@ -43,6 +43,7 @@ returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   previous public.pages;
   r public.pages;
+  v_changed text[];
 begin
   if not private.has_active_admin_session() then
     raise insufficient_privilege;
@@ -53,13 +54,27 @@ begin
     raise no_data_found;
   end if;
 
+  r := previous;
+  r.title := coalesce(p_changes->>'title', previous.title);
+  r.slug := coalesce(p_changes->>'slug', previous.slug);
+  if p_changes ? 'content' then r.content := coalesce(p_changes->>'content', ''); end if;
+  if p_changes ? 'meta_title' then r.meta_title := p_changes->>'meta_title'; end if;
+  if p_changes ? 'meta_description' then r.meta_description := p_changes->>'meta_description'; end if;
+
+  -- Audit hanya mencatat nama kolom yang berubah (urut abjad), tanpa nilainya.
+  v_changed := array_remove(array[
+    case when r.content is distinct from previous.content then 'content' end,
+    case when r.meta_description is distinct from previous.meta_description then 'meta_description' end,
+    case when r.meta_title is distinct from previous.meta_title then 'meta_title' end,
+    case when r.slug is distinct from previous.slug then 'slug' end,
+    case when r.title is distinct from previous.title then 'title' end
+  ], null);
+  if cardinality(v_changed) = 0 then
+    return to_jsonb(previous);
+  end if;
+
   update public.pages
-  set
-    title = coalesce(p_changes->>'title', previous.title),
-    slug = coalesce(p_changes->>'slug', previous.slug),
-    content = case when p_changes ? 'content' then coalesce(p_changes->>'content', '') else previous.content end,
-    meta_title = case when p_changes ? 'meta_title' then p_changes->>'meta_title' else previous.meta_title end,
-    meta_description = case when p_changes ? 'meta_description' then p_changes->>'meta_description' else previous.meta_description end
+  set title = r.title, slug = r.slug, content = r.content, meta_title = r.meta_title, meta_description = r.meta_description
   where id = p_id
   returning * into r;
 
@@ -69,7 +84,7 @@ begin
     'page',
     r.id,
     jsonb_build_object('title', previous.title, 'slug', previous.slug),
-    jsonb_build_object('title', r.title, 'slug', r.slug)
+    jsonb_build_object('title', r.title, 'slug', r.slug, 'changed_fields', to_jsonb(v_changed))
   );
 
   return to_jsonb(r);
@@ -153,6 +168,7 @@ returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   previous public.programs;
   r public.programs;
+  v_changed text[];
 begin
   if not private.has_active_admin_session() then
     raise insufficient_privilege;
@@ -164,13 +180,27 @@ begin
   end if;
 
   -- shortcut: image tidak ditulis dari admin (D44), buka lagi saat jalur publikasi media CMS ada
+  r := previous;
+  r.name := coalesce(p_changes->>'name', previous.name);
+  r.slug := coalesce(p_changes->>'slug', previous.slug);
+  if p_changes ? 'short_description' then r.short_description := p_changes->>'short_description'; end if;
+  if p_changes ? 'description' then r.description := coalesce(p_changes->>'description', ''); end if;
+  if p_changes ? 'display_order' then r.display_order := (p_changes->>'display_order')::integer; end if;
+
+  -- Audit hanya mencatat nama kolom yang berubah (urut abjad), tanpa nilainya.
+  v_changed := array_remove(array[
+    case when r.description is distinct from previous.description then 'description' end,
+    case when r.display_order is distinct from previous.display_order then 'display_order' end,
+    case when r.name is distinct from previous.name then 'name' end,
+    case when r.short_description is distinct from previous.short_description then 'short_description' end,
+    case when r.slug is distinct from previous.slug then 'slug' end
+  ], null);
+  if cardinality(v_changed) = 0 then
+    return to_jsonb(previous);
+  end if;
+
   update public.programs
-  set
-    name = coalesce(p_changes->>'name', previous.name),
-    slug = coalesce(p_changes->>'slug', previous.slug),
-    short_description = case when p_changes ? 'short_description' then p_changes->>'short_description' else previous.short_description end,
-    description = case when p_changes ? 'description' then coalesce(p_changes->>'description', '') else previous.description end,
-    display_order = case when p_changes ? 'display_order' then (p_changes->>'display_order')::integer else previous.display_order end
+  set name = r.name, slug = r.slug, short_description = r.short_description, description = r.description, display_order = r.display_order
   where id = p_id
   returning * into r;
 
@@ -180,7 +210,7 @@ begin
     'program',
     r.id,
     jsonb_build_object('name', previous.name, 'slug', previous.slug),
-    jsonb_build_object('name', r.name, 'slug', r.slug)
+    jsonb_build_object('name', r.name, 'slug', r.slug, 'changed_fields', to_jsonb(v_changed))
   );
 
   return to_jsonb(r);

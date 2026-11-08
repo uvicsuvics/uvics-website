@@ -245,6 +245,33 @@ begin
     raise exception 'update_program changed image';
   end if;
 
+  -- K3: audit update hanya mencatat nama kolom yang berubah, tanpa nilainya
+  perform public.update_page('00000000-0000-4000-8000-000000000801', '{"content":"Isi rahasia halaman"}'::jsonb);
+  select * into strict audit_rec from public.audit_logs where action = 'PAGE_UPDATED' and entity_id = '00000000-0000-4000-8000-000000000801';
+  if audit_rec.new_values->'changed_fields' is distinct from '["content"]'::jsonb
+    or audit_rec.old_values ? 'content' or audit_rec.new_values ? 'content'
+    or (audit_rec.old_values::text || audit_rec.new_values::text) like '%Isi rahasia%' then
+    raise exception 'PAGE_UPDATED changed_fields mismatch: % -> %', audit_rec.old_values, audit_rec.new_values;
+  end if;
+
+  perform public.update_program('00000000-0000-4000-8000-000000000813', '{"display_order":7}'::jsonb);
+  select * into strict audit_rec from public.audit_logs where action = 'PROGRAM_UPDATED' and entity_id = '00000000-0000-4000-8000-000000000813';
+  if audit_rec.new_values <> '{"name":"Archived Program","slug":"archived-program","changed_fields":["display_order"]}'::jsonb
+    or audit_rec.old_values <> '{"name":"Archived Program","slug":"archived-program"}'::jsonb then
+    raise exception 'PROGRAM_UPDATED changed_fields mismatch: % -> %', audit_rec.old_values, audit_rec.new_values;
+  end if;
+
+  -- Update tanpa perubahan: tidak ada UPDATE, tidak ada audit, updated_at tetap
+  perform public.update_page('00000000-0000-4000-8000-000000000802',
+    '{"title":"Published Page","slug":"published-page","content":"","meta_title":null,"meta_description":null}'::jsonb);
+  perform public.update_program('00000000-0000-4000-8000-000000000812',
+    '{"name":"Published Program","slug":"published-program","short_description":null,"description":"","display_order":0}'::jsonb);
+  if exists (select from public.audit_logs where entity_id in ('00000000-0000-4000-8000-000000000802', '00000000-0000-4000-8000-000000000812'))
+    or (select updated_at from public.pages where id = '00000000-0000-4000-8000-000000000802') <> (select created_at from public.pages where id = '00000000-0000-4000-8000-000000000802')
+    or (select updated_at from public.programs where id = '00000000-0000-4000-8000-000000000812') <> (select created_at from public.programs where id = '00000000-0000-4000-8000-000000000812') then
+    raise exception 'no-op update wrote a row or an audit entry';
+  end if;
+
   -- 6. Website Settings update
   settings_res := public.update_website_settings('{"registration_open":true,"footer_text":"Test Footer"}'::jsonb);
   if jsonb_array_length(settings_res) <> 2 then
