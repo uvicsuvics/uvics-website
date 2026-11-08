@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { requireAdmin, revalidatePath, client, redirect } = vi.hoisted(() => ({
+const { requireAdmin, revalidatePath, client, redirect, serverClient } = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
+  serverClient: vi.fn(),
   revalidatePath: vi.fn(),
   redirect: vi.fn((path: string) => {
     throw new Error(`NEXT_REDIRECT:${path}`);
@@ -12,7 +13,7 @@ const { requireAdmin, revalidatePath, client, redirect } = vi.hoisted(() => ({
   },
 }));
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin }));
-vi.mock("@/lib/supabase/server", () => ({ serverClient: async () => client }));
+vi.mock("@/lib/supabase/server", () => ({ serverClient }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect }));
 
@@ -58,6 +59,7 @@ const pageInput = { title: "Tentang", slug: "tentang", content: "Isi", meta_titl
 beforeEach(() => {
   vi.clearAllMocks();
   requireAdmin.mockResolvedValue({ id: "admin", name: "Admin", sessionId: "s" });
+  serverClient.mockResolvedValue(client);
 });
 
 describe("Server Action halaman", () => {
@@ -66,6 +68,8 @@ describe("Server Action halaman", () => {
     expect(await createPageAction(pageInput)).toEqual({ ok: true, data: { id: ID } });
     expect(client.rpc).toHaveBeenCalledWith("create_page", { p_values: { ...pageInput } });
     expect(revalidatePath).toHaveBeenCalledWith("/admin/pages", "layout");
+    // Client writable agar cookie sesi yang diperbarui ikut tersimpan (seperti app/admin/actions.ts).
+    expect(serverClient).toHaveBeenCalledWith(true);
   });
 
   it("slug duplikat menjadi CONFLICT tanpa teks database", async () => {

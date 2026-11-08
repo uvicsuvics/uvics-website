@@ -22,7 +22,8 @@ export async function mutate<T>(
   run: (client: Client) => Promise<T>,
 ): Promise<OperationResult<T>> {
   try {
-    const data = await run(await serverClient());
+    // Writable: Server Action boleh menulis cookie sesi yang diperbarui Supabase.
+    const data = await run(await serverClient(true));
     revalidatePath(path, "layout");
     return { ok: true, data };
   } catch (error) {
