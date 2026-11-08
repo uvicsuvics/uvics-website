@@ -4,10 +4,10 @@ insert into auth.users (id) values ('00000000-0000-4000-8000-000000000001'), ('0
 insert into public.admins (id, name, is_active) values ('00000000-0000-4000-8000-000000000001', 'CMS Admin', true);
 insert into auth.sessions (id, user_id, created_at) values ('00000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000001', statement_timestamp());
 
-insert into public.pages (id, title, slug, status) values
-  ('00000000-0000-4000-8000-000000000801', 'Draft Page', 'draft-page', 'DRAFT'),
-  ('00000000-0000-4000-8000-000000000802', 'Published Page', 'published-page', 'PUBLISHED'),
-  ('00000000-0000-4000-8000-000000000803', 'Archived Page', 'archived-page', 'ARCHIVED');
+insert into public.pages (id, title, slug, status, published_at) values
+  ('00000000-0000-4000-8000-000000000801', 'Draft Page', 'draft-page', 'DRAFT', null),
+  ('00000000-0000-4000-8000-000000000802', 'Published Page', 'published-page', 'PUBLISHED', '2026-10-01T00:00:00Z'),
+  ('00000000-0000-4000-8000-000000000803', 'Archived Page', 'archived-page', 'ARCHIVED', '2026-09-01T00:00:00Z');
 insert into public.programs (id, name, slug, status, image) values
   ('00000000-0000-4000-8000-000000000811', 'Draft Program', 'draft-program', 'DRAFT', '/images/program.png'),
   ('00000000-0000-4000-8000-000000000812', 'Published Program', 'published-program', 'PUBLISHED', null),
@@ -270,6 +270,19 @@ begin
     or (select updated_at from public.pages where id = '00000000-0000-4000-8000-000000000802') <> (select created_at from public.pages where id = '00000000-0000-4000-8000-000000000802')
     or (select updated_at from public.programs where id = '00000000-0000-4000-8000-000000000812') <> (select created_at from public.programs where id = '00000000-0000-4000-8000-000000000812') then
     raise exception 'no-op update wrote a row or an audit entry';
+  end if;
+
+  -- Status hanya lewat aksi terbit/arsip: update tidak punya jalur kembali ke DRAFT
+  perform public.update_page('00000000-0000-4000-8000-000000000802', '{"status":"DRAFT"}'::jsonb);
+  if (select status from public.pages where id = '00000000-0000-4000-8000-000000000802') <> 'PUBLISHED' then
+    raise exception 'update_page changed status';
+  end if;
+
+  -- Terbit ulang dari ARCHIVED (dipakai #71): PUBLISHED dengan published_at lama
+  perform public.publish_page('00000000-0000-4000-8000-000000000803');
+  if (select (status, published_at) from public.pages where id = '00000000-0000-4000-8000-000000000803')
+    is distinct from ('PUBLISHED'::public.content_status, '2026-09-01T00:00:00Z'::timestamptz) then
+    raise exception 'republish from ARCHIVED mismatch';
   end if;
 
   -- 6. Website Settings update

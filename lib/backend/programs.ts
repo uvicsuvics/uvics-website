@@ -126,7 +126,9 @@ export async function listAdminPrograms(client: SupabaseClient<Database>): Promi
     .from("programs")
     .select("*")
     .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(100);
 
   if (error) databaseError(error);
 

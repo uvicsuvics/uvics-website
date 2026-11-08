@@ -125,7 +125,9 @@ export async function listAdminPages(client: SupabaseClient<Database>): Promise<
   const { data, error } = await client
     .from("pages")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(100);
 
   if (error) databaseError(error);
 

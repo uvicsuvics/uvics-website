@@ -11,11 +11,12 @@ import {
   createPage,
   getAdminPage,
   getPublicPageBySlug,
+  listAdminPages,
   listPublicPages,
   publishPage,
   updatePage,
 } from "@/lib/backend/pages";
-import { createProgram, listPublicPrograms, updateProgram } from "@/lib/backend/programs";
+import { createProgram, listAdminPrograms, listPublicPrograms, updateProgram } from "@/lib/backend/programs";
 import { getPublicSettings, listAdminSettings, updateWebsiteSettings } from "@/lib/backend/settings";
 
 type Result = { data: unknown; error: { code?: string } | null; count?: number | null };
@@ -32,7 +33,7 @@ function fakeClient({ query = ok(null), rpc = ok(null) }: { query?: Result; rpc?
       return Promise.resolve(query);
     },
   };
-  for (const method of ["select", "eq", "order", "range"])
+  for (const method of ["select", "eq", "order", "range", "limit"])
     builder[method] = (...args: unknown[]) => {
       calls.push([method, args]);
       return builder;
@@ -161,6 +162,16 @@ describe("pages admin", () => {
     expect(rpc).toHaveBeenCalledWith("archive_page", { p_id: ID });
   });
 
+  it("lists at most 100 pages, newest first with an id tie-break (D43)", async () => {
+    const { client, calls } = fakeClient({ query: ok([pageRow]) });
+    expect(await listAdminPages(client)).toHaveLength(1);
+    expect(calls.filter(([m]) => m === "order" || m === "limit")).toEqual([
+      ["order", ["created_at", { ascending: false }]],
+      ["order", ["id", { ascending: false }]],
+      ["limit", [100]],
+    ]);
+  });
+
   it("fails closed when the database returns an unexpected shape", async () => {
     await rejectsWith(createPage(fakeClient({ rpc: ok({ id: ID }) }).client, { title: "X", slug: "x" }), "SERVICE_UNAVAILABLE");
   });
@@ -210,6 +221,17 @@ describe("programs", () => {
     await rejectsWith(createProgram(client, { name: "X", slug: "x", image: "x" }), "VALIDATION_ERROR");
     await rejectsWith(updateProgram(client, ID, { image: null }), "VALIDATION_ERROR");
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("lists at most 100 programs by display order with a stable tie-break (D43)", async () => {
+    const { client, calls } = fakeClient({ query: ok([programRow]) });
+    expect(await listAdminPrograms(client)).toHaveLength(1);
+    expect(calls.filter(([m]) => m === "order" || m === "limit")).toEqual([
+      ["order", ["display_order", { ascending: true }]],
+      ["order", ["created_at", { ascending: false }]],
+      ["order", ["id", { ascending: false }]],
+      ["limit", [100]],
+    ]);
   });
 
   it("does not inject description/display_order defaults on partial update", async () => {
