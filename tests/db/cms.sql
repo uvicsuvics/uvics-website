@@ -65,6 +65,33 @@ begin
 end$$;
 reset role;
 
+-- Grant EXECUTE per role: hosted memberi ALL ke anon/authenticated/service_role (#59),
+-- jadi ketujuh RPC runtime harus mencabutnya dari anon dan service_role.
+do $$
+declare
+  fn text;
+begin
+  foreach fn in array array[
+    'public.create_page(jsonb)', 'public.update_page(uuid, jsonb)', 'public.archive_page(uuid)',
+    'public.create_program(jsonb)', 'public.update_program(uuid, jsonb)', 'public.archive_program(uuid)',
+    'public.update_website_settings(jsonb)'
+  ] loop
+    if has_function_privilege('anon', fn, 'execute') then raise exception 'anon must not execute %', fn; end if;
+    if has_function_privilege('service_role', fn, 'execute') then raise exception 'service_role must not execute %', fn; end if;
+    if not has_function_privilege('authenticated', fn, 'execute') then raise exception 'authenticated must execute %', fn; end if;
+  end loop;
+end$$;
+
+-- service_role tanpa JWT admin ditolak
+set local role service_role;
+do $$
+begin
+  perform public.create_page('{"title":"Service","slug":"service-page"}'::jsonb);
+  raise exception 'service_role must not create pages';
+exception when insufficient_privilege then null;
+end$$;
+reset role;
+
 -- Non-admin (authenticated tanpa sesi admin): ditolak di semua RPC dan query langsung
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000002"}', true);
 set local role authenticated;

@@ -287,7 +287,7 @@ revoke all on function public.create_page(jsonb),
   public.create_program(jsonb),
   public.update_program(uuid, jsonb),
   public.archive_program(uuid),
-  public.update_website_settings(jsonb) from public, anon;
+  public.update_website_settings(jsonb) from public, anon, service_role;
 
 grant execute on function public.create_page(jsonb),
   public.update_page(uuid, jsonb),
