@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Clock, Flag, Lock, Radio } from 'lucide-react';
+import { COMPETITION_STATUS_LABELS } from '@/lib/format/labels';
 import { cn } from '@/lib/utils';
 import type { CompetitionStatus } from '@/types/competition';
 
@@ -8,30 +9,30 @@ interface StatusBadgeProps {
   className?: string;
 }
 
+// Teks tetap gelap di atas putih supaya kontras cukup di latar mana pun; warna status hanya pada ikon.
 const STATUS_CONFIG: Record<
   CompetitionStatus,
-  { label: string; icon: React.ComponentType<{ className?: string }>; classes: string }
+  { icon: React.ComponentType<{ className?: string }>; iconClass: string }
 > = {
-  UPCOMING: { label: 'Segera Dibuka', icon: Clock, classes: 'bg-accent/10 text-accent' },
-  OPEN: { label: 'Pendaftaran Dibuka', icon: CheckCircle2, classes: 'bg-success/10 text-success' },
-  ONGOING: { label: 'Sedang Berlangsung', icon: Radio, classes: 'bg-warning/10 text-warning' },
-  CLOSED: { label: 'Pendaftaran Ditutup', icon: Lock, classes: 'bg-muted text-gray-600' },
-  FINISHED: { label: 'Selesai', icon: Flag, classes: 'bg-muted text-gray-500' },
+  UPCOMING: { icon: Clock, iconClass: 'text-accent' },
+  OPEN: { icon: CheckCircle2, iconClass: 'text-success' },
+  ONGOING: { icon: Radio, iconClass: 'text-warning' },
+  CLOSED: { icon: Lock, iconClass: 'text-gray-500' },
+  FINISHED: { icon: Flag, iconClass: 'text-gray-500' },
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const { label, icon: Icon, classes } = STATUS_CONFIG[status];
+  const { icon: Icon, iconClass } = STATUS_CONFIG[status];
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-2 py-1 rounded-sm text-xs font-semibold',
-        classes,
+        'inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-gray-200/90 bg-white text-xs font-semibold text-gray-900',
         className
       )}
     >
-      <Icon className="w-3.5 h-3.5" />
-      {label}
+      <Icon className={cn('w-3.5 h-3.5', iconClass)} aria-hidden="true" />
+      {COMPETITION_STATUS_LABELS[status]}
     </span>
   );
 }

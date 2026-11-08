@@ -1,12 +1,69 @@
-import { UVICS_ACHIEVEMENTS, type AchievementItem } from "@/data/mock/achievements";
-import { applyLimit, findBySlug, type ListOptions } from "@/lib/services/shared";
+import { cache } from "react";
+import {
+  UVICS_ACHIEVEMENT_MEMBERS,
+  UVICS_ACHIEVEMENTS,
+  UVICS_ACHIEVEMENTS_PAGE,
+  type AchievementsPageContent,
+} from "@/data/mock/achievements";
+import { UVICS_PROJECTS } from "@/data/mock/projects";
+import { applyLimit, findBySlug, groupBy, toTeamMembers, type ListOptions } from "@/lib/services/shared";
+import type { Achievement, AchievementWithRelations } from "@/types/portfolio";
 
-// Sumber data sementara: mock. Lihat competitionService.ts.
+// Sumber data sementara: mock relasional. Join dilakukan di sini, supaya halaman tidak berubah
+// saat diganti query Supabase. Lihat competitionService.ts.
 
-export async function getAchievements(options: ListOptions = {}): Promise<AchievementItem[]> {
-  return applyLimit(UVICS_ACHIEVEMENTS, options.limit);
+const PROJECTS_BY_ID = new Map(UVICS_PROJECTS.map((project) => [project.id, project]));
+
+/** Peserta dikelompokkan sekali per pemanggilan, bukan difilter ulang untuk tiap prestasi. */
+function createRelationBuilder(): (achievement: Achievement) => AchievementWithRelations {
+  const membersByAchievement = groupBy(UVICS_ACHIEVEMENT_MEMBERS, (row) => row.achievementId);
+  return (achievement) => ({
+    achievement,
+    members: toTeamMembers(membersByAchievement.get(achievement.id) ?? []),
+    project: achievement.projectId ? (PROJECTS_BY_ID.get(achievement.projectId) ?? null) : null,
+  });
 }
 
-export async function getAchievementBySlug(slug: string): Promise<AchievementItem | null> {
-  return findBySlug(UVICS_ACHIEVEMENTS, slug);
+/** Jumlah `memberId` unik; peserta non-member (`memberId` null) dan nama yang sama tidak mempengaruhi hitungan. */
+export function countUniqueMemberIds(rows: readonly { memberId: string | null }[]): number {
+  return new Set(rows.flatMap(({ memberId }) => (memberId ? [memberId] : []))).size;
+}
+
+/** Anggota terlibat di semua prestasi, dihitung di server dari baris peserta: `memberId` tidak dikirim ke client (D21). */
+// Proyeksi publik tidak punya `member_id`: perlu agregat count-only atau stat dihapus (lihat U22 di documents/DECISIONS.md).
+export async function getAchievementMemberCount(): Promise<number> {
+  return countUniqueMemberIds(UVICS_ACHIEVEMENT_MEMBERS);
+}
+
+/** Prestasi, terbaru lebih dulu. */
+export async function getAchievements(options: ListOptions = {}): Promise<AchievementWithRelations[]> {
+  const sorted = [...UVICS_ACHIEVEMENTS].sort((a, b) => b.achievementDate.localeCompare(a.achievementDate));
+  return applyLimit(sorted, options.limit).map(createRelationBuilder());
+}
+
+/** Dibungkus `cache` supaya `generateMetadata` dan page berbagi satu hasil per request. */
+export const getAchievementBySlug = cache(async (slug: string): Promise<AchievementWithRelations | null> => {
+  const achievement = findBySlug(UVICS_ACHIEVEMENTS, slug);
+  return achievement ? createRelationBuilder()(achievement) : null;
+});
+
+/** Prestasi lain dengan level atau tahun yang sama, terbaru lebih dulu. */
+export async function getRelatedAchievements(slug: string, limit = 3): Promise<AchievementWithRelations[]> {
+  const current = findBySlug(UVICS_ACHIEVEMENTS, slug);
+  if (!current) return [];
+
+  const currentYear = current.achievementDate.slice(0, 4);
+  const all = await getAchievements();
+  return all
+    .filter(
+      ({ achievement }) =>
+        achievement.id !== current.id &&
+        ((current.level !== null && achievement.level === current.level) ||
+          achievement.achievementDate.startsWith(currentYear)),
+    )
+    .slice(0, limit);
+}
+
+export async function getAchievementsPage(): Promise<AchievementsPageContent> {
+  return UVICS_ACHIEVEMENTS_PAGE;
 }

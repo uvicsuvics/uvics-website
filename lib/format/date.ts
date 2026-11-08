@@ -1,0 +1,100 @@
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+function assertDateOnly(date: string): void {
+  // Datetime ditolak: new Date() pada zona waktu berbeda menggeser hari secara diam-diam.
+  if (!DATE_ONLY.test(date)) throw new RangeError(`Tanggal harus berformat YYYY-MM-DD: ${date}`);
+}
+
+/** Tahun dari tanggal YYYY-MM-DD tanpa konversi zona waktu. */
+export function getYear(date: string): number {
+  return Number(date.slice(0, 4));
+}
+
+/** Format tanggal YYYY-MM-DD ke "14 Agu 2026" (short) atau "14 Agustus 2026" (long); UTC agar tidak bergeser. */
+export function formatDate(date: string, month: 'short' | 'long' = 'short'): string {
+  assertDateOnly(date);
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month,
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(date));
+}
+
+// en-CA memformat tanggal sebagai YYYY-MM-DD; UVICS berada di zona WITA (Asia/Makassar).
+const WITA_DATE = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Makassar' });
+
+/** Tanggal hari ini di WITA sebagai YYYY-MM-DD, untuk dibandingkan dengan kolom `date`. */
+export function todayInWita(now: Date = new Date()): string {
+  return WITA_DATE.format(now);
+}
+
+const DATE_TIME_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
+
+function parseDateTime(dateTime: string): Date {
+  // Datetime tanpa offset ditafsirkan menurut zona runtime, jadi ditolak.
+  if (!DATE_TIME_WITH_OFFSET.test(dateTime)) {
+    throw new RangeError(`Datetime harus ISO 8601 dengan offset: ${dateTime}`);
+  }
+  return new Date(dateTime);
+}
+
+/** Tanggal WITA (YYYY-MM-DD) dari datetime ISO 8601 berzona, untuk dipakai formatDate dan formatDayMonth. */
+export function toWitaDate(dateTime: string): string {
+  return WITA_DATE.format(parseDateTime(dateTime));
+}
+
+const WITA_TIME = new Intl.DateTimeFormat('id-ID', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+  timeZone: 'Asia/Makassar',
+});
+
+/**
+ * Jam event dalam WITA: "14.00–16.30 WITA", "14.00 WITA" tanpa endAt,
+ * atau "08.00 WITA – 22 Nov 2026, 17.00 WITA" bila selesai di hari lain.
+ */
+export function formatTimeRange(startAt: string, endAt: string | null): string {
+  const start = WITA_TIME.format(parseDateTime(startAt));
+  if (!endAt) return `${start} WITA`;
+  const end = WITA_TIME.format(parseDateTime(endAt));
+  const endDate = toWitaDate(endAt);
+  return endDate === toWitaDate(startAt)
+    ? `${start}–${end} WITA`
+    : `${start} WITA – ${formatDate(endDate)}, ${end} WITA`;
+}
+
+const WITA_DATE_TIME = new Intl.DateTimeFormat('id-ID', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Asia/Makassar',
+});
+
+/** Format timestamptz ISO ke "8 Nov 2026, 14.30 WITA". */
+export function formatDateTime(value: string): string {
+  return `${WITA_DATE_TIME.format(new Date(value))} WITA`;
+}
+
+const DAY = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone: 'UTC' });
+const SHORT_MONTH = new Intl.DateTimeFormat('id-ID', { month: 'short', timeZone: 'UTC' });
+
+/** Hari dan bulan singkat dari tanggal YYYY-MM-DD untuk ubin tanggal, mis. { day: "5", month: "Okt" }. */
+export function formatDayMonth(date: string): { day: string; month: string } {
+  assertDateOnly(date);
+  const value = new Date(date);
+  return { day: DAY.format(value), month: SHORT_MONTH.format(value) };
+}
+
+const MONTH_YEAR = new Intl.DateTimeFormat('id-ID', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+
+/** "Agu 2025 – Mar 2026"; tanpa endDate menjadi "Agu 2025 – sekarang"; keduanya kosong menghasilkan null. */
+export function formatPeriod(start: string | null, end: string | null): string | null {
+  if (!start && !end) return null;
+  if (!start) return MONTH_YEAR.format(new Date(end as string));
+  const from = MONTH_YEAR.format(new Date(start));
+  return `${from} – ${end ? MONTH_YEAR.format(new Date(end)) : 'sekarang'}`;
+}

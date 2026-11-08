@@ -16,7 +16,8 @@
 
   --color-secondary: #ffd000;
   --color-accent:    #0066ff;
-  --color-base:      #ffffff;
+  /* Not --color-base: Tailwind v4 would turn text-base into a color instead of a font size. */
+  --color-surface:   #ffffff;
   --color-muted:     #f0f0f0;
   --color-card:      #ffffff;
 

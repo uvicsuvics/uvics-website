@@ -1,25 +1,34 @@
-import { CompetitionCard } from '@/components/competitions/competition-card';
+import Link from 'next/link';
+import { CompetitionTimelineRow } from '@/components/competitions/CompetitionTimeline';
 import type { Competition } from '@/types/competition';
 
 interface RelatedCompetitionsProps {
   competitions: Competition[];
 }
 
+/**
+ * Kompetisi terkait di halaman detail, memakai baris linimasa yang sama dengan halaman daftar.
+ * @param competitions - Hasil `getRelatedCompetitions`
+ */
 export function RelatedCompetitions({ competitions }: RelatedCompetitionsProps) {
   if (competitions.length === 0) return null;
 
   return (
-    <section className="bg-muted">
-      <div className="max-w-7xl mx-auto w-full px-6 md:px-8 py-12 md:py-16">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-          Kompetisi Terkait
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {competitions.map((competition) => (
-            <CompetitionCard key={competition.id} competition={competition} />
-          ))}
+    <section aria-labelledby="kompetisi-terkait" className="bg-gray-50 border-t border-gray-200/90">
+      <div className="flex flex-col mx-auto px-6 py-12 w-full max-w-7xl md:px-8 md:py-16">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 pb-2.5 border-b-2 border-gray-900">
+          <h2 id="kompetisi-terkait" className="font-heading text-2xl font-bold text-gray-900">
+            Kompetisi terkait
+          </h2>
+          <Link href="/competitions" className="text-sm font-semibold text-primary hover:text-primary-600">
+            Lihat semua kompetisi
+          </Link>
         </div>
+        <ul>
+          {competitions.map((competition) => (
+            <CompetitionTimelineRow key={competition.id} competition={competition} />
+          ))}
+        </ul>
       </div>
     </section>
   );

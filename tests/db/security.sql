@@ -1,5 +1,32 @@
 -- Issue #31: principal allow/deny, audit context, rollback, dan privasi CMS/settings.
 begin;
+
+-- Default privileges hosted (diemulasikan bootstrap.sql) memberi ALL pada objek baru di public.
+-- Dicek dari katalog sebelum fixture: relasi/fungsi yang lupa di-revoke langsung ketahuan.
+-- Kolom ikut dicek (grant insert(col) juga jalur tulis); relkind S menangkap setval lewat UPDATE.
+do $$declare bad text;begin
+ select string_agg(format('%s %s %s',r.role,p.priv,c.oid::regclass),', ' order by c.oid::regclass::text,r.role,p.priv) into bad
+ from pg_class c
+ cross join unnest(array['anon','authenticated','service_role']) r(role)
+ cross join unnest(array['INSERT','UPDATE','DELETE','TRUNCATE']) p(priv)
+ where c.relnamespace='public'::regnamespace and c.relkind in('r','p','v','m','f','S')
+  and case when p.priv in('INSERT','UPDATE') then has_any_column_privilege(r.role,c.oid,p.priv)
+   else has_table_privilege(r.role,c.oid,p.priv) end
+  -- Allowlist: provisioning/retire admin oleh operator memakai service client (scripts/provision-admin.mjs,
+  -- scripts/retire-fixtures.mjs). admins bukan tabel domain D13; TRUNCATE tetap dilarang.
+  and not (r.role='service_role' and c.oid='public.admins'::regclass and p.priv in('INSERT','UPDATE','DELETE'));
+ if bad is not null then raise exception 'direct write grant bypasses audit: %',bad;end if;
+end$$;
+do $$declare bad text;begin
+ select string_agg(p.oid::regprocedure::text,', ' order by 1) into bad
+ from pg_proc p
+ where p.pronamespace='public'::regnamespace and has_function_privilege('anon',p.oid,'EXECUTE')
+  and p.oid not in(
+   -- Allowlist anon: reader settings publik dengan allowlist key + validasi per key di SQL.
+   'public.read_public_settings()'::regprocedure);
+ if bad is not null then raise exception 'anon can execute non-public function: %',bad;end if;
+end$$;
+
 insert into auth.users values('00000000-0000-4000-8000-000000000001'),('00000000-0000-4000-8000-000000000002');
 insert into public.admins(id,name,is_active) values('00000000-0000-4000-8000-000000000001','Synthetic admin',true);
 insert into auth.sessions values

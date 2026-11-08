@@ -8,6 +8,8 @@
 
 > **Sinkronisasi (10 Oktober 2026):** Beberapa route dan model data di dokumen ini berbeda dengan PRD dan implementasi, antara lain `/join` vs `/register`, `/vision-mission`, `/gallery/{slug}`, field Programs, dan halaman Member/Alumni. Penyelesaiannya dicatat di [DECISIONS.md](DECISIONS.md) bagian C. Sebelum membangun halaman, periksa status keputusan terkait di sana.
 
+> **Konten organisasi (25 Oktober 2026):** Identitas, visi, misi, culture & value, struktur, departemen, dan program mengikuti *Achievers Guidebook* 2026 yang dirangkum di [PRD §9.1, §12.1, §13, §14, §21A](PRD.md) ([D22](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). Contoh konten di dokumen ini yang bertentangan dengan guidebook sudah diganti.
+
 ---
 
 # 1. Purpose
@@ -212,14 +214,13 @@ View All Departments
 
 ## Programs / What We Do
 
-Possible items:
-- Competition Update;
-- Competition Mentoring;
-- Achievement Showcase;
-- Workshop;
-- Internal Training;
-- Project Collaboration;
-- Community Development.
+Item diambil dari program resmi ([PRD §21A](PRD.md)), mis.:
+- Mentor Community;
+- Competition Finder;
+- KABEL (Kamar Belajar);
+- UVICS Vibes;
+- UVICS Impact;
+- DevHub.
 
 ## Featured Competitions
 
@@ -282,9 +283,10 @@ Menampilkan 3–4 news terbaru:
 Menampilkan pengurus inti:
 - current period;
 - president;
-- vice president;
-- secretary;
-- treasurer.
+- treasurer;
+- secretary.
+
+Tidak ada vice president di struktur resmi ([PRD §13](PRD.md)).
 
 CTA:
 ```text
@@ -341,41 +343,33 @@ CTA
 
 ## Content
 
+Sumber teks: [PRD §12.1](PRD.md).
+
 ### About UVICS
-- organization overview;
-- founding purpose;
-- community/university context.
+- organisasi atas inisiatif mahasiswa Universitas Klabat sebagai wadah berprestasi di perlombaan;
+- anggota dari berbagai tingkat dan jurusan, bukan hanya komputer;
+- tagline "Be an Achiever, Carve Your Future".
 
 ### History
-- founding year;
-- background;
-- key development phases.
+- tahun berdiri 2024;
+- latar belakang dan fase perkembangan belum tersedia di guidebook; jangan dikarang, isi setelah ada data resmi.
 
 ### Vision
-- official vision.
+- empat butir visi resmi, ditampilkan apa adanya.
 
 ### Mission
-- official missions in structured list.
+- empat butir misi resmi, ditampilkan sebagai daftar bernomor apa adanya.
 
-### Core Values
-Contoh:
-- Collaboration;
-- Innovation;
-- Growth;
-- Integrity;
-- Achievement;
-- Community.
+### Culture & Value
+- Culture: Discipline; Active and Communicative; Innovative; Sharing and Caring; Transparent.
+- Value: Willing to Learn; Dare to Do Extra; Grow Together; Enthusiasm; Inspired.
 
 ### What We Do
-- competitions;
-- mentoring;
-- workshops;
-- projects;
-- achievement development;
-- community activities.
+- dukungan kompetisi lintas bidang: Business Case, Business Plan, Hackathon, Web Competition, sayembara arsitektur, karya tulis ilmiah, nursing study case, health educational creative video;
+- program departemen ([PRD §21A](PRD.md)).
 
 ### Milestones
-Timeline perkembangan organisasi.
+Timeline perkembangan organisasi, mulai 2024. Isi tiap tahun belum tersedia di guidebook; sembunyikan section ini atau tampilkan hanya tahun berdiri sampai data resmi ada.
 
 Admin source:
 ```text
@@ -407,14 +401,14 @@ Closing CTA
 ## Information
 
 ### Vision
-- official vision statement;
-- optional supporting explanation.
+- empat butir visi resmi ([PRD §12.1](PRD.md)), apa adanya;
+- penjelasan pendukung optional, tidak boleh menambah klaim baru.
 
 ### Mission
-- numbered mission items.
+- empat butir misi resmi, bernomor, apa adanya.
 
 ### Core Principles
-- principles supporting UVICS programs.
+- Culture dan Value resmi ([PRD §12.1](PRD.md)).
 
 Admin source:
 ```text
@@ -428,6 +422,8 @@ Admin → Pages → Vision & Mission
 ## Purpose
 
 Menjelaskan seluruh divisi/departemen UVICS.
+
+Departemen resmi: Public Relations, External Affairs, Web Development, Competition Handler, dan Editor ([PRD §14](PRD.md)). Internal Development dan Officer tidak ditampilkan sebagai departemen sampai [T07](DECISIONS.md#d-isu-terbuka) diputuskan.
 
 ## Listing Page
 
@@ -526,25 +522,25 @@ Historical period tetap dapat dibuka.
 
 ## Core Management
 
-Recommended:
-- President;
-- Vice President;
-- Secretary;
-- Treasurer.
+Struktur resmi ([PRD §13](PRD.md)):
+- President (Ketua);
+- Treasurer (Bendahara);
+- Secretary (Sekretaris).
 
-Card:
+Tidak ada Vice President. Advisor belum diputuskan tampil atau tidak ([T07](DECISIONS.md#d-isu-terbuka)).
+
+Card (proyeksi D02):
 - photo;
 - name;
-- position;
-- short bio optional;
-- social link optional.
+- position.
+
+Bio dan tautan media sosial tidak ditampilkan (D02).
 
 ## Department Structure
 
 Untuk setiap department:
 - department name;
-- coordinator;
-- positions;
+- posisi berurutan: Steering Helper, Koordinator, PIC, Anggota;
 - member list;
 - display order.
 
@@ -677,14 +673,10 @@ Program Detail Preview
 CTA
 ```
 
-## Possible Programs
-- Competition Update;
-- Competition Mentoring;
-- Achievement Showcase;
-- Internal Training;
-- Workshop;
-- Project Collaboration;
-- Community Sharing.
+## Programs
+Program resmi beserta deskripsinya ada di [PRD §21A](PRD.md): UVICS Activity Content, Educational Content, Fun Trends Content, Interact with Followers, Content Summary, Template, Editing & Documentation, Mentor Community, Competition Finder, Website Building, DevHub, KABEL, Bonding, Champion of Change, UVICS Impact, UVICS Vibes, dan Perlombaan.
+
+Tidak ada program "Competition Update", "Achievement Showcase", "Internal Training", atau "Project Collaboration" di guidebook; jangan dipakai sebagai konten.
 
 ## Program Card
 - name;
@@ -1151,26 +1143,29 @@ Registration Form / CTA
 
 Example:
 ```text
-Grow With UVICS
+Be an Achiever, Carve Your Future
 
-Learn, collaborate, compete, and build meaningful projects
-with a community of motivated students.
+Bergabung dengan mahasiswa dari berbagai jurusan untuk bertumbuh,
+berkolaborasi, dan berprestasi bersama di perlombaan.
 
-[Register Now]
+[Join UVICS]
 ```
 
 ## Benefits
-- skill development;
-- mentorship;
-- competition opportunities;
-- project experience;
-- networking;
-- portfolio development;
-- leadership;
-- teamwork.
+Mengikuti hak anggota di guidebook ([PRD §9.1](PRD.md)):
+- sertifikat keanggotaan (dengan syarat minimal satu proyek selesai);
+- prestasi dapat diunggah di Instagram UVICS sebagai portofolio;
+- bebas memilih ikut lomba atau tidak;
+- hak memberi saran dan kritik;
+- tidak ada kegiatan organisasi pada masa ujian;
+- pendampingan lomba (Mentor Community) dan pencarian lomba (Competition Finder).
 
 ## Requirements
-Requirement final dikelola admin.
+Requirement final dikelola admin. Ketentuan dari guidebook:
+- mengisi formulir data anggota;
+- menandatangani surat komitmen;
+- bersedia menjalani masa jabatan 2 semester atau 1 tahun;
+- mengikuti meeting yang dijadwalkan.
 
 ## Recruitment Process
 
@@ -1197,7 +1192,7 @@ Onboarding
 Possible questions:
 - apakah harus berpengalaman?;
 - apakah boleh memilih lebih dari satu department?;
-- apakah semua program studi dapat mendaftar?;
+- apakah semua program studi dapat mendaftar? (ya: misi UVICS mengumpulkan mahasiswa dari berbagai tingkat dan jurusan);
 - apakah ada biaya?;
 - bagaimana proses interview?.
 

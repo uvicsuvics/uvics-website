@@ -8,3 +8,8 @@ create table auth.sessions(id uuid primary key,user_id uuid references auth.user
 create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
 create function auth.uid() returns uuid language sql stable as $$select nullif(auth.jwt()->>'sub','')::uuid$$;
 grant usage on schema auth to anon,authenticated,service_role;
+-- Tiru default privileges Supabase hosted: objek baru di public milik role migration otomatis
+-- mendapat ALL untuk anon, authenticated, service_role. Migration wajib mencabutnya sendiri.
+alter default privileges in schema public grant all on tables to anon,authenticated,service_role;
+alter default privileges in schema public grant all on functions to anon,authenticated,service_role;
+alter default privileges in schema public grant all on sequences to anon,authenticated,service_role;

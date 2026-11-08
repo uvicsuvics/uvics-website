@@ -1,27 +1,49 @@
 import { describe, expect, it } from "vitest";
 import {
   ADMIN_NAVIGATION,
+  ADMIN_NAVIGATION_FOOTER,
+  ADMIN_NAV_LINKS,
   isAdminNavItemActive,
   getAdminBreadcrumbs,
 } from "@/config/admin-navigation";
 
 describe("admin navigation configuration & helpers", () => {
   it("uses canonical /admin/organization-periods and has no legacy /admin/periods", () => {
-    const allHrefs = ADMIN_NAVIGATION.flatMap((section) =>
-      section.items.map((item) => item.href)
-    );
+    const allHrefs = ADMIN_NAV_LINKS.map((link) => link.href);
     expect(allHrefs).toContain("/admin/organization-periods");
     expect(allHrefs).not.toContain("/admin/periods");
   });
 
-  it("ensures all navigation items have valid admin hrefs", () => {
-    for (const section of ADMIN_NAVIGATION) {
-      for (const item of section.items) {
-        expect(item.href).toMatch(/^\/admin\/[a-z-]+$/);
-        expect(item.title).toBeTruthy();
-        expect(item.icon).toBeDefined();
-      }
+  it("ensures all navigation links have unique, valid admin hrefs", () => {
+    for (const link of ADMIN_NAV_LINKS) {
+      expect(link.href).toMatch(/^\/admin\/[a-z-]+$/);
+      expect(link.title).toBeTruthy();
     }
+    const hrefs = ADMIN_NAV_LINKS.map((link) => link.href);
+    expect(new Set(hrefs).size).toBe(hrefs.length);
+  });
+
+  it("groups Departemen, Posisi, and Periode Organisasi under a collapsible Organisasi entry in Membership", () => {
+    const membership = ADMIN_NAVIGATION.find((section) => section.title === "Membership");
+    const organisasi = membership?.items.find((entry) => entry.title === "Organisasi");
+    expect(organisasi && "items" in organisasi).toBe(true);
+    expect(organisasi && "items" in organisasi && organisasi.items.map((link) => link.href)).toEqual([
+      "/admin/departments",
+      "/admin/positions",
+      "/admin/organization-periods",
+    ]);
+  });
+
+  it("keeps Pengaturan Website and Log Audit in the sidebar footer, not in a titled section", () => {
+    expect(ADMIN_NAVIGATION_FOOTER.map((item) => item.href)).toEqual([
+      "/admin/settings",
+      "/admin/audit-logs",
+    ]);
+    expect(ADMIN_NAVIGATION.map((section) => section.title)).toEqual([
+      undefined,
+      "Website",
+      "Membership",
+    ]);
   });
 
   describe("isAdminNavItemActive", () => {
@@ -91,6 +113,14 @@ describe("admin navigation configuration & helpers", () => {
         { label: "Anggota", href: "/admin/members" },
         { label: "123", href: "/admin/members/123", isCurrent: false },
         { label: "Edit", href: "/admin/members/123/edit", isCurrent: true },
+      ]);
+    });
+
+    it("resolves links nested inside the Organisasi group", () => {
+      expect(getAdminBreadcrumbs("/admin/departments/create")).toEqual([
+        { label: "Admin", href: "/admin/dashboard" },
+        { label: "Departemen", href: "/admin/departments" },
+        { label: "Tambah", href: "/admin/departments/create", isCurrent: true },
       ]);
     });
 

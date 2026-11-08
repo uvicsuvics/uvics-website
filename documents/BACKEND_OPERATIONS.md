@@ -15,6 +15,26 @@ Runner migration memakai psql/TLS, transaksi, advisory lock, checksum, dan riway
 
 Types dari schema yang sama dengan `test:db`: `supabase gen types --db-url` menjalankan pg-meta di **container** (Docker/Podman), sehingga Postgres disposable harus terjangkau dari container. Jalankan Postgres di runtime container yang sama dengan port yang di-publish ke loopback (mis. `podman run --rm -p 127.0.0.1:<port>:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17-alpine`), terapkan `tests/db/bootstrap.sql` lalu semua migration, kemudian `SUPABASE_DB_URL=postgresql://postgres@127.0.0.1:<port>/postgres npm run db:types` dan `npx prettier --write types/database.ts`. Postgres yang listen di loopback host Windows tidak terjangkau dari container pg-meta.
 
+Preflight #28 sebelum `db:migrate` hosted, read-only. Semua hitungan harus nol; selain itu berhenti dan koordinasi dengan pemilik data, karena CHECK dan index parsial migration `20261011100000` mengevaluasi baris yang sudah ada:
+
+```sql
+select
+  count(*) filter (where batch not between 2000 and 2100) as batch_out_of_range,
+  count(*) filter (where char_length(skills) > 1000 or char_length(experience) > 1000) as text_over_1000,
+  count(*) filter (where char_length(motivation) > 2000) as motivation_over_2000
+from public.registrations;
+select nim, count(*) from public.registrations
+where status in ('SUBMITTED', 'UNDER_REVIEW') or (status = 'ACCEPTED' and converted_member_id is null)
+group by nim having count(*) > 1;
+```
+
+Membuka pendaftaran sebelum RPC settings #30 tersedia: admin belum dapat mengubah settings dari dashboard, jadi operator membuka atau menutupnya dengan SQL terkontrol setelah memverifikasi target project. Hanya dengan konfirmasi pengguna; nilai selain JSON `true` berarti tertutup.
+
+```sql
+insert into public.website_settings(key, value) values ('registration_open', 'true'::jsonb)
+on conflict (key) do update set value = excluded.value;
+```
+
 Verifikasi Dashboard/API Auth: signup OFF, anonymous OFF, email/password ON, single-session OFF, JWT expiry 3600, refresh rotation ON. SQL tidak mengubah Dashboard Auth. Selaraskan site URL/callback dengan origin saat rilis. SMTP/reset email tidak dibangun. Provisioning menerima identitas operator dan password tersembunyi, memakai Auth Admin API dengan email_confirm, lalu profil admin. Akun existing tidak direset/dipromosikan. Kegagalan profil menyebut UUID untuk rekonsiliasi; jangan membuat duplikat.
 
 Untuk provisioning noninteraktif yang telah diotorisasi operator, simpan JSON lokal berisi `name`, `email`, dan `password` dalam `.runtime/`, kemudian jalankan `npm run admin:provision -- --from-file .runtime/<identity>.json --project <project-ref-terverifikasi>`. Nilai credential tidak menjadi argumen command atau log; konfirmasi target eksplisit wajib. File ini tidak masuk Git dan tidak boleh dipakai sebagai fixture tes rutin. Mode tanpa argumen tetap memakai prompt password tersembunyi.
