@@ -1,12 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDayMonth, formatPeriod, getYear, todayInWita } from '@/lib/format/date';
+import {
+  formatDate,
+  formatDayMonth,
+  formatPeriod,
+  formatTimeRange,
+  getYear,
+  todayInWita,
+  toWitaDate,
+} from '@/lib/format/date';
 import {
   COMPETITION_STATUS_LABELS,
   CONTENT_LEVEL_LABELS,
+  EVENT_STATUS_LABELS,
   PROJECT_STATUS_LABELS,
   toOptions,
 } from '@/lib/format/labels';
 import { Constants } from '@/types/database';
+import { EVENT_STATUSES } from '@/types/event';
 
 describe('format date', () => {
   it('memformat tanggal YYYY-MM-DD tanpa pergeseran zona waktu', () => {
@@ -40,7 +50,33 @@ describe('format day-month', () => {
   });
 });
 
+describe('format datetime WITA', () => {
+  it('mengubah datetime berzona menjadi tanggal WITA', () => {
+    expect(toWitaDate('2026-11-12T23:30:00Z')).toBe('2026-11-13');
+    expect(toWitaDate('2026-11-21T14:00:00+08:00')).toBe('2026-11-21');
+  });
+
+  it('menolak datetime tanpa offset karena zonanya ambigu', () => {
+    expect(() => toWitaDate('2026-11-21T14:00:00')).toThrow(RangeError);
+    expect(() => toWitaDate('2026-11-21')).toThrow(RangeError);
+    expect(() => formatTimeRange('2026-11-21T14:00:00', null)).toThrow(RangeError);
+  });
+
+  it('memformat jam WITA untuk hari yang sama, tanpa selesai, dan lintas hari', () => {
+    expect(formatTimeRange('2026-11-21T14:00:00+08:00', '2026-11-21T16:30:00+08:00')).toBe('14.00–16.30 WITA');
+    expect(formatTimeRange('2026-11-12T23:30:00Z', null)).toBe('07.30 WITA');
+    expect(formatTimeRange('2026-11-21T08:00:00+08:00', '2026-11-22T17:00:00+08:00')).toBe(
+      '08.00 WITA – 22 Nov 2026, 17.00 WITA',
+    );
+  });
+});
+
 describe('format labels', () => {
+  it('punya label untuk setiap status event', () => {
+    expect(Object.keys(EVENT_STATUS_LABELS)).toEqual([...EVENT_STATUSES]);
+    expect(EVENT_STATUS_LABELS.CANCELLED).toBe('Dibatalkan');
+  });
+
   it('punya label untuk setiap kode enum DB', () => {
     expect(Object.keys(CONTENT_LEVEL_LABELS)).toEqual([...Constants.public.Enums.content_level]);
     expect(Object.keys(COMPETITION_STATUS_LABELS)).toEqual([

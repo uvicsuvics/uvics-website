@@ -31,12 +31,13 @@ Route memakai slug bahasa Inggris dari PRD dan navbar, huruf kecil, kebab-case. 
 
 | Status | Route |
 | --- | --- |
-| Sudah dibangun | `/`, `/about`, `/vision-mission`, `/organization`, `/departments` dan `/departments/[slug]`, `/programs` dan `/programs/[slug]`, `/competitions` dan `/competitions/[slug]`, `/achievements` dan `/achievements/[slug]`, `/projects` dan `/projects/[slug]`, `/contact`, `/join`, `/register` |
-| Placeholder | `/members`, `/alumni`, `/events`, `/news`, `/gallery` |
-| Sisa template (menunggu U09) | `/blog`, `/pricing`, `/batch`, `/forgot-password` |
+| Sudah dibangun | `/`, `/about`, `/vision-mission`, `/organization`, `/departments` dan `/departments/[slug]`, `/programs` dan `/programs/[slug]`, `/competitions` dan `/competitions/[slug]`, `/achievements` dan `/achievements/[slug]`, `/projects` dan `/projects/[slug]`, `/events` dan `/events/[slug]`, `/news` dan `/news/[slug]`, `/contact`, `/join`, `/register` |
+| Placeholder | `/members`, `/alumni`, `/gallery` |
+| Redirect permanen (`next.config.ts`) | `/blog` ke `/news`, `/blog/[slug]` ke `/news/[slug]` ([D30](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)) |
+| Sisa template (ditangani #49 sesuai D30) | `/pricing`, `/batch`, `/forgot-password` |
 
 - Placeholder memakai `PagePlaceholder` (`components/sections/PagePlaceholder.tsx`) agar link navigasi tidak 404. Halaman sebenarnya **mengganti isi file yang sama**; jangan membuat route baru dengan nama lain.
-- Route yang masih menunggu keputusan PM: `/join` vs `/register` ([U03](DECISIONS.md#u03--route-pendaftaran)), `/news` vs `/blog` serta route sisa template `/pricing`, `/batch`, `/forgot-password` ([U09](DECISIONS.md#u09--route-berita-dan-route-template)), `/members` dan `/alumni` ([U12](DECISIONS.md#u12--halaman-members-dan-alumni)). `/vision-mission` sudah diputuskan menjadi halaman sendiri ([D19](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
+- Keputusan route sudah diambil PM; penerapan yang tersisa dikerjakan #49: `/join` kanonis dan `/register` diarahkan ke `/join` ([D26](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)); `/news` kanonis, `/pricing` dan `/forgot-password` dihapus, `/batch` disembunyikan ([D30](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)); `/members` dan `/alumni` tidak masuk MVP ([D32](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). `/vision-mission` sudah diputuskan menjadi halaman sendiri ([D19](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 
 ## 3. Layout dan navigasi
 
@@ -71,7 +72,7 @@ Aturan:
 - Mock bertipe DTO, bukan tipe lokal: `UVICS_<DOMAIN>S: <Domain>[]`, contoh `UVICS_COMPETITIONS: Competition[]` di `data/mock/competitions.ts`. Domain yang DTO-nya belum dipindah ke `types/` masih memakai `interface <Domain>Item` di file mock (lihat §10).
 - Nilai mengikuti backend: kode enum database (`OPEN`, `NASIONAL`), tanggal `YYYY-MM-DD`, field nullable bernilai `null`, dan urutan array mengikuti urutan backend.
 - Isinya nilai polos yang bisa diserialisasi: string, angka, boolean, array, object. Tidak ada fungsi, komponen ikon, atau `Date`, karena data dikirim dari Server ke Client Component.
-- Mock hanya dibaca service. Batas ini dijaga `tests/unit/public-data-boundary.test.ts`; allowlist `KNOWN_DEBT` mencatat utang yang masih ada: delapan section beranda (#51) dan `/batch` (U09, #49). Entri dihapus saat file dimigrasikan; tes gagal bila entri usang. Tes e2e halaman publik yang harus berjalan di CI diberi nama berawalan `public navigation:`, karena CI hanya menjalankan `--grep 'guest routes|origin/method|public navigation'`.
+- Mock hanya dibaca service. Batas ini dijaga `tests/unit/public-data-boundary.test.ts`; allowlist `KNOWN_DEBT` mencatat utang yang masih ada: delapan section beranda (#51) dan `/batch` (D30, #49). Entri dihapus saat file dimigrasikan; tes gagal bila entri usang. Tes e2e halaman publik yang harus berjalan di CI diberi nama berawalan `public navigation:`, karena CI hanya menjalankan `--grep 'guest routes|origin/method|public navigation'`.
 
 ## 6. State UI
 
@@ -138,8 +139,12 @@ Filter dan halaman daftar hidup di URL supaya bisa dibagikan dan tombol back bek
 | Program | `PublicProgram` di `lib/services/programService.ts` (diturunkan dari `ProgramItem`) | `getPrograms`, `getProgramBySlug` | `data/mock/programs.ts` | belum ada | U05 / #30 |
 | Department | `PublicDepartment` di `lib/services/departmentService.ts` (diturunkan dari `DepartmentItem`) | `getDepartments`, `getDepartmentBySlug` | `data/mock/departments.ts` | belum ada | U02 / #48 |
 | Organisasi | `OrganizationPeriodItem` di `data/mock/organization.ts`; anggota `PublicMember` di `lib/backend/dto.ts` | `getOrganizationPeriods`, `getActivePeriod`, `getPeriodMembers` | `data/mock/organization.ts` | belum ada | U02 / #48 |
+| Event | `PublicEvent`, `EventStatus`, `EventBoard` di `types/event.ts` | `getEventBoard`, `getEventBySlug`, `getRelatedEvents` | `data/mock/events.ts` (contoh berlabel, dipetakan dari `EventItem` lama) | belum ada (tabel `events` belum dibuat) | issue backend events/news belum ada; T06 |
+| Berita | `NewsArticle`, `NewsQuery` di `types/news.ts` | `getNews`, `getNewsBySlug`, `getRelatedNews` | `data/mock/news.ts` (contoh berlabel, dipetakan dari `NewsItem` lama) | belum ada (tabel `posts` belum dibuat) | issue backend events/news belum ada |
 
 Catatan: memindahkan DTO Program, Department, dan periode organisasi ke `types/` sebagai DTO eksplisit masih tertunda (#24 Task 6, setelah PR #62 di-merge atau ditutup). Prestasi dan Project belum memakai `Paginated`; konversinya dikerjakan bersama integrasi backend (#26).
+
+Event dan Berita (#52): mock masih berbentuk `EventItem`/`NewsItem` karena `EventsSection` dan `NewsSection` beranda membacanya; service memetakannya ke DTO. Saat #51 memindahkan kedua section ke service, mock diubah ke bentuk DTO dan mapper dihapus. `startAt`/`endAt` event berupa ISO 8601 berzona dan ditampilkan lewat `toWitaDate`/`formatTimeRange` (WITA). Isi berita (`content`) sementara teks polos berparagraf sampai renderer Tiptap ada. Listing memakai `loading.tsx` di route group `(list)`, sehingga detail dengan slug tak dikenal tetap HTTP 404.
 
 ## 11. Migrasi mock ke backend
 

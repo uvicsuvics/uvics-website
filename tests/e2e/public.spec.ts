@@ -98,6 +98,13 @@ const PROFILE_PAGES = [
     path: "/competitions/gemastik-xviii-pengembangan-aplikasi",
     title: "Gemastik XVIII - Divisi Pengembangan Aplikasi | Kompetisi UVICS UNKLAB",
   },
+  { path: "/events", title: "Event | UVICS" },
+  { path: "/events/contoh-webinar-uvics-vibes", title: "Contoh: Webinar UVICS Vibes | Event UVICS" },
+  { path: "/news", title: "Berita | UVICS" },
+  {
+    path: "/news/contoh-rangkuman-webinar-uvics-vibes",
+    title: "Contoh: Rangkuman Webinar UVICS Vibes | Berita UVICS",
+  },
   { path: "/projects", title: "Project | UVICS" },
   {
     path: "/projects/klabat-campus-superapp",
@@ -180,5 +187,45 @@ test("public navigation: unknown achievement and project return a real 404", asy
     const response = await page.goto(path);
     expect(response?.status()).toBe(404);
     await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
+  }
+});
+
+test("public navigation: unknown event and news slugs return a real 404", async ({ page }) => {
+  for (const path of ["/events/tidak-ada", "/news/tidak-ada"]) {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
+  }
+});
+
+test("public navigation: events and news listings handle page and search params", async ({ page }) => {
+  expect((await page.goto("/events?page=abc"))?.status()).toBe(200);
+  await expect(page.getByRole("heading", { level: 2, name: "Akan datang" })).toBeVisible();
+  // Listing memakai loading.tsx, jadi halaman di luar total menjadi not-found ber-noindex (streamed 200).
+  await page.goto("/news?page=99");
+  await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
+  await expect(page.getByRole("heading", { level: 1, name: "Halaman tidak ditemukan" })).toBeVisible();
+
+  await page.goto("/news");
+  await page.getByRole("searchbox", { name: "Cari berita" }).fill("devhub");
+  await page.getByRole("button", { name: "Cari" }).click();
+  await expect(page).toHaveURL(/\/news\?search=devhub/);
+  await expect(page.getByRole("link", { name: "Contoh: Catatan Kelas DevHub" })).toBeVisible();
+});
+
+test("public navigation: /blog redirects to /news", async ({ page, request }) => {
+  const response = await request.get("/blog/contoh-catatan-kelas-devhub", { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  expect(response.headers().location).toMatch(/\/news\/contoh-catatan-kelas-devhub$/);
+  await page.goto("/blog");
+  await expect(page).toHaveURL(/\/news$/);
+});
+
+test("public navigation: homepage event and news links open their detail pages", async ({ page, request }) => {
+  await page.goto("/");
+  for (const prefix of ["/events/", "/news/"]) {
+    const href = await page.locator(`main a[href^="${prefix}"]`).first().getAttribute("href");
+    expect(href).toBeTruthy();
+    expect((await request.get(href!)).status()).toBe(200);
   }
 });

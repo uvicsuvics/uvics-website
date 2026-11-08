@@ -29,6 +29,42 @@ export function todayInWita(now: Date = new Date()): string {
   return WITA_DATE.format(now);
 }
 
+const DATE_TIME_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
+
+function parseDateTime(dateTime: string): Date {
+  // Datetime tanpa offset ditafsirkan menurut zona runtime, jadi ditolak.
+  if (!DATE_TIME_WITH_OFFSET.test(dateTime)) {
+    throw new RangeError(`Datetime harus ISO 8601 dengan offset: ${dateTime}`);
+  }
+  return new Date(dateTime);
+}
+
+/** Tanggal WITA (YYYY-MM-DD) dari datetime ISO 8601 berzona, untuk dipakai formatDate dan formatDayMonth. */
+export function toWitaDate(dateTime: string): string {
+  return WITA_DATE.format(parseDateTime(dateTime));
+}
+
+const WITA_TIME = new Intl.DateTimeFormat('id-ID', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+  timeZone: 'Asia/Makassar',
+});
+
+/**
+ * Jam event dalam WITA: "14.00–16.30 WITA", "14.00 WITA" tanpa endAt,
+ * atau "08.00 WITA – 22 Nov 2026, 17.00 WITA" bila selesai di hari lain.
+ */
+export function formatTimeRange(startAt: string, endAt: string | null): string {
+  const start = WITA_TIME.format(parseDateTime(startAt));
+  if (!endAt) return `${start} WITA`;
+  const end = WITA_TIME.format(parseDateTime(endAt));
+  const endDate = toWitaDate(endAt);
+  return endDate === toWitaDate(startAt)
+    ? `${start}–${end} WITA`
+    : `${start} WITA – ${formatDate(endDate)}, ${end} WITA`;
+}
+
 const WITA_DATE_TIME = new Intl.DateTimeFormat('id-ID', {
   day: 'numeric',
   month: 'short',

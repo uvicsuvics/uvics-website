@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Paragraf dari teks polos yang dipisah baris kosong; paragraf kosong dibuang. */
+export function toParagraphs(text: string): string[] {
+  return text.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
+}
+
 /** Href daftar tanpa nilai kosong dan tanpa `page` 1, urutan key dipertahankan. */
 export function listHref(
   pathname: string,
