@@ -15,7 +15,6 @@ const createProgramSchema = z
     slug: slugSchema,
     short_description: z.string().max(500).nullable().optional(),
     description: z.string().default(""),
-    image: z.string().nullable().optional(),
     display_order: z.number().int().default(0),
   })
   .strict();
@@ -26,7 +25,6 @@ const updateProgramSchema = z
     slug: slugSchema,
     short_description: z.string().max(500).nullable(),
     description: z.string(),
-    image: z.string().nullable(),
     display_order: z.number().int(),
   })
   .partial()

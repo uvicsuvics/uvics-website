@@ -8,10 +8,10 @@ insert into public.pages (id, title, slug, status) values
   ('00000000-0000-4000-8000-000000000801', 'Draft Page', 'draft-page', 'DRAFT'),
   ('00000000-0000-4000-8000-000000000802', 'Published Page', 'published-page', 'PUBLISHED'),
   ('00000000-0000-4000-8000-000000000803', 'Archived Page', 'archived-page', 'ARCHIVED');
-insert into public.programs (id, name, slug, status) values
-  ('00000000-0000-4000-8000-000000000811', 'Draft Program', 'draft-program', 'DRAFT'),
-  ('00000000-0000-4000-8000-000000000812', 'Published Program', 'published-program', 'PUBLISHED'),
-  ('00000000-0000-4000-8000-000000000813', 'Archived Program', 'archived-program', 'ARCHIVED');
+insert into public.programs (id, name, slug, status, image) values
+  ('00000000-0000-4000-8000-000000000811', 'Draft Program', 'draft-program', 'DRAFT', '/images/program.png'),
+  ('00000000-0000-4000-8000-000000000812', 'Published Program', 'published-program', 'PUBLISHED', null),
+  ('00000000-0000-4000-8000-000000000813', 'Archived Program', 'archived-program', 'ARCHIVED', null);
 insert into public.website_settings (key, value) values
   ('organization_name', '"UVICS"'),
   ('internal_secret', '"secret-value"');
@@ -226,6 +226,16 @@ begin
     raise exception 'archive_program status mismatch';
   end if;
   select * into strict audit_rec from public.audit_logs where action = 'PROGRAM_ARCHIVED' and entity_id = (created_pr->>'id')::uuid;
+
+  -- D44: image tidak ditulis dari admin, walaupun RPC dipanggil langsung
+  created_pr := public.create_program('{"name":"A","slug":"a","image":"https://evil.example/x.png"}'::jsonb);
+  if created_pr->>'image' is not null then raise exception 'create_program wrote image'; end if;
+  perform public.update_program('00000000-0000-4000-8000-000000000811', '{"image":null,"name":"Draft Program 2"}'::jsonb);
+  perform public.update_program((created_pr->>'id')::uuid, '{"image":"https://evil.example/y.png"}'::jsonb);
+  if (select image from public.programs where id = '00000000-0000-4000-8000-000000000811') is distinct from '/images/program.png'
+    or (select image from public.programs where id = (created_pr->>'id')::uuid) is not null then
+    raise exception 'update_program changed image';
+  end if;
 
   -- 6. Website Settings update
   settings_res := public.update_website_settings('{"registration_open":true,"footer_text":"Test Footer"}'::jsonb);

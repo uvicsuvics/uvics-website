@@ -205,6 +205,13 @@ describe("programs", () => {
     expect(program.display_order).toBe(2);
   });
 
+  it("rejects image writes from admin before the RPC (D44)", async () => {
+    const { client, rpc } = fakeClient({ rpc: ok(programRow) });
+    await rejectsWith(createProgram(client, { name: "X", slug: "x", image: "x" }), "VALIDATION_ERROR");
+    await rejectsWith(updateProgram(client, ID, { image: null }), "VALIDATION_ERROR");
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("does not inject description/display_order defaults on partial update", async () => {
     const { client, rpc } = fakeClient({ rpc: ok(programRow) });
     await updateProgram(client, ID, { name: "Baru" });

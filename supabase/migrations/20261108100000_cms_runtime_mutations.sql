@@ -118,7 +118,6 @@ declare
   v_slug text;
   v_short_desc text;
   v_desc text;
-  v_image text;
   v_order int;
 begin
   if not private.has_active_admin_session() then
@@ -129,11 +128,11 @@ begin
   v_slug := p_values->>'slug';
   v_short_desc := p_values->>'short_description';
   v_desc := coalesce(p_values->>'description', '');
-  v_image := p_values->>'image';
   v_order := coalesce((p_values->>'display_order')::integer, 0);
 
-  insert into public.programs (name, slug, short_description, description, image, display_order, status)
-  values (v_name, v_slug, v_short_desc, v_desc, v_image, v_order, 'DRAFT')
+  -- shortcut: image tidak ditulis dari admin (D44), buka lagi saat jalur publikasi media CMS ada
+  insert into public.programs (name, slug, short_description, description, display_order, status)
+  values (v_name, v_slug, v_short_desc, v_desc, v_order, 'DRAFT')
   returning * into r;
 
   perform private.write_audit(
@@ -164,13 +163,13 @@ begin
     raise no_data_found;
   end if;
 
+  -- shortcut: image tidak ditulis dari admin (D44), buka lagi saat jalur publikasi media CMS ada
   update public.programs
   set
     name = coalesce(p_changes->>'name', previous.name),
     slug = coalesce(p_changes->>'slug', previous.slug),
     short_description = case when p_changes ? 'short_description' then p_changes->>'short_description' else previous.short_description end,
     description = case when p_changes ? 'description' then coalesce(p_changes->>'description', '') else previous.description end,
-    image = case when p_changes ? 'image' then p_changes->>'image' else previous.image end,
     display_order = case when p_changes ? 'display_order' then (p_changes->>'display_order')::integer else previous.display_order end
   where id = p_id
   returning * into r;
