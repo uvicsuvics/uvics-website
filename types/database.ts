@@ -823,6 +823,8 @@ export type Database = {
         };
         Returns: Json;
       };
+      archive_page: { Args: { p_id: string }; Returns: Json };
+      archive_program: { Args: { p_id: string }; Returns: Json };
       begin_media_publication: {
         Args: {
           p_actor: string;
@@ -855,6 +857,8 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_page: { Args: { p_values: Json }; Returns: Json };
+      create_program: { Args: { p_values: Json }; Returns: Json };
       create_upload_intent: {
         Args: {
           p_actor: string;
@@ -908,6 +912,9 @@ export type Database = {
         };
         Returns: string;
       };
+      update_page: { Args: { p_changes: Json; p_id: string }; Returns: Json };
+      update_program: { Args: { p_changes: Json; p_id: string }; Returns: Json };
+      update_website_settings: { Args: { p_values: Json }; Returns: Json };
     };
     Enums: {
       competition_status:
