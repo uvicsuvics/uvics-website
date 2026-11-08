@@ -119,6 +119,21 @@ describe("pages admin", () => {
     await rejectsWith(archivePage(fakeClient({ rpc: fail("P0002") }).client, ID), "NOT_FOUND");
   });
 
+  it("reports a duplicate slug as field_errors.slug on every create/update", async () => {
+    const dup = () => fakeClient({ rpc: fail("23505") }).client;
+    for (const call of [
+      () => createPage(dup(), { title: "X", slug: "x" }),
+      () => updatePage(dup(), ID, { slug: "x" }),
+      () => createProgram(dup(), { name: "X", slug: "x" }),
+      () => updateProgram(dup(), ID, { slug: "x" }),
+    ]) {
+      const error = await rejectsWith(call(), "CONFLICT");
+      expect(error.details.fieldErrors).toEqual({ slug: ["Slug sudah dipakai."] });
+    }
+    const other = await rejectsWith(createPage(fakeClient({ rpc: fail("23503") }).client, { title: "X", slug: "x" }), "CONFLICT");
+    expect(other.details.fieldErrors).toBeUndefined();
+  });
+
   it("sends only the changed fields on update (no schema defaults overwrite content)", async () => {
     const { client, rpc } = fakeClient({ rpc: ok(pageRow) });
     await updatePage(client, ID, { title: "Baru" });

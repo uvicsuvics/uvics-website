@@ -243,7 +243,7 @@ begin
   begin
     perform public.update_website_settings('{"unknown_key":"bad"}'::jsonb);
     raise exception 'invalid setting key accepted';
-  exception when raise_exception then null; end;
+  exception when sqlstate '23514' then null; end;
 end$$;
 reset role;
 

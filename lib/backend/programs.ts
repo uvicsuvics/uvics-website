@@ -115,6 +115,12 @@ export async function getPublicProgramBySlug(
   return parsed.data;
 }
 
+/** Galat RPC tulis: slug duplikat (23505) menjadi field error slug, sisanya lewat databaseError. */
+function writeError(error: { code?: string }): never {
+  if (error.code === "23505") throw new AppError("CONFLICT", { fieldErrors: { slug: ["Slug sudah dipakai."] } });
+  databaseError(error);
+}
+
 export async function listAdminPrograms(client: SupabaseClient<Database>): Promise<AdminProgramDto[]> {
   await requireAdmin(client);
 
@@ -168,7 +174,7 @@ export async function createProgram(
   }
 
   const { data, error } = await client.rpc("create_program", { p_values: parsed.data });
-  if (error) databaseError(error);
+  if (error) writeError(error);
 
   const result = adminProgramDto.safeParse(data);
   if (!result.success) throw new AppError("SERVICE_UNAVAILABLE");
@@ -192,7 +198,7 @@ export async function updateProgram(
     p_id: id,
     p_changes: parsed.data,
   });
-  if (error) databaseError(error);
+  if (error) writeError(error);
 
   const result = adminProgramDto.safeParse(data);
   if (!result.success) throw new AppError("SERVICE_UNAVAILABLE");

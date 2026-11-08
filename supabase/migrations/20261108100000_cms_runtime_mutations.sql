@@ -244,7 +244,7 @@ begin
       'footer_text', 'default_meta_title', 'default_meta_description',
       'registration_open', 'maintenance_mode'
     ) then
-      raise exception 'invalid setting key';
+      raise exception 'invalid setting key' using errcode = 'check_violation';
     end if;
 
     select value into prev_val from public.website_settings where key = k for update;
