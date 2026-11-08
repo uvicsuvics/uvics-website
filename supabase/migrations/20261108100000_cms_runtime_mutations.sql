@@ -1,5 +1,6 @@
--- Issue #30: Mutasi CMS ter-audit atomik dalam satu transaksi SQL.
--- Menggantikan RPC generik log_cms_audit dengan fungsi domain khusus admin.
+-- Issue #30: runtime CMS. Mutasi page, program, dan website settings lewat RPC admin
+-- yang memeriksa sesi, menulis baris, lalu menulis audit dalam satu transaksi (D13).
+-- Kontrak: documents/BACKEND_CONVENTIONS.md, bagian Runtime CMS #30.
 
 create function public.create_page(p_values jsonb)
 returns jsonb language plpgsql security definer set search_path = '' as $$
