@@ -221,6 +221,44 @@ begin
 end;
 $$;
 
+-- Predikat bersama reader publik dan validasi tulis admin, agar nilai yang tersimpan
+-- selalu tampil di publik. Ekspresi case disalin apa adanya dari read_public_settings()
+-- di 20261008100000_backend_security_guardrails.sql.
+create function private.public_setting_is_valid(p_key text, p_value jsonb)
+returns boolean language sql immutable set search_path = '' as $$
+ select case
+  when s.key in('registration_open','maintenance_mode') then jsonb_typeof(s.value)='boolean'
+  when jsonb_typeof(s.value)<>'string' then false
+  -- Subset konservatif dari DTO: setiap nilai yang lolos di sini juga lolos Zod.
+  -- Karakter alfanumerik tidak pernah terpotong trim, jadi teks tidak kosong.
+  when s.key in('organization_name','website_title','address','default_meta_title','default_meta_description')
+   then char_length(t.v)<=500 and t.v ~ '[[:alnum:]]'
+  when s.key='footer_text' then char_length(t.v)<=2000 and t.v ~ '[[:alnum:]]'
+  -- Regex email identik dengan Zod 4 (zod/v4/core/regexes.js).
+  when s.key='email' then char_length(t.v)<=254
+   and t.v ~ '^(?:[A-Za-z0-9_''+-]+\.)*[A-Za-z0-9_''+-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$'
+  when s.key='phone' then t.v ~ '^\+[1-9][0-9]{7,14}$'
+  -- Host ASCII dengan TLD huruf, tanpa port/credential, path ASCII printable.
+  -- Label xn-- (punycode) dikecualikan: WHATWG URL menolak punycode invalid.
+  when s.key in('instagram_url','linkedin_url','github_url','youtube_url')
+   then char_length(t.v)<=2048
+   and t.v ~ '^https?://((?![Xx][Nn]--)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}([/?#][!-~]*)?$'
+  when s.key in('logo','favicon')
+   then t.v ~ '^/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.(png|jpg|jpeg|webp|svg|ico)$'
+   or t.v ~ '^https://res\.cloudinary\.com/[a-z0-9_-]+/image/upload/([a-z0-9_,]+/)?v[0-9]+/uvics/published/[a-f0-9-]{36}\.(jpg|png|webp)$'
+  else false end
+ from (select p_key as key, p_value as value) s
+ cross join lateral (select s.value#>>'{}' as v) t;
+$$;
+revoke all on function private.public_setting_is_valid(text, jsonb) from public, anon, authenticated, service_role;
+
+-- Output, grant, dan security definer tidak berubah; hanya predikatnya dipindah.
+create or replace function public.read_public_settings() returns jsonb
+language sql stable security definer set search_path='' as $$
+ select coalesce(jsonb_object_agg(s.key,s.value),'{}') from public.website_settings s
+ where private.public_setting_is_valid(s.key, s.value);
+$$;
+
 create function public.update_website_settings(p_values jsonb)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
@@ -244,6 +282,15 @@ begin
       'registration_open', 'maintenance_mode'
     ) then
       raise exception 'invalid setting key' using errcode = 'check_violation';
+    end if;
+
+    -- K2: null mengosongkan key teks; identitas wajib dan flag boolean tidak boleh kosong.
+    if jsonb_typeof(v) = 'null' then
+      if k in ('organization_name', 'website_title', 'registration_open', 'maintenance_mode') then
+        raise exception 'setting value required' using errcode = 'check_violation';
+      end if;
+    elsif private.public_setting_is_valid(k, v) is not true then
+      raise exception 'invalid setting value' using errcode = 'check_violation';
     end if;
 
     select value into prev_val from public.website_settings where key = k for update;

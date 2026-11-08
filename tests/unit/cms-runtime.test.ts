@@ -237,11 +237,30 @@ describe("website settings", () => {
     expect(from).not.toHaveBeenCalled();
   });
 
-  it("validates writes with websiteSettingsSchema before the audited RPC", async () => {
+  it("validates writes before the audited RPC", async () => {
     const { client, rpc } = fakeClient();
-    for (const bad of [{}, { site_name: "x" }, { instagram_url: "javascript:alert(1)" }, { phone: "081234" }, { registration_open: "true" }])
+    for (const bad of [
+      {},
+      { site_name: "x" },
+      { instagram_url: "javascript:alert(1)" },
+      { phone: "081234" },
+      { registration_open: "true" },
+      { logo: "/logo/uvics.png" },
+      { favicon: "/favicon.ico" },
+      { organization_name: null },
+      { website_title: null },
+      { registration_open: null },
+    ])
       await rejectsWith(updateWebsiteSettings(client, bad), "VALIDATION_ERROR");
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("normalizes 08 phones to +62 and passes null through to clear optional keys", async () => {
+    const { client, rpc } = fakeClient({ rpc: ok([]) });
+    await updateWebsiteSettings(client, { phone: "0812-3456-7890", footer_text: null });
+    expect(rpc.mock.calls).toEqual([
+      ["update_website_settings", { p_values: { phone: "+6281234567890", footer_text: null } }],
+    ]);
   });
 
   it("writes valid settings in one RPC and returns parsed admin DTOs", async () => {

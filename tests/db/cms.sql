@@ -80,6 +80,11 @@ begin
     if has_function_privilege('service_role', fn, 'execute') then raise exception 'service_role must not execute %', fn; end if;
     if not has_function_privilege('authenticated', fn, 'execute') then raise exception 'authenticated must execute %', fn; end if;
   end loop;
+  if has_function_privilege('anon', 'private.public_setting_is_valid(text, jsonb)', 'execute')
+    or has_function_privilege('authenticated', 'private.public_setting_is_valid(text, jsonb)', 'execute')
+    or has_function_privilege('service_role', 'private.public_setting_is_valid(text, jsonb)', 'execute') then
+    raise exception 'client roles must not execute private.public_setting_is_valid';
+  end if;
 end$$;
 
 -- service_role tanpa JWT admin ditolak
@@ -142,6 +147,9 @@ declare
   created_pr jsonb;
   settings_res jsonb;
   audit_rec public.audit_logs;
+  valid_settings jsonb;
+  bad jsonb;
+  k text;
 begin
   if (select count(*) from public.pages) <> 3 then raise exception 'active admin must read draft and archived pages'; end if;
   if (select count(*) from public.programs) <> 3 then raise exception 'active admin must read draft and archived programs'; end if;
@@ -254,6 +262,48 @@ begin
     perform public.update_website_settings('{"unknown_key":"bad"}'::jsonb);
     raise exception 'invalid setting key accepted';
   exception when sqlstate '23514' then null; end;
+
+  -- Setiap key yang bisa diedit admin dan tersimpan juga tampil di reader publik
+  valid_settings := jsonb_build_object(
+    'organization_name', 'UVICS', 'website_title', 'UVICS Website', 'email', 'uvics@unklab.ac.id',
+    'phone', '+6281234567890', 'address', 'Airmadidi, Minahasa Utara',
+    'instagram_url', 'https://www.instagram.com/uvics', 'linkedin_url', 'https://www.linkedin.com/company/uvics',
+    'github_url', 'https://github.com/uvics', 'youtube_url', 'https://www.youtube.com/@uvics',
+    'footer_text', 'Hak cipta UVICS', 'default_meta_title', 'UVICS', 'default_meta_description', 'Komunitas CS UNKLAB',
+    'registration_open', true, 'maintenance_mode', false);
+  perform public.update_website_settings(valid_settings);
+  for k in select jsonb_object_keys(valid_settings) loop
+    if not (public.read_public_settings() ? k) then raise exception 'stored setting % hidden from public reader', k; end if;
+  end loop;
+
+  -- Nilai yang lolos Zod tapi gagal reader publik ditolak
+  foreach bad in array array[
+    '{"organization_name":"   "}', '{"organization_name":"!!!"}',
+    '{"github_url":"https://github.com:8443/uvics"}', '{"github_url":"https://xn--uvics-9ta.com/x"}'
+  ]::jsonb[] loop
+    begin
+      perform public.update_website_settings(bad);
+      raise exception 'setting rejected by the public reader was stored: %', bad;
+    exception when sqlstate '23514' then null; end;
+  end loop;
+
+  -- K2: null mengosongkan key teks; key yang tidak dikirim tidak disentuh
+  perform public.update_website_settings('{"footer_text":null}'::jsonb);
+  if public.read_public_settings() ? 'footer_text'
+    or (select value from public.website_settings where key = 'footer_text') <> 'null'::jsonb then
+    raise exception 'footer_text null did not clear the setting';
+  end if;
+  if public.read_public_settings()->>'organization_name' <> 'UVICS' then
+    raise exception 'unsent setting key was changed';
+  end if;
+
+  -- K2: identitas wajib dan flag boolean tidak boleh null
+  foreach bad in array array['{"registration_open":null}', '{"organization_name":null}']::jsonb[] loop
+    begin
+      perform public.update_website_settings(bad);
+      raise exception 'required setting cleared: %', bad;
+    exception when sqlstate '23514' then null; end;
+  end loop;
 end$$;
 reset role;
 
