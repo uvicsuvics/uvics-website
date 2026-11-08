@@ -78,8 +78,13 @@ export function httpFailure(error: unknown) {
 }
 export function databaseError(error: { code?: string } | null): never {
   if (error?.code === "42501") throw new AppError("FORBIDDEN");
-  if (error?.code === "23505" || error?.code === "P0001")
+  if (
+    error?.code === "23503" ||
+    error?.code === "23505" ||
+    error?.code === "P0001"
+  )
     throw new AppError("CONFLICT");
+  if (error?.code === "23514") throw new AppError("VALIDATION_ERROR");
   if (error?.code === "P0002") throw new AppError("NOT_FOUND");
   // PostgREST 416: halaman di luar total baris.
   if (error?.code === "PGRST103") throw new AppError("NOT_FOUND");

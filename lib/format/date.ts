@@ -65,6 +65,20 @@ export function formatTimeRange(startAt: string, endAt: string | null): string {
     : `${start} WITA – ${formatDate(endDate)}, ${end} WITA`;
 }
 
+const WITA_DATE_TIME = new Intl.DateTimeFormat('id-ID', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Asia/Makassar',
+});
+
+/** Format timestamptz ISO ke "8 Nov 2026, 14.30 WITA". */
+export function formatDateTime(value: string): string {
+  return `${WITA_DATE_TIME.format(new Date(value))} WITA`;
+}
+
 const DAY = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone: 'UTC' });
 const SHORT_MONTH = new Intl.DateTimeFormat('id-ID', { month: 'short', timeZone: 'UTC' });
 
