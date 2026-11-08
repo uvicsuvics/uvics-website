@@ -488,7 +488,7 @@ Steering Helper → Koordinator → PIC (Person In Charge) → Anggota
 
 Admin dapat mengganti periode yang ingin ditampilkan.
 
-> **Catatan v1.1:** Pengurus inti tidak berada di departemen, tetapi kolom departemen pada histori keanggotaan saat ini wajib diisi ([U01](DECISIONS.md#u01--pengurus-inti-tanpa-departemen)). Pengunjung belum punya jalur baca data organisasi ([U02](DECISIONS.md#u02--akses-publik-data-organisasi)).
+> **Catatan v1.1:** Pengurus inti tidak berada di departemen, sehingga kolom departemen pada histori keanggotaan dibuat nullable ([D24](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). Pengunjung membaca data organisasi lewat view atau RPC publik berproyeksi field ([D25](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)), yang belum dibangun.
 
 ---
 
@@ -756,7 +756,7 @@ Requirement:
 - image compression;
 - optional album grouping.
 
-> **Catatan v1.1:** Spesifikasi halaman publik memakai album wajib dengan route `/gallery/{slug}`. Lihat [U14](DECISIONS.md#u14--galeri).
+> **Catatan v1.1:** Spesifikasi halaman publik memakai album wajib dengan route `/gallery/{slug}`. Lihat [D34](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima).
 
 ---
 
@@ -824,7 +824,7 @@ Public pages:
 - hanya program `PUBLISHED` yang tampil di website publik;
 - publish dilakukan lewat fungsi database yang memeriksa sesi admin.
 
-> **Catatan v1.1:** Spesifikasi halaman publik meminta informasi tambahan (kategori, ikon, relasi ke departemen) yang belum ada di tabel. Lihat [U05](DECISIONS.md#u05--field-programs).
+> **Catatan v1.1:** Spesifikasi halaman publik meminta informasi tambahan (kategori, ikon, relasi ke departemen) yang belum ada di tabel. Relasi ke departemen diputuskan di [D28](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima); kategori dan ikon tidak ditambah.
 
 ### Program Resmi (Achievers Guidebook 2026)
 
@@ -869,7 +869,7 @@ Admin harus dapat:
 
 Public registration hanya dapat digunakan ketika registration aktif.
 
-> **Catatan v1.1:** Status "pendaftaran dibuka" saat ini punya dua sumber (periode di bagian ini dan flag `registration_open` di §36), dan aturan unik per periode (§22.3) belum punya entitas periode. Lihat [U04](DECISIONS.md#u04--sumber-status-pendaftaran-dibuka). Route halaman pendaftaran menunggu [U03](DECISIONS.md#u03--route-pendaftaran).
+> **Catatan v1.1:** Status "pendaftaran dibuka" saat ini punya dua sumber (periode di bagian ini dan flag `registration_open` di §36), dan aturan unik per periode (§22.3) belum punya entitas periode. Untuk MVP sumbernya hanya `registration_open` ([D27](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). Route halaman pendaftaran adalah `/join` ([D26](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 
 ## 22.2 Registration Form
 
@@ -1227,7 +1227,7 @@ GitHub optional
 
 Field internal seperti phone number, personal email, NIM, dan admin notes tidak boleh ditampilkan.
 
-> **Catatan v1.1:** Akses publik langsung ke data member ditutup ([D02](DECISIONS.md#a-keputusan-teknis-d01d05-kontrak-3133)); data member hanya tampil lewat proyeksi field. Apakah halaman `/members` dan `/alumni` masuk MVP menunggu [U12](DECISIONS.md#u12--halaman-members-dan-alumni), dan default `public_profile` menunggu [U11](DECISIONS.md#u11--default-public_profile).
+> **Catatan v1.1:** Akses publik langsung ke data member ditutup ([D02](DECISIONS.md#a-keputusan-teknis-d01d05-kontrak-3133)); data member hanya tampil lewat proyeksi field. Halaman `/members` dan `/alumni` tidak masuk MVP ([D32](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)), dan default `public_profile` menjadi `false` ([D31](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 
 ---
 
@@ -2226,11 +2226,11 @@ Recommended:
 
 > **Catatan v1.1:** Beberapa route berbeda dengan spesifikasi halaman publik dan kode:
 >
-> - pendaftaran `/register` vs `/join` ([U03](DECISIONS.md#u03--route-pendaftaran));
-> - berita `/news` vs `/blog`, serta route template `/pricing`, `/batch`, `/forgot-password` ([U09](DECISIONS.md#u09--route-berita-dan-route-template));
+> - pendaftaran `/register` vs `/join` ([D26](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
+> - berita `/news` vs `/blog`, serta route template `/pricing`, `/batch`, `/forgot-password` ([D30](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
 > - halaman Visi & Misi `/vision-mission` ([D19](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
-> - detail galeri `/gallery/{slug}` ([U14](DECISIONS.md#u14--galeri));
-> - `/members` dan `/alumni` ([U12](DECISIONS.md#u12--halaman-members-dan-alumni)).
+> - detail galeri `/gallery/{slug}` ([D34](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
+> - `/members` dan `/alumni` ([D32](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 
 ---
 
