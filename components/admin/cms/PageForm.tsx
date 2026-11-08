@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import {
+  callAction,
   cmsErrorMap,
   cmsFailureView,
   pageFormSchema,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/admin/cms";
 import type { AdminPageDto } from "@/lib/backend/pages";
 import { CmsFormShell, CmsSection } from "./CmsFormShell";
+import { dismissNotice } from "./CmsNotice";
 import { FormField } from "./FormField";
 
 const FIELDS = [
@@ -56,7 +58,7 @@ export function PageForm({ page, statusSlot }: PageFormProps) {
     setValue,
     getFieldState,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<PageFormValues>({
     resolver: zodResolver(
       pageFormSchema,
@@ -69,6 +71,7 @@ export function PageForm({ page, statusSlot }: PageFormProps) {
   const metaDescription = useWatch({ control, name: "meta_description" });
 
   const fail = (error: FailureError) => {
+    dismissNotice();
     const view = cmsFailureView(error, FIELDS, "slug");
     if (view.kind === "banner") return setBanner(view.message);
     setBanner(
@@ -84,7 +87,9 @@ export function PageForm({ page, statusSlot }: PageFormProps) {
     startTransition(async () => {
       const payload = toPagePayload(values);
       if (page) {
-        const result = await updatePageAction(page.id, payload);
+        const result = await callAction(() =>
+          updatePageAction(page.id, payload),
+        );
         if (result.ok)
           router.replace(`/admin/pages/${page.id}?notice=saved`, {
             scroll: false,
@@ -92,7 +97,7 @@ export function PageForm({ page, statusSlot }: PageFormProps) {
         else fail(result.error);
         return;
       }
-      const result = await createPageAction(payload);
+      const result = await callAction(() => createPageAction(payload));
       if (result.ok)
         router.replace(`/admin/pages/${result.data.id}?notice=created`);
       else fail(result.error);
@@ -116,6 +121,7 @@ export function PageForm({ page, statusSlot }: PageFormProps) {
         banner={banner}
         cancelHref="/admin/pages"
         statusSlot={statusSlot}
+        statusLocked={isDirty}
       >
         <CmsSection title="Konten">
           <FormField

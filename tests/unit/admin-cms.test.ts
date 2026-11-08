@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getAdminBreadcrumbs } from "@/config/admin-navigation";
 import {
+  callAction,
   cmsErrorMap,
   cmsFailureView,
   countByStatus,
@@ -160,5 +161,19 @@ describe("skema dan payload form", () => {
       description: "",
       display_order: 3,
     });
+  });
+});
+
+describe("pemanggilan Server Action dari klien", () => {
+  it("galat jaringan menjadi hasil gagal dengan pesan aman, bukan exception", async () => {
+    const result = await callAction(() => Promise.reject(new TypeError("Failed to fetch")));
+    expect(result).toMatchObject({ ok: false, error: { code: "SERVICE_UNAVAILABLE" } });
+    expect(result.ok ? "" : result.error.message).toMatch(/^Gagal terhubung ke server/);
+    expect(JSON.stringify(result)).not.toContain("Failed to fetch");
+  });
+
+  it("hasil Server Action diteruskan apa adanya", async () => {
+    const ok = { ok: true as const, data: { id: ID } };
+    expect(await callAction(() => Promise.resolve(ok))).toBe(ok);
   });
 });

@@ -1,7 +1,9 @@
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { backend, notFound } = vi.hoisted(() => ({
+const { backend, notFound, url } = vi.hoisted(() => ({
+  url: { params: new URLSearchParams() },
   backend: {
     listAdminPages: vi.fn(),
     getAdminPage: vi.fn(),
@@ -19,6 +21,7 @@ vi.mock("next/navigation", () => ({
   notFound,
   redirect: vi.fn(),
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => url.params,
 }));
 vi.mock("@/lib/backend/pages", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/backend/pages")>()),
@@ -36,6 +39,8 @@ import NewPagePage from "@/app/admin/(protected)/pages/new/page";
 import AdminPagesPage from "@/app/admin/(protected)/pages/page";
 import EditProgramPage from "@/app/admin/(protected)/programs/[id]/page";
 import AdminProgramsPage from "@/app/admin/(protected)/programs/page";
+import { CmsFormShell } from "@/components/admin/cms/CmsFormShell";
+import { dismissNotice } from "@/components/admin/cms/CmsNotice";
 import { AppError } from "@/lib/backend/errors";
 
 const ID = "00000000-0000-4000-8000-000000000801";
@@ -71,7 +76,11 @@ const sp = (params: Record<string, string> = {}) => Promise.resolve(params);
 const renderList = async (params?: Record<string, string>) =>
   renderToStaticMarkup(await AdminPagesPage({ searchParams: sp(params) }));
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  // URL browser memuat notice seperti saat halaman baru dibuka setelah aksi sukses.
+  url.params = new URLSearchParams("notice=saved");
+});
 
 describe("/admin/pages", () => {
   it("menampilkan daftar dengan status, tanggal WITA, dan aksi sesuai status", async () => {
@@ -144,6 +153,19 @@ describe("/admin/pages/new dan /admin/pages/[id]", () => {
     expect(html).toContain("langsung tampil di website");
     expect(html).toContain("Perubahan berhasil disimpan.");
     expect(html).toContain('aria-label="Arsipkan Tentang UVICS"');
+    expect(html).toMatch(/<input[^>]*aria-required="true"[^>]*id="page-title"|<input[^>]*id="page-title"[^>]*aria-required="true"/);
+    expect(html).toMatch(/<input[^>]*id="page-slug"[^>]*aria-required="true"|<input[^>]*aria-required="true"[^>]*id="page-slug"/);
+    expect(html).not.toMatch(/id="page-content"[^>]*aria-required/);
+    expect(html).not.toContain("<fieldset disabled");
+  });
+
+  it("banner sukses hilang setelah notice dihapus dari URL karena galat", async () => {
+    backend.getAdminPage.mockResolvedValue(page());
+    url.params = new URLSearchParams();
+    const html = renderToStaticMarkup(
+      await EditPagePage({ params: Promise.resolve({ id: ID }), searchParams: sp({ notice: "saved" }) }),
+    );
+    expect(html).not.toContain("Perubahan berhasil disimpan.");
   });
 
   it("id tidak dikenal menjadi 404", async () => {
@@ -170,5 +192,45 @@ describe("/admin/programs", () => {
     expect(html).toContain('value="3"');
     expect(html).toContain('aria-label="Terbitkan ulang KABEL (Kamar Belajar)"');
     expect(html).not.toContain('name="image"');
+  });
+});
+
+describe("perlindungan suntingan di form CMS", () => {
+  const shell = (statusLocked: boolean) =>
+    // Dipanggil langsung seperti komponen halaman di atas (CmsFormShell tanpa hook).
+    renderToStaticMarkup(
+      CmsFormShell({
+        noun: "halaman",
+        status: "DRAFT",
+        pending: false,
+        cancelHref: "/admin/pages",
+        statusLocked,
+        statusSlot: createElement("button", { type: "button" }, "Terbitkan"),
+        children: null,
+      }),
+    );
+
+  it("aksi status terkunci selama ada perubahan yang belum disimpan", () => {
+    const locked = shell(true);
+    expect(locked).toMatch(/<fieldset[^>]*disabled=""[^>]*>[\s\S]*Terbitkan/);
+    expect(locked).toContain("Simpan perubahan dulu sebelum mengubah status.");
+    const open = shell(false);
+    expect(open).not.toContain('disabled=""');
+    expect(open).not.toContain("Simpan perubahan dulu");
+  });
+
+  it("dismissNotice menghapus notice dari URL tanpa menyentuh parameter lain", () => {
+    const replaceState = vi.fn();
+    vi.stubGlobal("window", {
+      location: { href: "http://localhost/admin/pages?status=DRAFT&notice=published" },
+      history: { replaceState },
+    });
+    dismissNotice();
+    expect(replaceState).toHaveBeenCalledWith(null, "", "http://localhost/admin/pages?status=DRAFT");
+    replaceState.mockClear();
+    window.location.href = "http://localhost/admin/pages?status=DRAFT";
+    dismissNotice();
+    expect(replaceState).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

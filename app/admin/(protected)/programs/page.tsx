@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { CmsBanner } from "@/components/admin/cms/CmsBanner";
+import { CmsNotice } from "@/components/admin/cms/CmsNotice";
 import { CmsIndex } from "@/components/admin/cms/CmsIndex";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -40,7 +40,7 @@ export default async function AdminProgramsPage({
           </Button>
         }
       />
-      {notice ? <CmsBanner tone="success">{notice}</CmsBanner> : null}
+      <CmsNotice message={notice} />
       {result.ok ? (
         <CmsIndex
           noun="program"

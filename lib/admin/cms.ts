@@ -150,6 +150,26 @@ const NOTICES = {
 export type CmsNotice = keyof typeof NOTICES;
 export const CMS_NOTICES = Object.keys(NOTICES) as CmsNotice[];
 
+const NETWORK_FAILURE =
+  "Gagal terhubung ke server. Periksa koneksi internet, lalu coba lagi.";
+
+/**
+ * Panggil Server Action dari komponen klien. Galat jaringan (fetch gagal, versi deploy berubah)
+ * menjadi hasil gagal biasa agar tidak naik ke error boundary dan menghapus isian form.
+ */
+export async function callAction<T>(
+  action: () => Promise<OperationResult<T>>,
+): Promise<OperationResult<T>> {
+  try {
+    return await action();
+  } catch {
+    return {
+      ok: false,
+      error: { code: "SERVICE_UNAVAILABLE", message: NETWORK_FAILURE },
+    };
+  }
+}
+
 /** Pesan sukses dari parameter `notice`; nilai tak dikenal diabaikan. */
 export function noticeMessage(
   notice: string | undefined,

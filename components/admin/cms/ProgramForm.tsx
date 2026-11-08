@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import {
+  callAction,
   cmsErrorMap,
   cmsFailureView,
   programFormSchema,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/admin/cms";
 import type { AdminProgramDto } from "@/lib/backend/programs";
 import { CmsFormShell, CmsSection } from "./CmsFormShell";
+import { dismissNotice } from "./CmsNotice";
 import { FormField } from "./FormField";
 
 // Field departemen (U05, programs.department_id dari #30) ditambahkan di sini setelah kolomnya ada.
@@ -57,7 +59,7 @@ export function ProgramForm({ program, statusSlot }: ProgramFormProps) {
     setValue,
     getFieldState,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ProgramFormValues>({
     resolver: zodResolver(
       programFormSchema,
@@ -69,6 +71,7 @@ export function ProgramForm({ program, statusSlot }: ProgramFormProps) {
   const shortDescription = useWatch({ control, name: "short_description" });
 
   const fail = (error: FailureError) => {
+    dismissNotice();
     const view = cmsFailureView(error, FIELDS, "slug");
     if (view.kind === "banner") return setBanner(view.message);
     setBanner(
@@ -84,7 +87,9 @@ export function ProgramForm({ program, statusSlot }: ProgramFormProps) {
     startTransition(async () => {
       const payload = toProgramPayload(values);
       if (program) {
-        const result = await updateProgramAction(program.id, payload);
+        const result = await callAction(() =>
+          updateProgramAction(program.id, payload),
+        );
         if (result.ok)
           router.replace(`/admin/programs/${program.id}?notice=saved`, {
             scroll: false,
@@ -92,7 +97,7 @@ export function ProgramForm({ program, statusSlot }: ProgramFormProps) {
         else fail(result.error);
         return;
       }
-      const result = await createProgramAction(payload);
+      const result = await callAction(() => createProgramAction(payload));
       if (result.ok)
         router.replace(`/admin/programs/${result.data.id}?notice=created`);
       else fail(result.error);
@@ -116,6 +121,7 @@ export function ProgramForm({ program, statusSlot }: ProgramFormProps) {
         banner={banner}
         cancelHref="/admin/programs"
         statusSlot={statusSlot}
+        statusLocked={isDirty}
       >
         <CmsSection title="Program">
           <div className="grid gap-5 md:grid-cols-2">

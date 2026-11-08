@@ -7,7 +7,7 @@ import { updateSettingsAction } from "@/app/admin/(protected)/settings/actions";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { cmsErrorMap, cmsFailureView } from "@/lib/admin/cms";
+import { callAction, cmsErrorMap, cmsFailureView } from "@/lib/admin/cms";
 import {
   changedSettings,
   SETTINGS_CLEARED_MESSAGE,
@@ -160,7 +160,7 @@ export function SettingsForm({ initial }: { initial: SettingsFormValues }) {
   const save = (changes: Partial<SettingsFormValues>) =>
     startTransition(async () => {
       setConfirming(null);
-      const result = await updateSettingsAction(changes);
+      const result = await callAction(() => updateSettingsAction(changes));
       if (result.ok) {
         const next = { ...baseline, ...changes };
         setBaseline(next);

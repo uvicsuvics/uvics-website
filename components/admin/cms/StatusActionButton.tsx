@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { statusAction, type CmsNoun } from "@/lib/admin/cms";
+import { callAction, statusAction, type CmsNoun } from "@/lib/admin/cms";
 import type { OperationResult } from "@/lib/backend/errors";
 import type { ContentStatus } from "@/types/cms";
+import { dismissNotice } from "./CmsNotice";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface StatusActionButtonProps {
@@ -35,10 +36,11 @@ export function StatusActionButton({
   const run = () =>
     startTransition(async () => {
       setError("");
-      const result = await action();
+      const result = await callAction(action);
       setOpen(false);
-      if (result.ok) router.replace(successHref, { scroll: false });
-      else setError(result.error.message);
+      if (result.ok) return router.replace(successHref, { scroll: false });
+      dismissNotice();
+      setError(result.error.message);
     });
 
   return (

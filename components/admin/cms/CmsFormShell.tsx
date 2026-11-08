@@ -14,6 +14,8 @@ interface CmsFormShellProps {
   cancelHref: string;
   /** Aksi status dan tanggal, dirender server untuk entri yang sudah ada. */
   statusSlot?: ReactNode;
+  /** Kunci aksi status selama form punya perubahan: aksi status memakai isi database, bukan isi form. */
+  statusLocked?: boolean;
   children: ReactNode;
 }
 
@@ -28,6 +30,7 @@ export function CmsFormShell({
   banner,
   cancelHref,
   statusSlot,
+  statusLocked = false,
   children,
 }: CmsFormShellProps) {
   return (
@@ -76,7 +79,20 @@ export function CmsFormShell({
           >
             Batal
           </Button>
-          {statusSlot}
+          {statusSlot ? (
+            <fieldset
+              disabled={statusLocked}
+              aria-describedby={statusLocked ? "cms-status-locked" : undefined}
+              className="flex min-w-0 flex-col gap-2"
+            >
+              {statusLocked ? (
+                <p id="cms-status-locked" className="text-xs text-gray-600">
+                  Simpan perubahan dulu sebelum mengubah status.
+                </p>
+              ) : null}
+              {statusSlot}
+            </fieldset>
+          ) : null}
         </aside>
       </div>
     </div>

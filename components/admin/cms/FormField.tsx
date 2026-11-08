@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 export interface FieldControlProps {
   id: string;
   "aria-invalid": boolean;
+  "aria-required"?: true;
   "aria-describedby"?: string;
 }
 
@@ -50,6 +51,8 @@ export function FormField({
       {children({
         id,
         "aria-invalid": !!error,
+        // Tanda * disembunyikan dari pembaca layar, jadi status wajib diumumkan lewat atribut.
+        "aria-required": required || undefined,
         "aria-describedby": described || undefined,
       })}
       {error ? (

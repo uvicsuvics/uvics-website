@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { BackLink } from "@/components/admin/cms/BackLink";
-import { CmsBanner } from "@/components/admin/cms/CmsBanner";
+import { CmsNotice } from "@/components/admin/cms/CmsNotice";
 import { CmsStatusPanel } from "@/components/admin/cms/CmsStatusPanel";
 import { PageForm } from "@/components/admin/cms/PageForm";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -40,7 +40,7 @@ export default async function EditPagePage({
         title="Edit halaman"
         description={result.ok ? result.data.title : undefined}
       />
-      {notice ? <CmsBanner tone="success">{notice}</CmsBanner> : null}
+      <CmsNotice message={notice} />
       {result.ok ? (
         <PageForm
           // Muat ulang nilai form setelah simpan (updated_at berubah).
