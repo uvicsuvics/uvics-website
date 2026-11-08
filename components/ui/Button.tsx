@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   href?: string;
   /** Dengan `href`: tautan ke situs lain, dibuka di tab baru. */
@@ -20,7 +20,7 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-250 ease-standard';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-250 ease-standard disabled:cursor-not-allowed disabled:opacity-60';
   
   const variants = {
     primary: 'bg-primary text-white hover:bg-primary-600 hover:shadow-primary',
@@ -28,6 +28,8 @@ export function Button({
     accent: 'bg-accent text-white hover:bg-[#0057db] hover:shadow-accent',
     outline: 'bg-transparent text-primary border-2 border-primary hover:bg-primary-50',
     ghost: 'bg-transparent text-gray-700 hover:bg-muted',
+    // Aksi berisiko (arsip); teks error di atas putih tetap lolos kontras 4.5:1.
+    danger: 'bg-white text-error border-2 border-error/60 hover:bg-error/5',
   };
 
   const sizes = {

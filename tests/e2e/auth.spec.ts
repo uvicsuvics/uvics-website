@@ -32,6 +32,19 @@ test("guest routes, form validation, and responsive public/admin shells", async 
   await expect(page.locator("main")).toHaveCount(1);
   await expect(page.getByRole("link", { name: "Uvics Logo" })).toBeVisible();
 });
+test("guest routes: admin CMS modules redirect to login", async ({ page }) => {
+  for (const path of [
+    "/admin/pages",
+    "/admin/pages/new",
+    "/admin/pages/00000000-0000-4000-8000-000000000801",
+    "/admin/programs",
+    "/admin/programs/new",
+    "/admin/settings",
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/admin\/login$/);
+  }
+});
 test("origin/method/content type guards precede media effects", async ({
   request,
 }) => {

@@ -29,6 +29,18 @@ export function todayInWita(now: Date = new Date()): string {
   return WITA_DATE.format(now);
 }
 
+const WITA_DAY = new Intl.DateTimeFormat('id-ID', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'Asia/Makassar',
+});
+
+/** Tanggal kejadian `timestamptz` (ISO dengan offset) menurut WITA, mis. "8 Nov 2026". */
+export function formatTimestamp(iso: string): string {
+  return WITA_DAY.format(new Date(iso));
+}
+
 const WITA_DATE_TIME = new Intl.DateTimeFormat('id-ID', {
   day: 'numeric',
   month: 'short',

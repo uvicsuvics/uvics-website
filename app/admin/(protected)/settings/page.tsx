@@ -1,18 +1,32 @@
 import type { Metadata } from "next";
-import { Settings } from "lucide-react";
-import { AdminModulePlaceholder } from "@/components/admin/AdminModulePlaceholder";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { SettingsForm } from "@/components/admin/cms/SettingsForm";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { loadForAdmin } from "@/lib/admin/server";
+import { settingsToForm } from "@/lib/admin/settings";
+import { listAdminSettings } from "@/lib/backend/settings";
 
 export const metadata: Metadata = {
   title: "Pengaturan Website | UVICS Admin",
 };
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  const result = await loadForAdmin(listAdminSettings);
+
   return (
-    <AdminModulePlaceholder
-      title="Pengaturan Website"
-      description="Kelola konfigurasi umum website, informasi kontak, dan preferensi platform."
-      icon={Settings}
-      message="Modul pengaturan website akan tersedia pada tahap integrasi berikutnya."
-    />
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Pengaturan Website"
+        description="Saat ini website baru memakai status pendaftaran. Pengaturan lain disimpan untuk bagian website yang menyusul."
+      />
+      {result.ok ? (
+        <SettingsForm initial={settingsToForm(result.data)} />
+      ) : (
+        <ErrorState
+          title="Pengaturan belum bisa dimuat"
+          message={result.error.message}
+        />
+      )}
+    </div>
   );
 }
