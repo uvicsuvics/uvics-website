@@ -103,9 +103,9 @@ Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration ad
 | `MEDIA_PUBLISHED` | upload_intent | `reference_type`, `reference_id` |
 | `PAGE_PUBLISHED` / `PROGRAM_PUBLISHED` | page / program | `status` |
 | Settings (milik #30) | website_settings, `entity_id = null` | `key`; nilai hanya untuk flag publik boolean |
-| `COMPETITION_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | competition | `title`, `slug`, `publication_status` |
-| `ACHIEVEMENT_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | achievement | `title`, `slug`, `publication_status` |
-| `PROJECT_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | project | `title`, `slug`, `publication_status` |
+| `COMPETITION_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | competition | `title`, `slug`, `registration_url`, `guidebook_url`, `changed`, `publication_status` |
+| `ACHIEVEMENT_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | achievement | `title`, `slug`, `changed`, `publication_status` (tanpa nama/data member) |
+| `PROJECT_CREATED` / `UPDATED` / `PUBLISHED` / `DELETED` | project | `title`, `slug`, `project_url`, `repository_url`, `changed`, `publication_status` (tanpa nama/data member) |
 
 **Direct DML.** `authenticated` dan `service_role` hanya memiliki SELECT pada tabel domain: CMS (`pages`, `programs`, `website_settings`), organisasi/membership (`registrations`, `members`, `membership_histories`, `departments`, `positions`, `organization_periods`), dan content #36 (`competitions`, `achievements`, `achievement_members`, `achievement_certificates`, `projects`, `project_members`). `service_role` melewati RLS, sehingga DML langsung berarti mutation tanpa audit (D13). Admin membaca lewat policy SELECT `active_admin_read`; tidak ada policy write yang tersisa, sehingga grant baru tidak diam-diam membuka bypass. Tersedia: `publish_page`, `publish_program`, serta mutasi admin ter-audit untuk content #55 (`create_*`, `update_*`, `publish_*`, `delete_*` untuk `competition`, `achievement`, `project`, serta view/RPC detail admin). Belum tersedia dan tetap tertutup sampai owner menambah RPC ter-audit: CRUD page/program/settings (#30) dan organisasi/membership (#29). Sampai saat itu, operator mengisi data lewat seeder/`psql` sebagai owner database, bukan service client.
 
