@@ -36,7 +36,7 @@ export const PUBLIC_NAVIGATION: PublicNavItem[] = [
       },
       {
         title: "Visi & Misi",
-        href: "/about#visi-misi",
+        href: "/vision-mission",
         desc: "Nilai luhur dan komitmen pengembangan talenta",
         group: "Profil Organisasi",
       },

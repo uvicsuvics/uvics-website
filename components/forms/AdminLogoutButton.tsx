@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 
 interface AdminLogoutButtonProps {
   size?: "sm" | "md" | "lg" | "xl";
-  variant?: "outline" | "dropdown-item";
+  /** `sidebar-item` hanya merender ikon dan label; tampilan diatur lewat `className`. */
+  variant?: "outline" | "dropdown-item" | "sidebar-item";
   className?: string;
 }
 
@@ -27,6 +28,22 @@ export function AdminLogoutButton({
       if (result && !result.ok) setError(result.error.message);
     });
   };
+
+  if (variant === "sidebar-item") {
+    return (
+      <div>
+        <button type="button" disabled={pending} onClick={handleLogout} className={className}>
+          <LogOut className="size-4" strokeWidth={1.5} aria-hidden="true" />
+          <span>{pending ? "Keluar…" : "Keluar"}</span>
+        </button>
+        {error && (
+          <p role="alert" className="mt-1 px-2.5 text-[11px] text-error">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   if (variant === "dropdown-item") {
     return (

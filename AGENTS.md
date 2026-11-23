@@ -119,7 +119,7 @@ Ukuran Button: sm | md | lg | xl
     sections/               Section besar untuk halaman (Hero, About, dll)
     ui/                     Komponen UI primitif yang reusable (Button, dll)
   config/                   Navigasi publik dan admin
-  data/, lib/mock-data/     Data mock sementara (diganti data Supabase)
+  data/                     Data mock sementara (diganti data Supabase)
   documents/                Dokumentasi proyek (lihat tabel di atas)
   lib/
     auth/                   Guard admin dan alur login

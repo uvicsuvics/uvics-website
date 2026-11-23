@@ -370,7 +370,7 @@ export type Database = {
       membership_histories: {
         Row: {
           created_at: string;
-          department_id: string;
+          department_id: string | null;
           end_date: string | null;
           id: string;
           member_id: string;
@@ -382,7 +382,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
-          department_id: string;
+          department_id?: string | null;
           end_date?: string | null;
           id?: string;
           member_id: string;
@@ -394,7 +394,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
-          department_id?: string;
+          department_id?: string | null;
           end_date?: string | null;
           id?: string;
           member_id?: string;
@@ -850,6 +850,32 @@ export type Database = {
       };
     };
     Functions: {
+      admin_convert_registration_to_member: {
+        Args: {
+          p_department_id?: string;
+          p_organization_period_id: string;
+          p_position_id: string;
+          p_registration_id: string;
+          p_start_date: string;
+        };
+        Returns: Json;
+      };
+      admin_review_registration: {
+        Args: {
+          p_admin_notes?: string;
+          p_registration_id: string;
+          p_status: string;
+        };
+        Returns: Json;
+      };
+      admin_soft_delete_member: {
+        Args: {
+          p_member_id: string;
+        };
+        Returns: Json;
+      };
+      archive_page: { Args: { p_id: string }; Returns: Json };
+      archive_program: { Args: { p_id: string }; Returns: Json };
       begin_media_publication: {
         Args: {
           p_actor: string;
@@ -894,6 +920,8 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_page: { Args: { p_values: Json }; Returns: Json };
+      create_program: { Args: { p_values: Json }; Returns: Json };
       create_project: {
         Args: {
           p_values: Json;
@@ -1015,6 +1043,8 @@ export type Database = {
         };
         Returns: Json;
       };
+      update_page: { Args: { p_changes: Json; p_id: string }; Returns: Json };
+      update_program: { Args: { p_changes: Json; p_id: string }; Returns: Json };
       update_project: {
         Args: {
           p_changes: Json;
@@ -1022,6 +1052,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      update_website_settings: { Args: { p_values: Json }; Returns: Json };
     };
     Enums: {
       competition_status:

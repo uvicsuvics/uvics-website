@@ -1,4 +1,3 @@
-import type { ComponentType } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -13,23 +12,32 @@ import {
   UserCheck,
   Users,
   GraduationCap,
-  Building2,
-  BadgeCheck,
-  CalendarRange,
+  Building,
   Settings,
   ShieldCheck,
+  type LucideIcon,
 } from "lucide-react";
 
-export interface AdminNavItem {
+export interface AdminNavLink {
   title: string;
   href: string;
-  icon: ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
+}
+
+export interface AdminNavItem extends AdminNavLink {
+  icon: LucideIcon;
   badge?: string;
+}
+
+/** Entri sidebar yang bisa dilipat; tautan anaknya tampil tanpa ikon. */
+export interface AdminNavGroup {
+  title: string;
+  icon: LucideIcon;
+  items: AdminNavLink[];
 }
 
 export interface AdminNavSection {
   title?: string;
-  items: AdminNavItem[];
+  items: (AdminNavItem | AdminNavGroup)[];
 }
 
 export const ADMIN_NAVIGATION: AdminNavSection[] = [
@@ -62,18 +70,31 @@ export const ADMIN_NAVIGATION: AdminNavSection[] = [
       { title: "Pendaftaran", href: "/admin/registrations", icon: UserCheck },
       { title: "Anggota", href: "/admin/members", icon: Users },
       { title: "Alumni", href: "/admin/alumni", icon: GraduationCap },
-      { title: "Departemen", href: "/admin/departments", icon: Building2 },
-      { title: "Posisi", href: "/admin/positions", icon: BadgeCheck },
-      { title: "Periode Organisasi", href: "/admin/organization-periods", icon: CalendarRange },
+      {
+        title: "Organisasi",
+        icon: Building,
+        items: [
+          { title: "Departemen", href: "/admin/departments" },
+          { title: "Posisi", href: "/admin/positions" },
+          { title: "Periode Organisasi", href: "/admin/organization-periods" },
+        ],
+      },
     ],
   },
-  {
-    title: "System",
-    items: [
-      { title: "Pengaturan Website", href: "/admin/settings", icon: Settings },
-      { title: "Log Audit", href: "/admin/audit-logs", icon: ShieldCheck },
-    ],
-  },
+];
+
+/** Tautan sistem di bagian bawah sidebar, di atas tombol Keluar. */
+export const ADMIN_NAVIGATION_FOOTER: AdminNavItem[] = [
+  { title: "Pengaturan Website", href: "/admin/settings", icon: Settings },
+  { title: "Log Audit", href: "/admin/audit-logs", icon: ShieldCheck },
+];
+
+/** Semua tautan admin dalam satu daftar datar, termasuk anak grup dan footer. */
+export const ADMIN_NAV_LINKS: AdminNavLink[] = [
+  ...ADMIN_NAVIGATION.flatMap((section) =>
+    section.items.flatMap((entry) => ("items" in entry ? entry.items : [entry]))
+  ),
+  ...ADMIN_NAVIGATION_FOOTER,
 ];
 
 /**
@@ -101,7 +122,7 @@ const COMMON_NESTED_ACTIONS: Record<string, string> = {
 };
 
 /**
- * Derives dynamic breadcrumbs from pathname using ADMIN_NAVIGATION as the single source of truth.
+ * Derives dynamic breadcrumbs from pathname using ADMIN_NAV_LINKS as the single source of truth.
  */
 export function getAdminBreadcrumbs(pathname: string): AdminBreadcrumbItem[] {
   const crumbs: AdminBreadcrumbItem[] = [
@@ -114,14 +135,11 @@ export function getAdminBreadcrumbs(pathname: string): AdminBreadcrumbItem[] {
     return crumbs;
   }
 
-  // Find matching item in ADMIN_NAVIGATION
-  let matchedItem: AdminNavItem | undefined;
-  for (const section of ADMIN_NAVIGATION) {
-    for (const item of section.items) {
-      if (isAdminNavItemActive(pathname, item.href)) {
-        if (!matchedItem || item.href.length > matchedItem.href.length) {
-          matchedItem = item;
-        }
+  let matchedItem: AdminNavLink | undefined;
+  for (const item of ADMIN_NAV_LINKS) {
+    if (isAdminNavItemActive(pathname, item.href)) {
+      if (!matchedItem || item.href.length > matchedItem.href.length) {
+        matchedItem = item;
       }
     }
   }

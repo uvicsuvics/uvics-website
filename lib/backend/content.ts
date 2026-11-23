@@ -89,7 +89,7 @@ export const contentMemberSchema = z
   });
 
 // Nilai kosong dari form GET ("Semua") berarti tanpa filter.
-const optional = <T extends z.ZodType>(schema: T) => z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
+export const optional = <T extends z.ZodType>(schema: T) => z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
 // Buang karakter khusus filter PostgREST (, ( ) " ' \ :) dan pola LIKE (* % _); hasil kosong = tanpa filter.
 export function normalizeSearch(term: string) {
   return term.replace(/[,()"'\\*%_:]/g, "").replace(/\s+/g, " ").trim();
@@ -114,7 +114,7 @@ const ACHIEVEMENT_FIELDS =
 const PROJECT_FIELDS =
   "id,title,slug,summary,description,cover_image,project_url,repository_url,start_date,end_date,status,featured,created_at,updated_at,project_members(member_name,role)";
 
-function parseQuery<T extends z.ZodType>(schema: T, raw: unknown): z.infer<T> {
+export function parseQuery<T extends z.ZodType>(schema: T, raw: unknown): z.infer<T> {
   const result = schema.safeParse(raw);
   if (!result.success) throw new AppError("VALIDATION_ERROR");
   return result.data;
@@ -142,7 +142,7 @@ function publicSlug(slug: string) {
   return slug;
 }
 
-const rangeOf = ({ page, page_size }: { page: number; page_size: number }) => [(page - 1) * page_size, page * page_size - 1] as const;
+export const rangeOf = ({ page, page_size }: { page: number; page_size: number }) => [(page - 1) * page_size, page * page_size - 1] as const;
 
 // Filter PUBLISHED eksplisit: sesi admin di halaman publik membuka draft lewat RLS admin.
 export async function listPublicCompetitions(client: Client, raw: unknown) {

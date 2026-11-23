@@ -1,3 +1,10 @@
+import { formatDayMonth, formatTimeRange, toWitaDate } from "@/lib/format/date";
+
+// Isi CONTOH (keputusan K2 #52, D22): bukan konten resmi UVICS. Nama program diambil dari
+// guidebook; jadwal, lokasi, dan deskripsi hanya untuk menguji tampilan sampai data dari CMS ada.
+// Bentuk `EventItem` dipertahankan karena EventsSection beranda (#51) masih memakainya;
+// eventService memetakannya ke DTO `PublicEvent`.
+
 export interface EventItem {
   id: string;
   slug: string;
@@ -6,6 +13,7 @@ export interface EventItem {
   location: string;
   venueType: "On-Campus" | "Online" | "Hybrid";
   startAt: string;
+  endAt?: string;
   dateBadge: {
     day: string;
     month: string;
@@ -24,101 +32,102 @@ export interface EventItem {
   featured?: boolean;
 }
 
-export const UVICS_EVENTS: EventItem[] = [
+type EventSeed = Omit<EventItem, "dateBadge" | "timeRange">;
+
+const EXAMPLE_NOTE = "Ini konten contoh. Jadwal, lokasi, dan detail resmi diumumkan pengurus UVICS.";
+
+/** Field tampilan lama beranda diturunkan dari startAt/endAt supaya tidak berbeda dengan halaman event. */
+function withLegacyFields(seed: EventSeed): EventItem {
+  const date = toWitaDate(seed.startAt);
+  const { day, month } = formatDayMonth(date);
+  return {
+    ...seed,
+    dateBadge: { day, month: month.toUpperCase(), year: date.slice(0, 4) },
+    timeRange: formatTimeRange(seed.startAt, seed.endAt ?? null),
+  };
+}
+
+// Tiga event mendatang di depan karena EventsSection menampilkan tiga item pertama sebagai "Event Mendatang".
+const EVENT_SEEDS: EventSeed[] = [
   {
-    id: "evt-tech-talk-fullstack",
-    slug: "tech-talk-scalable-fullstack-2026",
-    title: "UVICS Tech Talk: Architecting Scalable Next.js & Cloud Systems",
-    description: "Sesi mendalam mengenai praktik rekayasa perangkat lunak modern, optimasi SSR di edge, dan strategi membangun backend resilient untuk jutaan pengguna.",
-    location: "Auditorium GK1 UNKLAB & Live Zoom",
-    venueType: "Hybrid",
-    startAt: "2026-10-12T14:00:00+08:00",
-    dateBadge: {
-      day: "12",
-      month: "OKT",
-      year: "2026",
-    },
-    timeRange: "14:00 - 16:30 WITA",
-    registrationUrl: "https://uvics.org/events/register/tech-talk-fullstack",
+    id: "evt-contoh-uvics-vibes",
+    slug: "contoh-webinar-uvics-vibes",
+    title: "Contoh: Webinar UVICS Vibes",
+    description: `Contoh event: webinar teknologi dan pengembangan diri dari program UVICS Vibes.\n\n${EXAMPLE_NOTE}`,
+    location: "Online",
+    venueType: "Online",
+    startAt: "2026-11-21T14:00:00+08:00",
+    endAt: "2026-11-21T16:00:00+08:00",
     poster: "/images/img/foto-2.webp",
     status: "UPCOMING",
     category: "Tech Talk",
-    speaker: {
-      name: "Kevin Runtuwene",
-      role: "Staff Software Engineer & Alumnus UVICS",
-    },
-    seatsLeft: 45,
     featured: true,
   },
   {
-    id: "evt-workshop-cv-pytorch",
-    slug: "hands-on-deep-learning-pytorch",
-    title: "Hands-on Bootcamp: Practical Computer Vision with PyTorch",
-    description: "Workshop interaktif pemrograman model deep learning, transfer learning untuk deteksi objek, dan deployment model AI langsung ke antarmuka web.",
-    location: "Lab Komputer 3, Gedung FIK UNKLAB",
+    id: "evt-contoh-kabel",
+    slug: "contoh-sesi-belajar-kabel",
+    title: "Contoh: Sesi Belajar KABEL",
+    description: `Contoh event: sesi belajar bersama program KABEL (Kamar Belajar) sesuai topik yang dipilih anggota.\n\n${EXAMPLE_NOTE}`,
+    location: "Kampus UNKLAB, Airmadidi",
     venueType: "On-Campus",
-    startAt: "2026-10-24T09:00:00+08:00",
-    dateBadge: {
-      day: "24",
-      month: "OKT",
-      year: "2026",
-    },
-    timeRange: "09:00 - 15:00 WITA",
-    registrationUrl: "https://uvics.org/events/register/deep-learning-pytorch",
+    startAt: "2026-12-05T18:00:00+08:00",
+    endAt: "2026-12-05T20:00:00+08:00",
     poster: "/images/img/foto-3.webp",
     status: "UPCOMING",
     category: "Workshop",
-    speaker: {
-      name: "Sarah Manoppo",
-      role: "Lead Researcher AI & Data UVICS",
-    },
-    seatsLeft: 18,
-    featured: false,
   },
   {
-    id: "evt-internal-hackathon",
-    slug: "uvics-codesprint-hackathon-2026",
-    title: "UVICS CodeSprint: 48-Hour Campus Innovation Challenge",
-    description: "Kompetisi hackathon internal tahunan di mana anggota UVICS membentuk tim lintas angkatan untuk menyelesaikan tantangan digitalisasi kampus Universitas Klabat.",
-    location: "Innovation Hall Gedung Pioneer UNKLAB",
+    id: "evt-contoh-bonding",
+    slug: "contoh-bonding-anggota-uvics",
+    title: "Contoh: Bonding Anggota UVICS",
+    description: `Contoh event: kegiatan Bonding untuk mempererat hubungan antaranggota.\n\n${EXAMPLE_NOTE}`,
+    location: "Kampus UNKLAB, Airmadidi",
     venueType: "On-Campus",
-    startAt: "2026-11-07T08:00:00+08:00",
-    dateBadge: {
-      day: "07",
-      month: "NOV",
-      year: "2026",
-    },
-    timeRange: "08:00 WITA (Non-stop 48 Jam)",
-    registrationUrl: "https://uvics.org/events/register/codesprint-2026",
-    poster: "/images/img/foto-12.webp",
+    startAt: "2027-01-16T09:00:00+08:00",
+    endAt: "2027-01-16T15:00:00+08:00",
+    poster: "/images/img/foto-9.webp",
     status: "UPCOMING",
-    category: "Hackathon Internal",
-    seatsLeft: 12,
-    featured: true,
+    category: "Orientasi",
   },
   {
-    id: "evt-design-critique-uiux",
-    slug: "design-system-critique-session",
-    title: "Design Critique & Accessibility Audit Clinic",
-    description: "Sesi bedah antarmuka dan usability testing langsung terhadap prototipe proyek anggota, dipandu oleh UI/UX designer profesional.",
-    location: "Studio Desain Kreatif & Discord Voice",
-    venueType: "Hybrid",
-    startAt: "2026-11-18T16:00:00+08:00",
-    dateBadge: {
-      day: "18",
-      month: "NOV",
-      year: "2026",
-    },
-    timeRange: "16:00 - 18:00 WITA",
-    registrationUrl: "https://uvics.org/events/register/design-critique",
-    poster: "/images/img/foto-13.webp",
-    status: "UPCOMING",
+    id: "evt-contoh-mentor-community",
+    slug: "contoh-sharing-session-mentor-community",
+    title: "Contoh: Sharing Session Mentor Community",
+    description: `Contoh event: sesi berbagi persiapan lomba dari program Mentor Community.\n\n${EXAMPLE_NOTE}`,
+    location: "Kampus UNKLAB, Airmadidi",
+    venueType: "On-Campus",
+    startAt: "2026-10-18T15:00:00+08:00",
+    endAt: "2026-10-18T17:00:00+08:00",
+    poster: "/images/img/foto-8.webp",
+    status: "FINISHED",
     category: "Workshop",
-    speaker: {
-      name: "Kezia Sondakh",
-      role: "Product Design Lead UVICS",
-    },
-    seatsLeft: 25,
-    featured: false,
+  },
+  {
+    id: "evt-contoh-devhub",
+    slug: "contoh-kelas-devhub",
+    title: "Contoh: Kelas DevHub",
+    description: `Contoh event yang dibatalkan: kelas web development dari program DevHub.\n\n${EXAMPLE_NOTE}`,
+    location: "Online",
+    venueType: "Online",
+    startAt: "2026-09-27T16:00:00+08:00",
+    endAt: "2026-09-27T18:00:00+08:00",
+    poster: "/images/img/foto-5.webp",
+    status: "CANCELLED",
+    category: "Workshop",
+  },
+  {
+    id: "evt-contoh-bonding-awal",
+    slug: "contoh-bonding-awal-periode",
+    title: "Contoh: Bonding Awal Periode",
+    description: `Contoh event: Bonding pembuka periode kepengurusan.\n\n${EXAMPLE_NOTE}`,
+    location: "Kampus UNKLAB, Airmadidi",
+    venueType: "On-Campus",
+    startAt: "2026-09-06T09:00:00+08:00",
+    endAt: "2026-09-06T14:00:00+08:00",
+    poster: "/images/img/foto-12.webp",
+    status: "FINISHED",
+    category: "Orientasi",
   },
 ];
+
+export const UVICS_EVENTS: EventItem[] = EVENT_SEEDS.map(withLegacyFields);

@@ -50,14 +50,11 @@ describe("schema vs types/database.ts", () => {
     expect(compareSchema(db, readTypes(withText))).toEqual([]);
   });
 
-  it("maps jsonb arguments to Json like supabase gen types", () => {
-    const withJson = source.replace(
-      "Functions: { ping: { Args: { p_id: string }; Returns: boolean } };",
-      "Functions: { ping: { Args: { p_id: string }; Returns: boolean }; update_item: { Args: { p_changes: Json; p_id: string }; Returns: Json } };",
-    );
+  it("maps jsonb function arguments to Json like supabase gen types", () => {
+    const withJsonArg = source.replace("ping: { Args: { p_id: string }", "ping: { Args: { p_id: string; p_values: Json }");
     const db = catalog();
-    db.functions.push({ proname: "update_item", res: "jsonb", args: "p_changes:jsonb,p_id:uuid" });
-    expect(compareSchema(db, readTypes(withJson))).toEqual([]);
+    db.functions[0].args = "p_id:uuid,p_values:jsonb";
+    expect(compareSchema(db, readTypes(withJsonArg))).toEqual([]);
   });
 
   it("compares runtime Constants, which Zod validators are built from, with the enum labels", () => {

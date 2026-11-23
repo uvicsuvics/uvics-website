@@ -3,7 +3,10 @@ import { cn } from "@/lib/utils";
 
 export interface DashboardStatCardProps {
   title: string;
-  value: string | number;
+  /** null: sumber data belum ada, tampil "Belum tersedia" alih-alih angka. */
+  value: string | number | null;
+  /** Pesan aman bila data gagal dimuat; menggantikan nilai dan deskripsi. */
+  error?: string;
   description?: string;
   icon: ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
   iconColorVariant?: "primary" | "accent" | "warning";
@@ -19,6 +22,7 @@ const ICON_VARIANTS = {
 export function DashboardStatCard({
   title,
   value,
+  error,
   description,
   icon: Icon,
   iconColorVariant = "primary",
@@ -42,14 +46,25 @@ export function DashboardStatCard({
           <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
       </div>
-      <div className="mt-2.5">
-        <div className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-sans tabular-nums">
-          {value}
+      {error ? (
+        <div role="alert" className="mt-2.5">
+          <p className="text-sm font-semibold text-error">Gagal dimuat</p>
+          <p className="mt-0.5 text-xs text-gray-500">{error}</p>
         </div>
-        {description && (
-          <p className="mt-0.5 text-xs text-gray-400">{description}</p>
-        )}
-      </div>
+      ) : (
+        <div className="mt-2.5">
+          {value === null ? (
+            <p className="text-sm font-semibold text-gray-500">Belum tersedia</p>
+          ) : (
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 font-sans tabular-nums">
+              {value}
+            </div>
+          )}
+          {description && (
+            <p className="mt-0.5 text-xs text-gray-400">{description}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

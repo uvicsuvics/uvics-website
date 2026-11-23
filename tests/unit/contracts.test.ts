@@ -96,6 +96,8 @@ describe("explicit DTO projections", () => {
     });
     expect(JSON.stringify(dto)).not.toContain(SENTINEL);
     expect(() => toPublicMember({ nim: SENTINEL })).toThrow(AppError);
+    // Pengurus inti tanpa departemen (U01)
+    expect(toPublicMember({ ...row, department_name: null }).department).toBeNull();
   });
   it("keeps allowlisted, well-typed settings and drops unknown or malformed values", () => {
     const settings = toPublicSettings({

@@ -30,6 +30,8 @@ describe("public navigation configuration and active link helpers", () => {
       "Visi & Misi",
       "Departemen",
     ]);
+    // D19: Visi & Misi punya halaman sendiri, bukan anchor di /about.
+    expect(profilItems?.find((s) => s.title === "Visi & Misi")?.href).toBe("/vision-mission");
 
     const aktivitasItems = tentang?.subItems?.filter(
       (s) => s.group === "Aktivitas & Media"
@@ -71,6 +73,7 @@ describe("public navigation configuration and active link helpers", () => {
     it("activates Tentang for both Profil and merged Aktivitas routes", () => {
       // Profil routes
       expect(isPublicNavItemActive("/about", tentangItem)).toBe(true);
+      expect(isPublicNavItemActive("/vision-mission", tentangItem)).toBe(true);
       expect(isPublicNavItemActive("/departments", tentangItem)).toBe(true);
       expect(isPublicNavItemActive("/departments/web-development", tentangItem)).toBe(true);
 
