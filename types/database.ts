@@ -540,6 +540,7 @@ export type Database = {
       programs: {
         Row: {
           created_at: string;
+          department_id: string | null;
           description: string;
           display_order: number;
           id: string;
@@ -552,6 +553,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          department_id?: string | null;
           description?: string;
           display_order?: number;
           id?: string;
@@ -564,6 +566,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          department_id?: string | null;
           description?: string;
           display_order?: number;
           id?: string;
@@ -574,7 +577,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["content_status"];
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "programs_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       project_members: {
         Row: {
@@ -885,6 +896,8 @@ export type Database = {
       has_active_admin_session: { Args: never; Returns: boolean };
       publish_page: { Args: { p_id: string }; Returns: undefined };
       publish_program: { Args: { p_id: string }; Returns: undefined };
+      read_admin_programs: { Args: { p_id?: string }; Returns: Json };
+      read_public_program_departments: { Args: never; Returns: Json };
       read_public_settings: { Args: never; Returns: Json };
       read_upload_intent: {
         Args: { p_actor: string; p_intent: string; p_session: string };

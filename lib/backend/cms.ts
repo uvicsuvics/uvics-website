@@ -19,6 +19,7 @@ export const pageSchema = z.object({
 
 export const programSchema = z.object({
   name: z.string().trim().min(1).max(255),
+  department_id: z.uuid().nullable().optional(),
   slug: slugSchema,
   short_description: z.string().max(500).nullable().optional(),
   description: z.string().default(""),

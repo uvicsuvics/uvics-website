@@ -4,13 +4,19 @@ import { Constants, type Database } from "@/types/database";
 import { requireAdmin } from "@/lib/auth/admin";
 import { programSchema } from "./cms";
 import { AppError, databaseError } from "./errors";
-import { datetimeSchema, paginationMeta, paginationSchema, slugSchema } from "./validation";
+import {
+  datetimeSchema,
+  paginationMeta,
+  paginationSchema,
+  slugSchema,
+} from "./validation";
 
 export { programSchema };
 export type ProgramInput = z.infer<typeof programSchema>;
 
 const createProgramSchema = z
   .object({
+    department_id: z.uuid().nullable().optional(),
     name: z.string().trim().min(1).max(255),
     slug: slugSchema,
     short_description: z.string().max(500).nullable().optional(),
@@ -21,6 +27,7 @@ const createProgramSchema = z
 
 const updateProgramSchema = z
   .object({
+    department_id: z.uuid().nullable(),
     name: z.string().trim().min(1).max(255),
     slug: slugSchema,
     short_description: z.string().max(500).nullable(),
@@ -33,6 +40,7 @@ const updateProgramSchema = z
 
 export const adminProgramDto = z.object({
   id: z.uuid(),
+  department_id: z.uuid().nullable(),
   name: z.string(),
   slug: z.string(),
   short_description: z.string().nullable(),
@@ -46,6 +54,9 @@ export const adminProgramDto = z.object({
 
 export type AdminProgramDto = z.output<typeof adminProgramDto>;
 
+const departmentDto = z.strictObject({ slug: z.string(), name: z.string() });
+const departmentMapSchema = z.record(z.uuid(), departmentDto);
+
 export const publicProgramDto = z.object({
   id: z.uuid(),
   name: z.string(),
@@ -54,23 +65,53 @@ export const publicProgramDto = z.object({
   description: z.string(),
   image: z.string().nullable(),
   display_order: z.number().int(),
+  department: departmentDto.nullable(),
 });
 
 export type PublicProgramDto = z.output<typeof publicProgramDto>;
 
-const PUBLIC_PROGRAM_FIELDS = "id, name, slug, short_description, description, image, display_order";
-const ADMIN_PROGRAM_FIELDS =
-  "id, name, slug, short_description, description, image, status, display_order, created_at, updated_at";
+const PUBLIC_PROGRAM_FIELDS =
+  "id, name, slug, short_description, description, image, display_order";
 
-export async function getPublicPrograms(client: SupabaseClient<Database>): Promise<PublicProgramDto[]> {
-  const { items } = await listPublicPrograms(client, { page: 1, page_size: 100 });
+async function withDepartments(
+  client: SupabaseClient<Database>,
+  rows: Omit<PublicProgramDto, "department">[],
+): Promise<PublicProgramDto[]> {
+  if (!rows.length) return [];
+
+  // shortcut: RPC memuat semua pemetaan program terbit; tambahkan p_ids saat jumlah program jauh melebihi satu halaman.
+  const { data, error } = await client.rpc("read_public_program_departments");
+  if (error) databaseError(error);
+  const mapping = departmentMapSchema.safeParse(data);
+  if (!mapping.success) throw new AppError("SERVICE_UNAVAILABLE");
+
+  return rows.map((row) => {
+    const parsed = publicProgramDto.safeParse({
+      ...row,
+      department: mapping.data[row.id] ?? null,
+    });
+    if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
+    return parsed.data;
+  });
+}
+
+export async function getPublicPrograms(
+  client: SupabaseClient<Database>,
+): Promise<PublicProgramDto[]> {
+  const { items } = await listPublicPrograms(client, {
+    page: 1,
+    page_size: 100,
+  });
   return items;
 }
 
 export async function listPublicPrograms(
   client: SupabaseClient<Database>,
   raw: unknown,
-): Promise<{ items: PublicProgramDto[]; pagination: ReturnType<typeof paginationMeta> }> {
+): Promise<{
+  items: PublicProgramDto[];
+  pagination: ReturnType<typeof paginationMeta>;
+}> {
   const parsed = paginationSchema.safeParse(raw);
   if (!parsed.success) throw new AppError("VALIDATION_ERROR");
   const { page, page_size } = parsed.data;
@@ -81,15 +122,12 @@ export async function listPublicPrograms(
     .eq("status", "PUBLISHED")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .range((page - 1) * page_size, page * page_size - 1);
 
   if (error) databaseError(error);
 
-  const items = (data ?? []).map((row) => {
-    const p = publicProgramDto.safeParse(row);
-    if (!p.success) throw new AppError("SERVICE_UNAVAILABLE");
-    return p.data;
-  });
+  const items = await withDepartments(client, data ?? []);
 
   return { items, pagination: paginationMeta(page, page_size, count ?? 0) };
 }
@@ -110,56 +148,47 @@ export async function getPublicProgramBySlug(
   if (error) databaseError(error);
   if (!data) throw new AppError("NOT_FOUND");
 
-  const parsed = publicProgramDto.safeParse(data);
-  if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
-  return parsed.data;
+  const [program] = await withDepartments(client, [data]);
+  return program;
 }
 
 /** Galat RPC tulis: slug duplikat (23505) menjadi field error slug, sisanya lewat databaseError. */
 function writeError(error: { code?: string }): never {
-  if (error.code === "23505") throw new AppError("CONFLICT", { fieldErrors: { slug: ["Slug sudah dipakai."] } });
+  if (error.code === "23505")
+    throw new AppError("CONFLICT", {
+      fieldErrors: { slug: ["Slug sudah dipakai."] },
+    });
   databaseError(error);
 }
 
-export async function listAdminPrograms(client: SupabaseClient<Database>): Promise<AdminProgramDto[]> {
+async function readAdminPrograms(
+  client: SupabaseClient<Database>,
+  args: { p_id?: string },
+): Promise<AdminProgramDto[]> {
   await requireAdmin(client);
+  if ("p_id" in args && !z.uuid().safeParse(args.p_id).success)
+    throw new AppError("NOT_FOUND");
 
-  const { data, error } = await client
-    .from("programs")
-    .select(ADMIN_PROGRAM_FIELDS)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(100);
-
+  const { data, error } = await client.rpc("read_admin_programs", args);
   if (error) databaseError(error);
+  const parsed = z.array(adminProgramDto).safeParse(data);
+  if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
+  return parsed.data;
+}
 
-  return (data ?? []).map((row) => {
-    const parsed = adminProgramDto.safeParse(row);
-    if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
-    return parsed.data;
-  });
+export async function listAdminPrograms(
+  client: SupabaseClient<Database>,
+): Promise<AdminProgramDto[]> {
+  return readAdminPrograms(client, {});
 }
 
 export async function getAdminProgram(
   client: SupabaseClient<Database>,
   id: string,
 ): Promise<AdminProgramDto> {
-  await requireAdmin(client);
-  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
-
-  const { data, error } = await client
-    .from("programs")
-    .select(ADMIN_PROGRAM_FIELDS)
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) databaseError(error);
-  if (!data) throw new AppError("NOT_FOUND");
-
-  const parsed = adminProgramDto.safeParse(data);
-  if (!parsed.success) throw new AppError("SERVICE_UNAVAILABLE");
-  return parsed.data;
+  const [program] = await readAdminPrograms(client, { p_id: id });
+  if (!program) throw new AppError("NOT_FOUND");
+  return program;
 }
 
 export const getAdminProgramById = getAdminProgram;
@@ -172,10 +201,14 @@ export async function createProgram(
 
   const parsed = createProgramSchema.safeParse(input);
   if (!parsed.success) {
-    throw new AppError("VALIDATION_ERROR", { fieldErrors: parsed.error.flatten().fieldErrors });
+    throw new AppError("VALIDATION_ERROR", {
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    });
   }
 
-  const { data, error } = await client.rpc("create_program", { p_values: parsed.data });
+  const { data, error } = await client.rpc("create_program", {
+    p_values: parsed.data,
+  });
   if (error) writeError(error);
 
   const result = adminProgramDto.safeParse(data);
@@ -193,7 +226,9 @@ export async function updateProgram(
 
   const parsed = updateProgramSchema.safeParse(input);
   if (!parsed.success) {
-    throw new AppError("VALIDATION_ERROR", { fieldErrors: parsed.error.flatten().fieldErrors });
+    throw new AppError("VALIDATION_ERROR", {
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    });
   }
 
   const { data, error } = await client.rpc("update_program", {

@@ -16,7 +16,16 @@ import {
   publishPage,
   updatePage,
 } from "@/lib/backend/pages";
-import { createProgram, getAdminProgram, listAdminPrograms, listPublicPrograms, updateProgram } from "@/lib/backend/programs";
+import {
+  createProgram,
+  getAdminProgram,
+  getPublicProgramBySlug,
+  getPublicPrograms,
+  listAdminPrograms,
+  listPublicPrograms,
+  publishProgram,
+  updateProgram,
+} from "@/lib/backend/programs";
 import { getPublicSettings, listAdminSettings, updateWebsiteSettings } from "@/lib/backend/settings";
 
 type Result = { data: unknown; error: { code?: string } | null; count?: number | null };
@@ -61,6 +70,7 @@ const pageRow = {
 };
 const programRow = {
   id: ID,
+  department_id: null,
   name: "Study Group",
   slug: "study-group",
   short_description: null,
@@ -207,56 +217,214 @@ describe("pages public", () => {
 });
 
 describe("programs", () => {
-  it("reads only the existing admin columns for lists and details", async () => {
-    const list = fakeClient({ query: ok([programRow]) });
-    const detail = fakeClient({ query: ok(programRow) });
-    await listAdminPrograms(list.client);
-    await getAdminProgram(detail.client, ID);
-    const projection = "id, name, slug, short_description, description, image, status, display_order, created_at, updated_at";
-    for (const result of [list, detail]) {
-      expect(result.calls).toContainEqual(["select", [projection]]);
-    }
-  });
-
   it("creates via create_program with the shared programSchema", async () => {
     const { client, rpc } = fakeClient({ rpc: ok(programRow) });
-    const program = await createProgram(client, { name: "Study Group", slug: "study-group", display_order: 2 });
+    const program = await createProgram(client, {
+      name: "Study Group",
+      slug: "study-group",
+      display_order: 2,
+    });
     expect(rpc).toHaveBeenCalledWith("create_program", {
-      p_values: { name: "Study Group", slug: "study-group", description: "", display_order: 2 },
+      p_values: {
+        name: "Study Group",
+        slug: "study-group",
+        description: "",
+        display_order: 2,
+      },
     });
     expect(program.display_order).toBe(2);
   });
 
   it("rejects image writes from admin before the RPC (D44)", async () => {
     const { client, rpc } = fakeClient({ rpc: ok(programRow) });
-    await rejectsWith(createProgram(client, { name: "X", slug: "x", image: "x" }), "VALIDATION_ERROR");
-    await rejectsWith(updateProgram(client, ID, { image: null }), "VALIDATION_ERROR");
+    await rejectsWith(
+      createProgram(client, { name: "X", slug: "x", image: "x" }),
+      "VALIDATION_ERROR",
+    );
+    await rejectsWith(
+      updateProgram(client, ID, { image: null }),
+      "VALIDATION_ERROR",
+    );
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  it("lists at most 100 programs by display order with a stable tie-break (D43)", async () => {
-    const { client, calls } = fakeClient({ query: ok([programRow]) });
-    expect(await listAdminPrograms(client)).toHaveLength(1);
-    expect(calls.filter(([m]) => m === "order" || m === "limit")).toEqual([
-      ["order", ["display_order", { ascending: true }]],
-      ["order", ["created_at", { ascending: false }]],
-      ["order", ["id", { ascending: false }]],
-      ["limit", [100]],
+  it("reads the raw department ID through the protected reader for lists and details", async () => {
+    const row = { ...programRow, department_id: ID };
+    const { client, rpc, from } = fakeClient({ rpc: ok([row]) });
+    expect((await listAdminPrograms(client))[0].department_id).toBe(ID);
+    expect((await getAdminProgram(client, ID)).department_id).toBe(ID);
+    expect(rpc.mock.calls).toEqual([
+      ["read_admin_programs", {}],
+      ["read_admin_programs", { p_id: ID }],
     ]);
+    expect(from).not.toHaveBeenCalled();
+    expect(requireAdmin).toHaveBeenCalledTimes(2);
+  });
+
+  it("distinguishes empty admin lists, missing details and invalid reader responses", async () => {
+    const { client, rpc } = fakeClient({ rpc: ok([]) });
+    await rejectsWith(getAdminProgram(client, "abc"), "NOT_FOUND");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(await listAdminPrograms(client)).toEqual([]);
+    await rejectsWith(getAdminProgram(client, ID), "NOT_FOUND");
+    rpc.mockResolvedValueOnce(ok({}));
+    await rejectsWith(listAdminPrograms(client), "SERVICE_UNAVAILABLE");
+  });
+
+  it("returns the protected detail after publishing", async () => {
+    const { client, rpc } = fakeClient();
+    rpc
+      .mockResolvedValueOnce(ok(null))
+      .mockResolvedValueOnce(
+        ok([{ ...programRow, status: "PUBLISHED", department_id: ID }]),
+      );
+    expect((await publishProgram(client, ID)).department_id).toBe(ID);
+    expect(rpc.mock.calls).toEqual([
+      ["publish_program", { p_id: ID }],
+      ["read_admin_programs", { p_id: ID }],
+    ]);
+  });
+
+  it("passes explicit assignments and removals, validating before mutation", async () => {
+    const { client, rpc } = fakeClient({ rpc: ok(programRow) });
+    await rejectsWith(
+      updateProgram(client, ID, { department_id: false }),
+      "VALIDATION_ERROR",
+    );
+    await rejectsWith(
+      createProgram(client, { name: "X", slug: "x", department_id: "" }),
+      "VALIDATION_ERROR",
+    );
+    expect(rpc).not.toHaveBeenCalled();
+    await createProgram(client, { name: "X", slug: "x", department_id: ID });
+    expect(rpc).toHaveBeenLastCalledWith("create_program", {
+      p_values: expect.objectContaining({ department_id: ID }),
+    });
+    await updateProgram(client, ID, { department_id: null });
+    expect(rpc).toHaveBeenLastCalledWith("update_program", {
+      p_id: ID,
+      p_changes: { department_id: null },
+    });
+    rpc.mockResolvedValueOnce(fail("23514"));
+    await rejectsWith(
+      updateProgram(client, ID, { department_id: ID }),
+      "VALIDATION_ERROR",
+    );
   });
 
   it("does not inject description/display_order defaults on partial update", async () => {
     const { client, rpc } = fakeClient({ rpc: ok(programRow) });
     await updateProgram(client, ID, { name: "Baru" });
-    expect(rpc).toHaveBeenCalledWith("update_program", { p_id: ID, p_changes: { name: "Baru" } });
+    expect(rpc).toHaveBeenCalledWith("update_program", {
+      p_id: ID,
+      p_changes: { name: "Baru" },
+    });
   });
 
-  it("lists published programs without status or timestamps", async () => {
-    const { client, calls } = fakeClient({ query: ok([{ ...programRow, status: "PUBLISHED" }], 1) });
-    const result = await listPublicPrograms(client, {});
+  it("joins the mapping once without changing order, count or public projection", async () => {
+    const nextId = "00000000-0000-4000-8000-000000000802";
+    const otherId = "00000000-0000-4000-8000-000000000803";
+    const department = { slug: "editor", name: "Editor" };
+    const { client, calls, rpc } = fakeClient({
+      query: ok([programRow, { ...programRow, id: nextId }], 22),
+      rpc: ok({ [otherId]: department, [nextId]: department }),
+    });
+    const result = await listPublicPrograms(client, { page: 2 });
+    expect(rpc.mock.calls).toEqual([["read_public_program_departments"]]);
+    expect(calls).toContainEqual([
+      "select",
+      [
+        "id, name, slug, short_description, description, image, display_order",
+        { count: "exact" },
+      ],
+    ]);
     expect(calls).toContainEqual(["eq", ["status", "PUBLISHED"]]);
-    expect(result.items[0]).not.toHaveProperty("status");
-    expect(result.items[0]).not.toHaveProperty("created_at");
+    expect(calls.filter(([method]) => method === "order")).toEqual([
+      ["order", ["display_order", { ascending: true }]],
+      ["order", ["created_at", { ascending: false }]],
+      ["order", ["id", { ascending: false }]],
+    ]);
+    expect(result.pagination).toEqual({
+      page: 2,
+      page_size: 20,
+      total_items: 22,
+      total_pages: 2,
+    });
+    expect(result.items.map(({ id, department }) => [id, department])).toEqual([
+      [ID, null],
+      [nextId, department],
+    ]);
+    expect(Object.keys(result.items[0]).sort()).toEqual([
+      "department",
+      "description",
+      "display_order",
+      "id",
+      "image",
+      "name",
+      "short_description",
+      "slug",
+    ]);
+  });
+
+  it("maps a published detail by its ID and treats an empty mapping as unassigned", async () => {
+    const department = { slug: "web", name: "Web" };
+    const { client, calls, rpc } = fakeClient({
+      query: ok(programRow),
+      rpc: ok({ [ID]: department }),
+    });
+    expect(
+      (await getPublicProgramBySlug(client, programRow.slug)).department,
+    ).toEqual(department);
+    expect(calls).toContainEqual(["eq", ["slug", programRow.slug]]);
+    expect(calls).toContainEqual(["eq", ["status", "PUBLISHED"]]);
+    expect(rpc.mock.calls).toEqual([["read_public_program_departments"]]);
+    rpc.mockResolvedValueOnce(ok({}));
+    expect(
+      (await getPublicProgramBySlug(client, programRow.slug)).department,
+    ).toBeNull();
+  });
+
+  it("skips the mapping for empty, missing, invalid and out-of-range results", async () => {
+    const list = fakeClient({ query: ok([], 0) });
+    expect(await getPublicPrograms(list.client)).toEqual([]);
+    expect(list.rpc).not.toHaveBeenCalled();
+    const detail = fakeClient();
+    await rejectsWith(
+      getPublicProgramBySlug(detail.client, "../bad"),
+      "NOT_FOUND",
+    );
+    expect(detail.from).not.toHaveBeenCalled();
+    await rejectsWith(
+      getPublicProgramBySlug(detail.client, "absen"),
+      "NOT_FOUND",
+    );
+    expect(detail.rpc).not.toHaveBeenCalled();
+    const outside = fakeClient({ query: fail("PGRST103") });
+    await rejectsWith(
+      listPublicPrograms(outside.client, { page: 4 }),
+      "NOT_FOUND",
+    );
+    expect(outside.rpc).not.toHaveBeenCalled();
+  });
+
+  it("fails closed on mapping errors or malformed keys and values", async () => {
+    for (const data of [
+      null,
+      [],
+      { bad: { slug: "web", name: "Web" } },
+      { [ID]: { slug: "web" } },
+    ]) {
+      const { client } = fakeClient({ query: ok(programRow), rpc: ok(data) });
+      await rejectsWith(
+        getPublicProgramBySlug(client, programRow.slug),
+        "SERVICE_UNAVAILABLE",
+      );
+    }
+    const { client } = fakeClient({
+      query: ok([programRow]),
+      rpc: fail("42501"),
+    });
+    await rejectsWith(getPublicPrograms(client), "FORBIDDEN");
   });
 });
 
