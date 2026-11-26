@@ -16,7 +16,7 @@ import {
   publishPage,
   updatePage,
 } from "@/lib/backend/pages";
-import { createProgram, listAdminPrograms, listPublicPrograms, updateProgram } from "@/lib/backend/programs";
+import { createProgram, getAdminProgram, listAdminPrograms, listPublicPrograms, updateProgram } from "@/lib/backend/programs";
 import { getPublicSettings, listAdminSettings, updateWebsiteSettings } from "@/lib/backend/settings";
 
 type Result = { data: unknown; error: { code?: string } | null; count?: number | null };
@@ -207,6 +207,17 @@ describe("pages public", () => {
 });
 
 describe("programs", () => {
+  it("reads only the existing admin columns for lists and details", async () => {
+    const list = fakeClient({ query: ok([programRow]) });
+    const detail = fakeClient({ query: ok(programRow) });
+    await listAdminPrograms(list.client);
+    await getAdminProgram(detail.client, ID);
+    const projection = "id, name, slug, short_description, description, image, status, display_order, created_at, updated_at";
+    for (const result of [list, detail]) {
+      expect(result.calls).toContainEqual(["select", [projection]]);
+    }
+  });
+
   it("creates via create_program with the shared programSchema", async () => {
     const { client, rpc } = fakeClient({ rpc: ok(programRow) });
     const program = await createProgram(client, { name: "Study Group", slug: "study-group", display_order: 2 });
