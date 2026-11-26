@@ -272,22 +272,29 @@ delete from public.departments where slug = 'lama';
 insert into public.programs (id, name, slug, status, department_id, display_order, created_at)
 select ('76000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
        'Batas ' || n, 'batas-76-' || n, 'PUBLISHED',
-       '00000000-0000-4000-8000-000000000761', 1000 + n, '2026-01-01T00:00:00Z'
-from generate_series(1, 101) as fixture(n);
+       '00000000-0000-4000-8000-000000000761', 2000 - n, '2026-01-01T00:00:00Z'
+from generate_series(1, 101) as fixture(n)
+order by n;
 
 set local role authenticated;
 do $$
 declare
-  last_id constant uuid := '76000000-0000-4000-8000-000000000101';
+  first_inserted_id constant uuid := '76000000-0000-4000-8000-000000000001';
+  last_inserted_id constant uuid := '76000000-0000-4000-8000-000000000101';
   listing jsonb := public.read_admin_programs();
-  detail jsonb := public.read_admin_programs(last_id);
+  detail jsonb := public.read_admin_programs(first_inserted_id);
 begin
-  if jsonb_array_length(listing) is distinct from 100
-    or listing @> jsonb_build_array(jsonb_build_object('id', last_id)) then
-    raise exception 'daftar admin harus berisi 100 program pertama';
+  if jsonb_array_length(listing) is distinct from 100 then
+    raise exception 'daftar admin harus berisi tepat 100 program';
+  end if;
+  if listing @> jsonb_build_array(jsonb_build_object('id', first_inserted_id)) then
+    raise exception 'daftar admin memuat program pertama dengan display_order tertinggi';
+  end if;
+  if not (listing @> jsonb_build_array(jsonb_build_object('id', last_inserted_id))) then
+    raise exception 'daftar admin melewatkan program terakhir dengan display_order terendah di fixture';
   end if;
   if jsonb_array_length(detail) is distinct from 1
-    or detail->0->>'id' is distinct from last_id::text
+    or detail->0->>'id' is distinct from first_inserted_id::text
     or detail->0->>'department_id' is distinct from '00000000-0000-4000-8000-000000000761' then
     raise exception 'detail program di luar batas daftar admin salah';
   end if;
