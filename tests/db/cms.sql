@@ -79,6 +79,10 @@ do $$begin
     perform public.update_program('00000000-0000-4000-8000-000000007601', '{"department_id":false}');
     raise exception 'mutasi lolos tanpa admin';
   exception when insufficient_privilege then null; end;
+  begin
+    perform public.update_program('00000000-0000-4000-8000-000000000799', 'null'::jsonb);
+    raise exception 'otorisasi harus mendahului pencarian program dan validasi patch';
+  exception when insufficient_privilege then null; end;
 end$$;
 reset role;
 
@@ -127,6 +131,26 @@ begin
     or public.read_admin_programs(two_id)->0->>'department_id' is distinct from inactive::text then
     raise exception 'hasil detail admin salah';
   end if;
+
+  begin
+    perform public.update_program('00000000-0000-4000-8000-000000000799', 'null'::jsonb);
+    raise exception 'pencarian program harus mendahului validasi patch';
+  exception when no_data_found then null;
+  end;
+
+  foreach bad in array array['["department_id"]'::jsonb, 'null'::jsonb, null::jsonb] loop
+    begin
+      perform public.update_program(one_id, bad);
+      raise exception 'patch berbentuk selain objek diterima: %', bad;
+    exception when check_violation then null;
+    end;
+    row_data := public.read_admin_programs(one_id)->0;
+    if row_data->>'department_id' is distinct from editor::text
+      or (row_data->>'updated_at')::timestamptz is distinct from '2020-01-01Z'::timestamptz
+      or exists (select from public.audit_logs where entity_id = one_id) then
+      raise exception 'patch yang ditolak mengubah pengelola, timestamp, atau audit';
+    end if;
+  end loop;
 
   foreach bad in array array['false'::jsonb, '""', '"abc"', '{}', to_jsonb(inactive), '"00000000-0000-4000-8000-000000000799"'] loop
     begin
@@ -185,11 +209,13 @@ begin
   row_data := public.create_program('{"name":"Kosong","slug":"kosong","department_id":null}');
   select * into strict audit_rec from public.audit_logs where entity_id = (row_data->>'id')::uuid and action = 'PROGRAM_CREATED';
   if row_data->'department_id' is distinct from 'null'::jsonb
+    or audit_rec.old_values is distinct from '{}'::jsonb
     or audit_rec.new_values is distinct from '{"name":"Kosong","slug":"kosong"}'::jsonb then raise exception 'create null salah'; end if;
 
   row_data := public.create_program('{"name":"Default","slug":"default"}');
   select * into strict audit_rec from public.audit_logs where entity_id = (row_data->>'id')::uuid and action = 'PROGRAM_CREATED';
   if row_data->'department_id' is distinct from 'null'::jsonb
+    or audit_rec.old_values is distinct from '{}'::jsonb
     or audit_rec.new_values is distinct from '{"name":"Default","slug":"default"}'::jsonb then raise exception 'create tanpa key salah'; end if;
 
   row_data := public.update_program(four_id, jsonb_build_object('name','Ganti','department_id',editor,'display_order',8));
@@ -242,6 +268,44 @@ do $$declare r jsonb; begin
 end$$;
 reset role;
 delete from public.departments where slug = 'lama';
+
+insert into public.programs (id, name, slug, status, department_id, display_order, created_at)
+select ('76000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
+       'Batas ' || n, 'batas-76-' || n, 'PUBLISHED',
+       '00000000-0000-4000-8000-000000000761', 1000 + n, '2026-01-01T00:00:00Z'
+from generate_series(1, 101) as fixture(n);
+
+set local role authenticated;
+do $$
+declare
+  last_id constant uuid := '76000000-0000-4000-8000-000000000101';
+  listing jsonb := public.read_admin_programs();
+  detail jsonb := public.read_admin_programs(last_id);
+begin
+  if jsonb_array_length(listing) is distinct from 100
+    or listing @> jsonb_build_array(jsonb_build_object('id', last_id)) then
+    raise exception 'daftar admin harus berisi 100 program pertama';
+  end if;
+  if jsonb_array_length(detail) is distinct from 1
+    or detail->0->>'id' is distinct from last_id::text
+    or detail->0->>'department_id' is distinct from '00000000-0000-4000-8000-000000000761' then
+    raise exception 'detail program di luar batas daftar admin salah';
+  end if;
+end$$;
+reset role;
+
+select set_config('request.jwt.claims', '{}', true);
+set local role anon;
+do $$
+declare
+  fixture_ids text[] := array(select id::text from public.programs where slug like 'batas-76-%');
+begin
+  if cardinality(fixture_ids) <> 101
+    or (public.read_public_program_departments() ?& fixture_ids) is distinct from true then
+    raise exception 'pemetaan publik harus memuat seluruh 101 program fixture';
+  end if;
+end$$;
+reset role;
 
 rollback to savepoint managing_department;
 

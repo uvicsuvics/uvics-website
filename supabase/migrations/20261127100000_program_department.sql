@@ -131,6 +131,9 @@ begin
   if not found then
     raise no_data_found;
   end if;
+  if jsonb_typeof(p_changes) is distinct from 'object' then
+    raise check_violation using message = 'Patch program harus berupa objek JSON';
+  end if;
 
   r := previous;
   r.name := coalesce(p_changes->>'name', previous.name);
