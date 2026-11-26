@@ -211,12 +211,19 @@ end$$;
 reset role;
 
 update public.departments set active = false, name = 'Editor baru', slug = 'editor-baru' where slug = 'editor';
-do $$begin
+do $$
+declare
+  blocked_by text;
+begin
   if public.read_public_program_departments() is distinct from '{}'::jsonb then raise exception 'pengelola nonaktif tampil'; end if;
   begin
     delete from public.departments where slug = 'editor-baru';
     raise exception 'departemen dengan referensi terhapus';
-  exception when foreign_key_violation then null; end;
+  exception when foreign_key_violation or restrict_violation then
+    -- PostgreSQL 17 memakai 23503 untuk RESTRICT, PostgreSQL 18 memakai 23001.
+    get stacked diagnostics blocked_by = constraint_name;
+    if blocked_by is distinct from 'programs_department_id_fkey' then raise; end if;
+  end;
 end$$;
 update public.departments set active = true where slug = 'editor-baru';
 do $$begin
