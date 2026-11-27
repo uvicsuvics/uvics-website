@@ -177,14 +177,33 @@ begin
   ) then
     raise exception 'service_role must have SELECT only on content tables (D13)';
   end if;
-  -- D02: tautan member tidak terbaca anon
+  -- D02 & D21: tautan member_id tidak terbaca anon maupun authenticated non-admin secara langsung
   if has_column_privilege('anon', 'public.achievement_members', 'member_id', 'SELECT')
      or has_column_privilege('anon', 'public.project_members', 'member_id', 'SELECT') then
     raise exception 'anon must not read member_id (D02)';
   end if;
+  if has_column_privilege('authenticated', 'public.achievement_members', 'member_id', 'SELECT')
+     or has_column_privilege('authenticated', 'public.project_members', 'member_id', 'SELECT') then
+    raise exception 'authenticated direct table select on member_id must be revoked (D21)';
+  end if;
+  -- View admin_*_members hanya SELECT untuk authenticated; tidak ada DML untuk role mana pun
+  if exists (
+    select from unnest(array['admin_achievement_members','admin_project_members']) v,
+      unnest(array['anon','authenticated','service_role']) r,
+      unnest(array['INSERT','UPDATE','DELETE','TRUNCATE']) p
+    where has_table_privilege(r, format('public.%I', v), p)
+  ) then
+    raise exception 'admin_*_members views must not allow DML for any client/service role';
+  end if;
+  if has_table_privilege('anon', 'public.admin_achievement_members', 'SELECT')
+     or has_table_privilege('anon', 'public.admin_project_members', 'SELECT')
+     or has_table_privilege('service_role', 'public.admin_achievement_members', 'SELECT')
+     or has_table_privilege('service_role', 'public.admin_project_members', 'SELECT') then
+    raise exception 'anon/service_role must not have SELECT on admin_*_members views';
+  end if;
 end$$;
 
--- anon: hanya PUBLISHED; anggota hanya dari induk PUBLISHED
+-- anon: hanya PUBLISHED; anggota hanya dari induk PUBLISHED; RPC mutasi dan DML view ditolak
 set local role anon;
 do $$
 begin
@@ -193,10 +212,51 @@ begin
   if (select count(*) from public.projects) <> 1 then raise exception 'anon must see only published projects'; end if;
   if (select count(*) from public.achievement_members) <> 2 then raise exception 'anon must see only members of published achievements'; end if;
   if (select count(*) from public.project_members) <> 1 then raise exception 'anon must see only members of published projects'; end if;
+
+  begin
+    insert into public.admin_achievement_members (achievement_id, member_name) values ('00000000-0000-4000-8000-000000000721', 'Bypass');
+    raise exception 'anon must not insert through admin_achievement_members';
+  exception when insufficient_privilege then null; end;
+  begin
+    insert into public.admin_project_members (project_id, member_name) values ('00000000-0000-4000-8000-000000000731', 'Bypass');
+    raise exception 'anon must not insert through admin_project_members';
+  exception when insufficient_privilege then null; end;
+
+  begin
+    perform public.create_competition('{"title":"X","slug":"x","organizer":"X"}'::jsonb);
+    raise exception 'anon must not execute create_competition';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform public.publish_competition('00000000-0000-4000-8000-000000000712'::uuid);
+    raise exception 'anon must not execute publish_competition';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform public.delete_competition('00000000-0000-4000-8000-000000000712'::uuid);
+    raise exception 'anon must not execute delete_competition';
+  exception when insufficient_privilege then null; end;
 end$$;
 reset role;
 
--- authenticated non-admin: baris sama dengan publik, tetapi member_id tetap terbaca (U18); sertifikat tidak
+-- service_role: tidak boleh DML lewat view maupun memanggil RPC admin konten
+set local role service_role;
+do $$
+begin
+  begin
+    insert into public.admin_achievement_members (achievement_id, member_name) values ('00000000-0000-4000-8000-000000000721', 'Bypass');
+    raise exception 'service_role must not insert through admin_achievement_members';
+  exception when insufficient_privilege then null; end;
+  begin
+    insert into public.admin_project_members (project_id, member_name) values ('00000000-0000-4000-8000-000000000731', 'Bypass');
+    raise exception 'service_role must not insert through admin_project_members';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform public.create_competition('{"title":"X","slug":"x","organizer":"X"}'::jsonb);
+    raise exception 'service_role must not execute create_competition';
+  exception when insufficient_privilege then null; end;
+end$$;
+reset role;
+
+-- authenticated non-admin: baris sama dengan publik; sertifikat dan member_id tidak terbaca (D21 ditutup)
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000002"}', true);
 set local role authenticated;
 do $$
@@ -206,26 +266,479 @@ begin
   if (select count(*) from public.projects) <> 1 then raise exception 'non-admin must see only published projects'; end if;
   if (select count(*) from public.achievement_members) <> 2 then raise exception 'non-admin must see only members of published achievements'; end if;
   if (select count(*) from public.project_members) <> 1 then raise exception 'non-admin must see only members of published projects'; end if;
-  if (select count(*) from public.achievement_certificates) <> 0 then raise exception 'non-admin must not read achievement certificates (U18)'; end if;
-end$$;
-reset role;
+  if (select count(*) from public.achievement_certificates) <> 0 then raise exception 'non-admin must not read achievement certificates'; end if;
 
--- admin aktif: membaca draft/arsip, tetapi tidak menulis langsung
-select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-4000-8000-000000000001'::uuid, 'session_id', '00000000-0000-4000-8000-000000000011'::uuid)::text, true);
-set local role authenticated;
-do $$
-begin
-  if (select count(*) from public.competitions) <> 4 then raise exception 'active admin must read all competitions'; end if;
-  if (select count(*) from public.achievements) <> 3 then raise exception 'active admin must read all achievements'; end if;
-  if (select count(*) from public.achievement_members) <> 3 then raise exception 'active admin must read all achievement members'; end if;
-  if (select count(*) from public.projects) <> 3 then raise exception 'active admin must read all projects'; end if;
-  if (select count(*) from public.project_members) <> 2 then raise exception 'active admin must read all project members'; end if;
-  if (select count(*) from public.achievement_certificates) <> 1 then raise exception 'active admin must read achievement certificates'; end if;
+  -- D21: non-admin tidak membaca member_id langsung dari tabel
   begin
-    update public.competitions set featured = true;
-    raise exception 'direct competition update must go through an audited RPC (D13)';
+    perform member_id from public.achievement_members;
+    raise exception 'non-admin must not read member_id directly from achievement_members (D21)';
+  exception when insufficient_privilege then null; end;
+
+  begin
+    perform member_id from public.project_members;
+    raise exception 'non-admin must not read member_id directly from project_members (D21)';
+  exception when insufficient_privilege then null; end;
+
+  -- D21: admin view mengembalikan 0 baris untuk non-admin dan menolak INSERT/UPDATE/DELETE
+  if (select count(*) from public.admin_achievement_members) <> 0 then raise exception 'non-admin must see 0 rows in admin_achievement_members'; end if;
+  if (select count(*) from public.admin_project_members) <> 0 then raise exception 'non-admin must see 0 rows in admin_project_members'; end if;
+
+  begin
+    insert into public.admin_achievement_members (achievement_id, member_name) values ('00000000-0000-4000-8000-000000000721', 'Bypass');
+    raise exception 'non-admin must not insert through admin_achievement_members';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.admin_achievement_members set role = 'Hack';
+    raise exception 'non-admin must not update through admin_achievement_members';
+  exception when insufficient_privilege then null; end;
+  begin
+    delete from public.admin_achievement_members;
+    raise exception 'non-admin must not delete through admin_achievement_members';
+  exception when insufficient_privilege then null; end;
+  begin
+    insert into public.admin_project_members (project_id, member_name) values ('00000000-0000-4000-8000-000000000731', 'Bypass');
+    raise exception 'non-admin must not insert through admin_project_members';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.admin_project_members set role = 'Hack';
+    raise exception 'non-admin must not update through admin_project_members';
+  exception when insufficient_privilege then null; end;
+  begin
+    delete from public.admin_project_members;
+    raise exception 'non-admin must not delete through admin_project_members';
+  exception when insufficient_privilege then null; end;
+
+  -- Non-admin ditolak saat memanggil RPC mutasi
+  begin
+    perform public.create_competition('{"title":"X","slug":"x","organizer":"X"}'::jsonb);
+    raise exception 'non-admin must not execute create_competition';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform public.publish_competition('00000000-0000-4000-8000-000000000712'::uuid);
+    raise exception 'non-admin must not execute publish_competition';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform public.delete_competition('00000000-0000-4000-8000-000000000712'::uuid);
+    raise exception 'non-admin must not execute delete_competition';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform public.get_admin_achievement('00000000-0000-4000-8000-000000000721'::uuid);
+    raise exception 'non-admin must not execute get_admin_achievement';
   exception when insufficient_privilege then null; end;
 end$$;
 reset role;
 
+-- Fixtures media intents untuk pengujian validasi media di mutasi admin
+insert into private.upload_intents (
+  id, owner_id, category, kind, public_id, preset, max_bytes,
+  issued_at, expires_at, cleanup_not_before, status, cleanup_status,
+  asset_id, version, format, bytes, width, height
+) values
+  ('00000000-0000-4000-8000-000000000901', '00000000-0000-4000-8000-000000000001', 'poster', 'image', 'uvics/pending/00000000-0000-4000-8000-000000000901', 'uvics_image_5mb_v1', 5242880, statement_timestamp(), statement_timestamp() + interval '1 hour', statement_timestamp() + interval '65 minutes', 'COMPLETED', 'HELD', 'asset-poster-901', 1, 'png', 1000, 100, 100),
+  ('00000000-0000-4000-8000-000000000902', '00000000-0000-4000-8000-000000000001', 'thumbnail', 'image', 'uvics/pending/00000000-0000-4000-8000-000000000902', 'uvics_image_5mb_v1', 5242880, statement_timestamp(), statement_timestamp() + interval '1 hour', statement_timestamp() + interval '65 minutes', 'COMPLETED', 'HELD', 'asset-thumb-902', 1, 'jpg', 1000, 100, 100),
+  ('00000000-0000-4000-8000-000000000903', '00000000-0000-4000-8000-000000000001', 'certificate', 'pdf', 'uvics/pending/00000000-0000-4000-8000-000000000903', 'uvics_pdf_10mb_v1', 10485760, statement_timestamp(), statement_timestamp() + interval '1 hour', statement_timestamp() + interval '65 minutes', 'COMPLETED', 'HELD', 'asset-cert-903', 1, 'pdf', 5000, 0, 0),
+  ('00000000-0000-4000-8000-000000000904', '00000000-0000-4000-8000-000000000001', 'poster', 'image', 'uvics/pending/00000000-0000-4000-8000-000000000904', 'uvics_image_5mb_v1', 5242880, statement_timestamp(), statement_timestamp() + interval '1 hour', statement_timestamp() + interval '65 minutes', 'PENDING', 'HELD', null, null, null, null, null, null),
+  ('00000000-0000-4000-8000-000000000905', '00000000-0000-4000-8000-000000000001', 'thumbnail', 'image', 'uvics/pending/00000000-0000-4000-8000-000000000905', 'uvics_image_5mb_v1', 5242880, statement_timestamp(), statement_timestamp() + interval '1 hour', statement_timestamp() + interval '65 minutes', 'COMPLETED', 'HELD', 'asset-thumb-905', 1, 'jpg', 1000, 100, 100),
+  ('00000000-0000-4000-8000-000000000906', '00000000-0000-4000-8000-000000000001', 'poster', 'image', 'uvics/pending/00000000-0000-4000-8000-000000000906', 'uvics_image_5mb_v1', 5242880, statement_timestamp(), statement_timestamp() + interval '1 hour', statement_timestamp() + interval '65 minutes', 'COMPLETED', 'CLEANED', 'asset-cleaned-906', 1, 'png', 1000, 100, 100);
+
+-- admin aktif: membaca draft/arsip, mutasi lewat RPC ter-audit, validasi media, penutupan D21
+select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-4000-8000-000000000001'::uuid, 'session_id', '00000000-0000-4000-8000-000000000011'::uuid)::text, true);
+set local role authenticated;
+do $$
+declare
+  c_res jsonb;
+  c_id uuid;
+  a_res jsonb;
+  a_id uuid;
+  p_res jsonb;
+  p_id uuid;
+  audit_rec public.audit_logs;
+  admin_ach jsonb;
+  admin_proj jsonb;
+begin
+  -- 1. Verifikasi pembacaan awal admin aktif
+  if (select count(*) from public.competitions) <> 4 then raise exception 'active admin must read all competitions'; end if;
+  if (select count(*) from public.achievements) <> 3 then raise exception 'active admin must read all achievements'; end if;
+  if (select count(*) from public.projects) <> 3 then raise exception 'active admin must read all projects'; end if;
+  if (select count(*) from public.achievement_certificates) <> 1 then raise exception 'active admin must read achievement certificates'; end if;
+
+  -- D21: admin membaca view admin_achievement_members dan admin_project_members lengkap dengan member_id
+  if (select count(*) from public.admin_achievement_members) <> 3 then raise exception 'admin must read all rows from admin_achievement_members'; end if;
+  if (select count(*) from public.admin_achievement_members where member_id is not null) <> 1 then raise exception 'admin must see member_id in admin_achievement_members'; end if;
+  if (select count(*) from public.admin_project_members) <> 2 then raise exception 'admin must read all rows from admin_project_members'; end if;
+
+  -- D13: admin aktif tetap dilarang INSERT/UPDATE/DELETE lewat view admin_*_members (tanpa audit)
+  begin
+    insert into public.admin_achievement_members (achievement_id, member_name) values ('00000000-0000-4000-8000-000000000721', 'Bypass');
+    raise exception 'active admin must not insert through admin_achievement_members without audit';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.admin_achievement_members set role = 'Hack';
+    raise exception 'active admin must not update through admin_achievement_members without audit';
+  exception when insufficient_privilege then null; end;
+  begin
+    delete from public.admin_achievement_members;
+    raise exception 'active admin must not delete through admin_achievement_members without audit';
+  exception when insufficient_privilege then null; end;
+  begin
+    insert into public.admin_project_members (project_id, member_name) values ('00000000-0000-4000-8000-000000000731', 'Bypass');
+    raise exception 'active admin must not insert through admin_project_members without audit';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.admin_project_members set role = 'Hack';
+    raise exception 'active admin must not update through admin_project_members without audit';
+  exception when insufficient_privilege then null; end;
+  begin
+    delete from public.admin_project_members;
+    raise exception 'active admin must not delete through admin_project_members without audit';
+  exception when insufficient_privilege then null; end;
+
+  -- D13: direct update tetap dilarang
+  begin
+    update public.competitions set featured = true;
+    raise exception 'direct competition update must go through an audited RPC (D13)';
+  exception when insufficient_privilege then null; end;
+
+  -- 2. Competitions: Create -> Invalid Media -> Update -> Publish -> Delete
+  -- Validasi media: intent berstatus PENDING, CLEANED, atau public_id mentah harus ditolak
+  begin
+    perform public.create_competition(jsonb_build_object(
+      'title', 'Pending Poster Comp',
+      'slug', 'pending-poster-comp',
+      'organizer', 'Org',
+      'poster', '00000000-0000-4000-8000-000000000904'
+    ));
+    raise exception 'pending upload intent accepted for poster';
+  exception when sqlstate '22023' then null; end;
+
+  begin
+    perform public.create_competition(jsonb_build_object(
+      'title', 'Cleaned Poster Comp',
+      'slug', 'cleaned-poster-comp',
+      'organizer', 'Org',
+      'poster', '00000000-0000-4000-8000-000000000906'
+    ));
+    raise exception 'cleaned upload intent accepted for poster';
+  exception when sqlstate '22023' then null; end;
+
+  begin
+    perform public.create_competition(jsonb_build_object(
+      'title', 'Raw PublicId Comp',
+      'slug', 'raw-publicid-comp',
+      'organizer', 'Org',
+      'poster', 'uvics/pending/00000000-0000-4000-8000-000000000901'
+    ));
+    raise exception 'raw public_id accepted for poster';
+  exception when sqlstate '22023' then null; end;
+
+  -- Create competition dengan media COMPLETED (meski mengirim publication_status = PUBLISHED, tetap tersimpan DRAFT)
+  c_res := public.create_competition(jsonb_build_object(
+    'title', 'New Audited Comp',
+    'slug', 'new-audited-comp',
+    'organizer', 'Himpunan',
+    'level', 'NASIONAL',
+    'registration_url', 'https://uvics.id/register-v1',
+    'poster', '00000000-0000-4000-8000-000000000901',
+    'publication_status', 'PUBLISHED',
+    'featured', true
+  ));
+  c_id := (c_res->>'id')::uuid;
+  if c_res->>'publication_status' <> 'DRAFT' then
+    raise exception 'create_competition must always initialize publication_status as DRAFT';
+  end if;
+
+  select * into strict audit_rec from public.audit_logs
+  where action = 'COMPETITION_CREATED' and entity_id = c_id;
+  if audit_rec.actor_id <> '00000000-0000-4000-8000-000000000001'
+     or audit_rec.new_values->>'slug' <> 'new-audited-comp'
+     or audit_rec.new_values->>'registration_url' <> 'https://uvics.id/register-v1' then
+    raise exception 'COMPETITION_CREATED audit log mismatch';
+  end if;
+
+  -- Update competition (publication_status diabaikan, URL lama & baru serta changed tercatat di audit)
+  c_res := public.update_competition(c_id, jsonb_build_object(
+    'title', 'Updated Audited Comp',
+    'description', 'Deskripsi lomba',
+    'registration_url', 'https://uvics.id/register-v2',
+    'guidebook_url', 'https://uvics.id/guidebook',
+    'publication_status', 'PUBLISHED'
+  ));
+  if (select title from public.competitions where id = c_id) <> 'Updated Audited Comp' then
+    raise exception 'update_competition title failed';
+  end if;
+  if (select publication_status from public.competitions where id = c_id) <> 'DRAFT' then
+    raise exception 'update_competition must not modify publication_status';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'COMPETITION_UPDATED' and entity_id = c_id;
+  if audit_rec.old_values->>'title' <> 'New Audited Comp'
+     or audit_rec.new_values->>'title' <> 'Updated Audited Comp'
+     or audit_rec.old_values->>'registration_url' <> 'https://uvics.id/register-v1'
+     or audit_rec.new_values->>'registration_url' <> 'https://uvics.id/register-v2'
+     or audit_rec.new_values->>'guidebook_url' <> 'https://uvics.id/guidebook'
+     or audit_rec.new_values->'changed' <> '["description","guidebook_url","registration_url","title"]'::jsonb then
+    raise exception 'COMPETITION_UPDATED audit log mismatch: %', to_jsonb(audit_rec);
+  end if;
+
+  -- Publish competition
+  perform public.publish_competition(c_id);
+  if (select publication_status from public.competitions where id = c_id) <> 'PUBLISHED' then
+    raise exception 'publish_competition failed';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'COMPETITION_PUBLISHED' and entity_id = c_id;
+
+  -- Delete competition
+  perform public.delete_competition(c_id);
+  if exists (select from public.competitions where id = c_id) then
+    raise exception 'delete_competition failed';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'COMPETITION_DELETED' and entity_id = c_id;
+
+  -- 3. Achievements: Create (dengan cover_image, certificate_file, members) -> Update -> Publish -> Delete
+  -- Validasi media sertifikat: kategori bukan certificate harus ditolak
+  begin
+    perform public.create_achievement(jsonb_build_object(
+      'title', 'Bad Cert Ach',
+      'slug', 'bad-cert-ach',
+      'competition_name', 'Lomba',
+      'ranking', '1',
+      'achievement_date', '2026-03-01',
+      'certificate_file', '00000000-0000-4000-8000-000000000901' -- poster, bukan certificate
+    ));
+    raise exception 'poster category accepted for certificate';
+  exception when sqlstate '22023' then null; end;
+
+  a_res := public.create_achievement(jsonb_build_object(
+    'title', 'New Audited Ach',
+    'slug', 'new-audited-ach',
+    'competition_name', 'Gemastik',
+    'ranking', 'Juara 1',
+    'achievement_date', '2026-03-01',
+    'cover_image', '00000000-0000-4000-8000-000000000902',
+    'certificate_file', '00000000-0000-4000-8000-000000000903',
+    'publication_status', 'PUBLISHED',
+    'members', jsonb_build_array(
+      jsonb_build_object('member_id', '00000000-0000-4000-8000-000000000701', 'role', 'Leader'),
+      jsonb_build_object('member_name', 'Peserta Eksternal', 'role', 'Member')
+    )
+  ));
+  a_id := (a_res->>'id')::uuid;
+  if a_res->>'publication_status' <> 'DRAFT' then
+    raise exception 'create_achievement must always initialize publication_status as DRAFT';
+  end if;
+
+  select * into strict audit_rec from public.audit_logs
+  where action = 'ACHIEVEMENT_CREATED' and entity_id = a_id;
+
+  -- Verifikasi relasi sertifikat dan members
+  if (select certificate_file from public.achievement_certificates where achievement_id = a_id) <> '00000000-0000-4000-8000-000000000903' then
+    raise exception 'achievement_certificates insert failed';
+  end if;
+  if (select count(*) from public.achievement_members where achievement_id = a_id) <> 2 then
+    raise exception 'achievement_members insert failed';
+  end if;
+
+  -- get_admin_achievement mengembalikan detail lengkap dengan certificate dan members
+  admin_ach := public.get_admin_achievement(a_id);
+  if admin_ach->>'certificate_file' <> '00000000-0000-4000-8000-000000000903'
+     or jsonb_array_length(admin_ach->'members') <> 2 then
+    raise exception 'get_admin_achievement result mismatch';
+  end if;
+
+  -- Update achievement (audit mencatat changed tanpa nama member)
+  a_res := public.update_achievement(a_id, jsonb_build_object(
+    'ranking', 'Juara Umum',
+    'publication_status', 'PUBLISHED',
+    'members', jsonb_build_array(
+      jsonb_build_object('member_id', '00000000-0000-4000-8000-000000000701', 'role', 'Solo'),
+      jsonb_build_object('member_name', 'Nama Rahasia Audit', 'role', 'Co')
+    )
+  ));
+  if (select count(*) from public.achievement_members where achievement_id = a_id) <> 2 then
+    raise exception 'achievement_members replace update failed';
+  end if;
+  if (select publication_status from public.achievements where id = a_id) <> 'DRAFT' then
+    raise exception 'update_achievement must not modify publication_status';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'ACHIEVEMENT_UPDATED' and entity_id = a_id;
+  if audit_rec.new_values->'changed' <> '["members","ranking"]'::jsonb
+     or audit_rec.new_values::text like '%Nama Rahasia Audit%'
+     or audit_rec.old_values::text like '%Peserta Eksternal%' then
+    raise exception 'ACHIEVEMENT_UPDATED audit log mismatch or leaked member name: %', to_jsonb(audit_rec);
+  end if;
+
+  -- Publish achievement
+  perform public.publish_achievement(a_id);
+  if (select publication_status from public.achievements where id = a_id) <> 'PUBLISHED' then
+    raise exception 'publish_achievement failed';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'ACHIEVEMENT_PUBLISHED' and entity_id = a_id;
+
+  -- Delete achievement (cascade ke sertifikat dan anggota)
+  perform public.delete_achievement(a_id);
+  if exists (select from public.achievements where id = a_id)
+     or exists (select from public.achievement_certificates where achievement_id = a_id)
+     or exists (select from public.achievement_members where achievement_id = a_id) then
+    raise exception 'delete_achievement cascade failed';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'ACHIEVEMENT_DELETED' and entity_id = a_id;
+
+  -- 4. Projects: Create -> Update -> Publish -> Delete
+  -- Media intent 902 yang sudah diikat ke achievement harus ditolak bila dipakai project
+  begin
+    perform public.create_project(jsonb_build_object(
+      'title', 'Reused Media Project',
+      'slug', 'reused-media-project',
+      'summary', 'Ringkasan',
+      'cover_image', '00000000-0000-4000-8000-000000000902'
+    ));
+    raise exception 'upload intent already bound to another record accepted';
+  exception when sqlstate '22023' then null; end;
+
+  p_res := public.create_project(jsonb_build_object(
+    'title', 'New Audited Project',
+    'slug', 'new-audited-project',
+    'summary', 'Ringkasan proyek ter-audit',
+    'cover_image', '00000000-0000-4000-8000-000000000905',
+    'project_url', 'https://uvics.id/proj-v1',
+    'publication_status', 'PUBLISHED',
+    'members', jsonb_build_array(
+      jsonb_build_object('member_id', '00000000-0000-4000-8000-000000000702', 'role', 'Lead Developer')
+    )
+  ));
+  p_id := (p_res->>'id')::uuid;
+  if p_res->>'publication_status' <> 'DRAFT' then
+    raise exception 'create_project must always initialize publication_status as DRAFT';
+  end if;
+
+  select * into strict audit_rec from public.audit_logs
+  where action = 'PROJECT_CREATED' and entity_id = p_id;
+  if audit_rec.new_values->>'project_url' <> 'https://uvics.id/proj-v1' then
+    raise exception 'PROJECT_CREATED audit log mismatch';
+  end if;
+
+  admin_proj := public.get_admin_project(p_id);
+  if admin_proj->>'title' <> 'New Audited Project'
+     or jsonb_array_length(admin_proj->'members') <> 1 then
+    raise exception 'get_admin_project result mismatch';
+  end if;
+
+  -- Update project (URL lama & baru serta changed tercatat di audit, tanpa nama member)
+  p_res := public.update_project(p_id, jsonb_build_object(
+    'title', 'Updated Project Title',
+    'project_url', 'https://uvics.id/proj-v2',
+    'repository_url', 'https://github.com/uvics/proj',
+    'publication_status', 'PUBLISHED',
+    'members', jsonb_build_array(
+      jsonb_build_object('member_name', 'Kontributor Rahasia', 'role', 'Dev')
+    )
+  ));
+  if (select publication_status from public.projects where id = p_id) <> 'DRAFT' then
+    raise exception 'update_project must not modify publication_status';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'PROJECT_UPDATED' and entity_id = p_id;
+  if audit_rec.old_values->>'project_url' <> 'https://uvics.id/proj-v1'
+     or audit_rec.new_values->>'project_url' <> 'https://uvics.id/proj-v2'
+     or audit_rec.new_values->>'repository_url' <> 'https://github.com/uvics/proj'
+     or audit_rec.new_values->'changed' <> '["members","project_url","repository_url","title"]'::jsonb
+     or audit_rec.new_values::text like '%Kontributor Rahasia%' then
+    raise exception 'PROJECT_UPDATED audit log mismatch: %', to_jsonb(audit_rec);
+  end if;
+
+  -- Publish project
+  perform public.publish_project(p_id);
+  if (select publication_status from public.projects where id = p_id) <> 'PUBLISHED' then
+    raise exception 'publish_project failed';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'PROJECT_PUBLISHED' and entity_id = p_id;
+
+  -- Delete project
+  perform public.delete_project(p_id);
+  if exists (select from public.projects where id = p_id)
+     or exists (select from public.project_members where project_id = p_id) then
+    raise exception 'delete_project cascade failed';
+  end if;
+  select * into strict audit_rec from public.audit_logs
+  where action = 'PROJECT_DELETED' and entity_id = p_id;
+
+  -- 5. P0002 saat ID tidak ditemukan
+  begin
+    perform public.publish_competition(gen_random_uuid());
+    raise exception 'missing competition reported success';
+  exception when no_data_found then null; end;
+
+  begin
+    perform public.update_achievement(gen_random_uuid(), '{"title":"X"}'::jsonb);
+    raise exception 'missing achievement update reported success';
+  exception when no_data_found then null; end;
+
+  begin
+    perform public.delete_project(gen_random_uuid());
+    raise exception 'missing project delete reported success';
+  exception when no_data_found then null; end;
+end$$;
+reset role;
+
+-- Verifikasi pengikatan reference_type dan reference_id pada private.upload_intents
+do $$
+begin
+  if (select reference_type from private.upload_intents where id = '00000000-0000-4000-8000-000000000901') <> 'competition'
+     or (select reference_id from private.upload_intents where id = '00000000-0000-4000-8000-000000000901') is null then
+    raise exception 'competition poster intent not bound to competition record';
+  end if;
+  if (select reference_type from private.upload_intents where id = '00000000-0000-4000-8000-000000000902') <> 'achievement'
+     or (select reference_id from private.upload_intents where id = '00000000-0000-4000-8000-000000000902') is null then
+    raise exception 'achievement cover_image intent not bound to achievement record';
+  end if;
+  if (select reference_type from private.upload_intents where id = '00000000-0000-4000-8000-000000000903') <> 'achievement_certificate'
+     or (select reference_id from private.upload_intents where id = '00000000-0000-4000-8000-000000000903') is null then
+    raise exception 'achievement certificate intent not bound to achievement record';
+  end if;
+  if (select reference_type from private.upload_intents where id = '00000000-0000-4000-8000-000000000905') <> 'project'
+     or (select reference_id from private.upload_intents where id = '00000000-0000-4000-8000-000000000905') is null then
+    raise exception 'project cover_image intent not bound to project record';
+  end if;
+end$$;
+
+-- 6. Atomisitas: Kegagalan audit membatalkan mutasi konten
+create function public.fail_content_audit_fixture() returns trigger language plpgsql as $$
+begin
+  raise exception 'content audit fixture failure';
+end$$;
+create trigger fail_content_audit_fixture before insert on public.audit_logs for each row execute function public.fail_content_audit_fixture();
+
+select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-4000-8000-000000000001'::uuid, 'session_id', '00000000-0000-4000-8000-000000000011'::uuid)::text, true);
+set local role authenticated;
+do $$
+begin
+  begin
+    perform public.create_competition(jsonb_build_object(
+      'title', 'Rollback Comp',
+      'slug', 'rollback-comp',
+      'organizer', 'Org'
+    ));
+    raise exception 'create_competition without audit succeeded';
+  exception when raise_exception then
+    if sqlerrm <> 'content audit fixture failure' then raise; end if;
+  end;
+end$$;
+reset role;
+drop trigger fail_content_audit_fixture on public.audit_logs;
+drop function public.fail_content_audit_fixture();
+
+do $$
+begin
+  if exists (select from public.competitions where slug = 'rollback-comp') then
+    raise exception 'competition mutation was not rolled back upon audit failure';
+  end if;
+end$$;
+
 rollback;
+

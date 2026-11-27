@@ -86,7 +86,7 @@ describe("content input validation", () => {
 
   it("enforces date order, real calendar dates and http(s) links", () => {
     expect(competitionSchema.safeParse({ ...competition, registration_deadline: "2026-10-20", competition_date: "2026-10-20" }).success).toBe(true);
-    expect(competitionSchema.safeParse({ ...competition, level: "NASIONAL", poster: "uvics/published/poster-1" }).success).toBe(true);
+    expect(competitionSchema.safeParse({ ...competition, level: "NASIONAL", poster: "00000000-0000-4000-8000-000000000901" }).success).toBe(true);
     for (const bad of [
       { registration_deadline: "2026-10-21", competition_date: "2026-10-20" },
       { competition_date: "2026-02-30" },
@@ -94,6 +94,9 @@ describe("content input validation", () => {
       { status: "Open" },
       { level: "Nasional" },
       { poster: "a".repeat(501) },
+      // Referensi media = ID upload intent, bukan path atau URL provider.
+      { poster: "uvics/published/poster-1" },
+      { poster: "https://res.cloudinary.com/x/image/upload/v1/a.png" },
     ])
       expect(competitionSchema.safeParse({ ...competition, ...bad }).success).toBe(false);
     expect(projectSchema.safeParse({ title: "P", slug: "p", summary: "S", start_date: "2026-02-01", end_date: "2026-01-01" }).success).toBe(false);
@@ -117,8 +120,8 @@ describe("content input validation", () => {
   it("keeps certificates out of the public achievement input (U18)", () => {
     const achievement = { title: "A", slug: "a", competition_name: "C", ranking: "1", achievement_date: "2026-01-01" };
     expect(achievementSchema.parse({ ...achievement, certificate_file: "x" })).not.toHaveProperty("certificate_file");
-    expect(achievementCertificateSchema.safeParse({ achievement_id: "00000000-0000-4000-8000-000000000721", certificate_file: "uvics/private/c" }).success).toBe(true);
-    for (const certificate_file of ["", "  ", "a".repeat(501)])
+    expect(achievementCertificateSchema.safeParse({ achievement_id: "00000000-0000-4000-8000-000000000721", certificate_file: "00000000-0000-4000-8000-000000000903" }).success).toBe(true);
+    for (const certificate_file of ["", "  ", "a".repeat(501), "uvics/private/c"])
       expect(achievementCertificateSchema.safeParse({ achievement_id: "00000000-0000-4000-8000-000000000721", certificate_file }).success).toBe(false);
   });
 
