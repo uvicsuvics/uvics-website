@@ -165,7 +165,7 @@ begin
   declare
     bad_level text;
   begin
-    foreach bad_level in array array['Executive', 'Management', 'Staff', 'core', 'VICE_PRESIDENT', '', 'UNKNOWN'] loop
+    foreach bad_level in array array['Executive', 'Management', 'Staff', 'core', 'CORE ', 'VICE_PRESIDENT', '', 'UNKNOWN'] loop
       begin
         insert into public.positions (name, level) values ('Bad Pos', bad_level);
         raise exception 'invalid position level "%" should have been rejected', bad_level;
@@ -261,6 +261,12 @@ begin
   exception when insufficient_privilege then
     null;
   end;
+  begin
+    delete from public.positions;
+    raise exception 'non-admin direct delete on positions must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
 end$$;
 reset role;
 
@@ -285,6 +291,18 @@ begin
   begin
     insert into public.positions (name, level) values ('Anon Pos', 'MEMBER');
     raise exception 'anon must not insert positions';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    update public.positions set level = 'CORE';
+    raise exception 'anon must not update positions';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    delete from public.positions;
+    raise exception 'anon must not delete positions';
   exception when insufficient_privilege then
     null;
   end;

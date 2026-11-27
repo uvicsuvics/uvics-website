@@ -80,6 +80,9 @@ begin
   if exists (select 1 from public.positions where name = 'Vice President') then
     raise exception 'fresh seed failed: Vice President must not be seeded (PRD §13)';
   end if;
+  if (select count(distinct level) from public.positions where level in ('ADVISOR', 'CORE', 'STEERING_HELPER', 'COORDINATOR', 'PIC', 'MEMBER')) <> 6 then
+    raise exception 'fresh seed failed: all 6 canonical D29 levels must be seeded';
+  end if;
   if (select count(*) from public.organization_periods) <> 1 then
     raise exception 'fresh seed failed: periods count mismatch';
   end if;

@@ -237,7 +237,9 @@ export async function convertRegistrationToMember(client: Client, raw: unknown) 
     ) {
       throw new AppError("VALIDATION_ERROR", {
         fieldErrors: {
-          department_id: ["Posisi non-inti wajib memiliki departemen."],
+          department_id: [
+            "Posisi selain pengurus inti dan advisor wajib memiliki departemen.",
+          ],
         },
       });
     }

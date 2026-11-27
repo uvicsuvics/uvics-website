@@ -389,7 +389,9 @@ describe("admin registration mutations", () => {
       code: "VALIDATION_ERROR",
       details: {
         fieldErrors: {
-          department_id: ["Posisi non-inti wajib memiliki departemen."],
+          department_id: [
+            "Posisi selain pengurus inti dan advisor wajib memiliki departemen.",
+          ],
         },
       },
     });
@@ -407,7 +409,7 @@ describe("admin registration mutations", () => {
         position_id: regId,
         start_date: "2026-08-15",
       }),
-    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR", details: {} });
   });
 
   it("maps RPC errors (P0001 -> CONFLICT, P0002 -> NOT_FOUND, 42501 -> FORBIDDEN)", async () => {

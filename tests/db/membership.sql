@@ -296,6 +296,18 @@ begin
   exception when insufficient_privilege then
     null;
   end;
+  begin
+    update public.members set public_profile = true;
+    raise exception 'non-admin must not update members';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    insert into public.members (full_name) values ('NonAdmin Member');
+    raise exception 'non-admin must not insert members';
+  exception when insufficient_privilege then
+    null;
+  end;
 
   -- Calling RPC raises insufficient_privilege
   begin
@@ -330,6 +342,18 @@ begin
   begin
     delete from public.members where id = '00000000-0000-4000-8000-000000000001';
     raise exception 'anon must not delete members';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    update public.members set public_profile = true;
+    raise exception 'anon must not update members';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    insert into public.members (full_name) values ('Anon Member');
+    raise exception 'anon must not insert members';
   exception when insufficient_privilege then
     null;
   end;

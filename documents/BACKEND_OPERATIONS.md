@@ -34,7 +34,7 @@ Preflight #74 sebelum `db:migrate` hosted, read-only. Pastikan tidak ada baris `
 select id, name, level
 from public.positions
 where level not in ('ADVISOR', 'CORE', 'STEERING_HELPER', 'COORDINATOR', 'PIC', 'MEMBER')
-  and upper(regexp_replace(btrim(level), '[\s-]+', '_', 'g')) not in (
+  and upper(btrim(regexp_replace(level, '[[:space:]_-]+', '_', 'g'), '_')) not in (
     'ADVISOR', 'PEMBINA', 'CORE', 'CORE_TEAM', 'EXECUTIVE', 'INTI', 'PENGURUS_INTI',
     'STEERING_HELPER', 'COORDINATOR', 'KOORDINATOR', 'MANAGEMENT',
     'PIC', 'PERSON_IN_CHARGE', 'MEMBER', 'STAFF', 'ANGGOTA'

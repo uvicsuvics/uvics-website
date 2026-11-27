@@ -276,6 +276,9 @@ begin
   ) then
     raise exception 'TEST 8 GAGAL: posisi ADVISOR harus bisa tanpa departemen (D24)';
   end if;
+  if (select public_profile from public.members where id = (result->>'member_id')::uuid) is distinct from false then
+    raise exception 'TEST 8 GAGAL: member ADVISOR baru harus default public_profile = false (D31)';
+  end if;
 
   -- ============================================================
   -- TEST 8B: D24 — Posisi selain CORE dan ADVISOR tanpa departemen DITOLAK (23514)
@@ -528,8 +531,8 @@ end$$;
 reset role;
 do $$
 begin
-  if not exists (select 1 from public.members where nim = '10502181301' and status = 'ACTIVE') then
-    raise exception 'TEST 17 GAGAL: admin authenticated harus bisa mengonversi';
+  if not exists (select 1 from public.members where nim = '10502181301' and status = 'ACTIVE' and public_profile = false) then
+    raise exception 'TEST 17 GAGAL: admin authenticated harus bisa mengonversi dengan default public_profile = false';
   end if;
 end$$;
 
@@ -541,6 +544,9 @@ begin
   if has_function_privilege('anon', 'public.admin_review_registration(uuid, text, text)', 'execute')
     or has_function_privilege('anon', 'public.admin_convert_registration_to_member(uuid, uuid, uuid, date, uuid)', 'execute') then
     raise exception 'TEST 12 GAGAL: anon tidak boleh punya EXECUTE pada RPC admin';
+  end if;
+  if has_function_privilege('service_role', 'public.admin_convert_registration_to_member(uuid, uuid, uuid, date, uuid)', 'execute') then
+    raise exception 'TEST 12 GAGAL: service_role tidak boleh punya EXECUTE pada admin_convert_registration_to_member';
   end if;
   if not has_function_privilege('authenticated', 'public.admin_review_registration(uuid, text, text)', 'execute')
     or not has_function_privilege('authenticated', 'public.admin_convert_registration_to_member(uuid, uuid, uuid, date, uuid)', 'execute') then

@@ -11,7 +11,7 @@
 -- Petakan nilai teks bebas yang mungkin sudah ada tanpa menyentuh baris yang sudah kanonis.
 -- Nilai tak dikenal dibiarkan apa adanya agar ADD CONSTRAINT gagal secara atomik (fail-closed).
 update public.positions
-set level = case upper(regexp_replace(btrim(level), '[\s-]+', '_', 'g'))
+set level = case upper(btrim(regexp_replace(level, '[[:space:]_-]+', '_', 'g'), '_'))
   when 'ADVISOR' then 'ADVISOR'
   when 'PEMBINA' then 'ADVISOR'
   when 'CORE' then 'CORE'
