@@ -55,7 +55,8 @@ do $$declare before_count int;begin
  select count(*) into before_count from public.audit_logs;
  begin
   update public.admins set name='rollback';
-  perform private.write_audit('00000000-0000-4000-8000-000000000001','FIXTURE','fixture',null,'{}','{}');
+  insert into auth.sessions values('00000000-0000-4000-8000-000000000011','00000000-0000-4000-8000-000000000001',statement_timestamp());
+  perform private.write_audit('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000011','FIXTURE','fixture',null,'{}','{}');
   raise exception 'rollback fixture';
  exception when raise_exception then null;end;
  if exists(select from public.admins where name='rollback') or (select count(*) from public.audit_logs)<>before_count then raise exception 'audit not atomic';end if;
