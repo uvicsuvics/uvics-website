@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 # UVICS Website Platform
 
-**Document Version:** 1.0  
+**Document Version:** 1.2  
 **Status:** Draft for Development  
 **Product:** UVICS Website Platform  
 **Document Type:** Product Requirements Document  
@@ -9,6 +9,18 @@
 **Prepared For:** UVICS Development Team  
 
 **Keputusan teknis:** Stack implementasi telah disepakati pada 22 September 2026 dalam [TECH_STACK.md](TECH_STACK.md), termasuk full-stack Next.js, Supabase, Cloudinary, dan shadcn/ui. Status draft serta open questions bisnis dalam PRD ini tetap berlaku.
+
+**Keputusan produk:** Jawaban open questions (§79) dan penyelesaian bagian yang ambigu dicatat di [DECISIONS.md](DECISIONS.md). Keputusan berstatus *Diterima* di sana berlaku sampai PRD diperbarui. Penanda **Catatan v1.1** di dokumen ini menunjuk bagian yang masih menunggu keputusan.
+
+**Sumber konten organisasi:** identitas, visi, misi, culture & value, struktur, departemen, program, dan ketentuan keanggotaan UVICS mengikuti *Achievers Guidebook* 2026 (Main Rules Batch 3.5), sesuai [D22](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima). Contoh konten di dokumen dan mock data yang bertentangan dengan guidebook dianggap salah.
+
+### Riwayat Perubahan
+
+| Versi | Tanggal | Perubahan |
+| --- | --- | --- |
+| 1.2 | 25 Oktober 2026 | Menyelaraskan profil organisasi dengan *Achievers Guidebook* 2026: ketentuan keanggotaan (§9), konten About (§12), struktur organisasi (§13), departemen (§14), program (§21A), dan posisi (§31). |
+| 1.1 | 10 Oktober 2026 | Menyelaraskan istilah autentikasi, keamanan, dan error dengan TECH_STACK (§8, §45.1, §48, §54); menambah modul Programs (§21A) sesuai tabel yang sudah dibuat; menandai bagian yang bertentangan dengan spesifikasi atau implementasi; mengubah §79 menjadi tabel status; memperbarui struktur dokumentasi (§81). |
+| 1.0 | — | Draft awal. |
 
 ---
 
@@ -228,13 +240,14 @@ Admin Dashboard
 
 Minimum authentication requirement:
 
-- email;
-- password;
-- secure password hashing;
-- session-based authentication;
+- login email dan password melalui Supabase Auth (hashing password dikelola Supabase Auth);
+- sesi berbasis cookie SSR (`@supabase/ssr`) dengan masa maksimal satu jam absolut sejak login;
 - logout;
-- failed login handling;
-- session expiration.
+- pesan error yang tidak membedakan email salah dan password salah;
+- rate limit percobaan login;
+- akun admin dibuat lewat provisioning operator; signup publik dinonaktifkan.
+
+Detail teknis ada di [BACKEND_CONVENTIONS.md](BACKEND_CONVENTIONS.md#auth-database-dan-audit).
 
 Optional future enhancement:
 
@@ -281,6 +294,18 @@ Admin Review
         Alumni
 ```
 
+## 9.1 Ketentuan Keanggotaan (Achievers Guidebook 2026)
+
+- Anggota tergabung per **batch**; guidebook 2026 berlaku untuk **Batch 3.5**.
+- Masa jabatan anggota **2 semester atau 1 tahun**, sesuai kesepakatan di awal.
+- Anggota baru wajib mengisi formulir data anggota dan menandatangani surat komitmen.
+- Anggota boleh memilih ikut atau tidak ikut lomba, dan organisasi tidak berkegiatan pada masa ujian.
+- Akhir masa jabatan: farewell, penerimaan sertifikat dan laporan kinerja, lalu formulir status untuk melanjutkan atau mengakhiri keanggotaan.
+- Sertifikat hanya diberikan bila anggota pernah menyelesaikan minimal satu proyek bersama UVICS. Durasi keanggotaan ditulis di sertifikat.
+- Pengunduran diri diberitahukan ke core team dua minggu sebelumnya dan melewati exit interview. Anggota yang tidak memberi kabar selama satu bulan dan sudah menerima SP 2 dinyatakan keluar tanpa sertifikat.
+
+Aturan internal lain di guidebook (meeting, absensi, surat peringatan, pendanaan, hirarki komunikasi, kode etik) adalah dokumen internal. Isinya **tidak** ditampilkan di website publik; mengunggah informasi internal tanpa persetujuan termasuk pelanggaran yang dikenai SP.
+
 ---
 
 # 10. High-Level Information Architecture
@@ -315,6 +340,7 @@ Dashboard
 
 WEBSITE
 ├── Pages
+├── Programs
 ├── News
 ├── Events
 ├── Competitions
@@ -387,6 +413,39 @@ Halaman About dapat berisi:
 
 Admin dapat mengubah konten melalui Pages Management.
 
+## 12.1 Konten Resmi (Achievers Guidebook 2026)
+
+Teks visi dan misi dipakai apa adanya, tidak diparafrasekan. Bagian lain boleh disunting gayanya selama faktanya tetap.
+
+**Identitas.** UVICS (Unklab Virtue in Computer Science) adalah organisasi yang dibentuk atas inisiatif mahasiswa Universitas Klabat sebagai wadah untuk menggali dan mengembangkan potensi diri, khususnya di jenjang perlombaan, serta mewujudkan aspirasi positif bersama. UVICS mempertemukan mahasiswa dengan minat serupa untuk berprestasi secara kolektif dalam organisasi yang terstruktur.
+
+- Anggota berasal dari **berbagai tingkat dan jurusan**, bukan hanya program studi komputer.
+- Jenis kompetisi yang didukung: Business Case Competition, Business Plan Competition, Hackathon, Web Competition, sayembara arsitektur, karya tulis ilmiah, nursing study case, health educational creative video, dan lomba lain.
+- Tagline: **"Be an Achiever, Carve Your Future"**.
+- Tahun berdiri: **2024** (dikonfirmasi pengguna 24 Oktober 2026; tidak tertulis di guidebook).
+
+**Visi**
+
+1. Menjadi wadah untuk mahasiswa-mahasiswa yang ingin bertumbuh dan berprestasi dalam lomba.
+2. Menjadi organisasi yang membawa prestasi dan nama baik bagi kampus Universitas Klabat.
+3. Menjadi tempat mahasiswa untuk mengasah dan meningkatkan hard skill dan soft skill mereka untuk meningkatkan pengalaman dan portofolio.
+4. Menjadi organisasi yang memberikan manfaat dan dampak yang berkelanjutan dalam masyarakat.
+
+**Misi**
+
+1. Mengumpulkan mahasiswa dari berbagai tingkat dan jurusan untuk sama-sama bertumbuh dan berprestasi membangun portofolio.
+2. Memberikan sistem dan kesempatan yang sama kepada mahasiswa untuk melatih kerja sama, komunikasi, dan leadership mereka.
+3. Menyediakan media belajar bersama untuk setiap anggota meningkatkan hard skill dan soft skill mereka.
+4. Menciptakan program-program inovatif yang dapat memberikan dampak dalam masyarakat dan mengasah pola pikir kreatif member UVICS.
+
+**Culture:** Discipline; Active and Communicative; Innovative; Sharing and Caring; Transparent.
+
+**Value:** Willing to Learn; Dare to Do Extra; Grow Together; Enthusiasm; Inspired.
+
+> Ejaan "Transparent" dan "Willing to Learn" dikoreksi dari guidebook ("Transparant", "Willing to Learned"). Konfirmasi ke PM bila ejaan asli ingin dipertahankan.
+
+Belum tersedia di guidebook dan tidak boleh dikarang: narasi sejarah selain tahun berdiri, tonggak per tahun, dan angka statistik (jumlah anggota, prestasi, proyek).
+
 ---
 
 # 13. Organization Structure
@@ -403,23 +462,33 @@ Member
 Display Order
 ```
 
-Example:
+Struktur resmi (Achievers Guidebook 2026):
 
 ```text
-UVICS 2026/2027
-
-President
-Vice President
-Secretary
-Treasurer
-
+Advisor
+   ↓
+President (Ketua)
+   ↓
+Core Team ── Treasurer (Bendahara), Secretary (Sekretaris)
+   ↓
 Departments
-├── Department A
-├── Department B
-└── Department C
+├── Public Relations
+├── External Affairs
+├── Web Development
+├── Competition Handler
+└── Editor
+
+Setiap departemen:
+Steering Helper → Koordinator → PIC (Person In Charge) → Anggota
 ```
 
+- Tidak ada posisi Vice President / Wakil Ketua di struktur resmi.
+- Advisor adalah pembina yang menerima laporan bulanan dari ketua dan core team; apakah Advisor tampil di website publik belum diputuskan ([T07](DECISIONS.md#d-isu-terbuka)).
+- Peran tiap posisi (ringkas): Steering Helper membantu koordinator menetapkan goals/roadmap dan menangani kendala divisi; Koordinator membuat roadmap dan timeline, memimpin meeting departemen, dan melapor ke core team; PIC membantu koordinator mengeksekusi dan mengarahkan tim; Anggota menjalankan jobdesc yang disepakati.
+
 Admin dapat mengganti periode yang ingin ditampilkan.
+
+> **Catatan v1.1:** Pengurus inti tidak berada di departemen, sehingga kolom departemen pada histori keanggotaan dibuat nullable ([D24](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). Pengunjung membaca data organisasi lewat view atau RPC publik berproyeksi field ([D25](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)), yang belum dibangun.
 
 ---
 
@@ -442,6 +511,18 @@ Public website dapat menampilkan:
 - current members;
 - department leader;
 - selected projects/programs.
+
+Departemen resmi (Achievers Guidebook 2026) beserta programnya:
+
+| Departemen | Program |
+| --- | --- |
+| Public Relations | UVICS Activity Content, Educational Content, Fun Trends Content, Interact with Followers, Content Summary |
+| External Affairs | Belum dijabarkan di guidebook |
+| Web Development | Website Building, DevHub |
+| Competition Handler | Mentor Community, Competition Finder |
+| Editor | Template, Editing & Documentation |
+
+Guidebook juga mencantumkan **Internal Development** (KABEL, Bonding, Champion of Change) dan **Officer** (UVICS Impact, UVICS Vibes, Perlombaan) di bagian "Departemen & Program", tetapi keduanya tidak ada di bagan struktur. Statusnya menunggu [T07](DECISIONS.md#d-isu-terbuka); jangan ditampilkan sebagai departemen sebelum diputuskan.
 
 ---
 
@@ -519,6 +600,8 @@ CANCELLED
 
 Status dapat dihitung otomatis berdasarkan waktu atau diubah admin apabila diperlukan.
 
+> **Catatan v1.1:** Visibilitas event mengikuti [D17](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima) (`content_status`). Aturan prioritas status otomatis dan status dari admin masih terbuka ([T06](DECISIONS.md#d-isu-terbuka)).
+
 Public pages:
 
 ```text
@@ -571,6 +654,8 @@ Admin dapat:
 - archive;
 - set featured.
 
+> **Catatan v1.1:** Status di atas adalah lifecycle. Publish/archive memakai `publication_status` sesuai [D17](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima).
+
 Public dapat:
 
 - melihat listing;
@@ -610,6 +695,8 @@ members
 ```
 
 Admin dapat menentukan apakah achievement ditampilkan secara publik.
+
+> **Catatan v1.1:** Relasi ke `members` dan peserta non-member mengikuti [D18](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima); `published` diganti `publication_status` (D17).
 
 ---
 
@@ -669,6 +756,8 @@ Requirement:
 - image compression;
 - optional album grouping.
 
+> **Catatan v1.1:** Spesifikasi halaman publik memakai album wajib dengan route `/gallery/{slug}`. Lihat [D34](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima).
+
 ---
 
 # 21. Partners Management
@@ -688,6 +777,83 @@ Admin dapat menentukan partner mana yang ditampilkan.
 
 ---
 
+# 21A. Programs Management
+
+Program adalah kegiatan rutin UVICS (mis. KABEL, Mentor Community, UVICS Vibes) yang ditampilkan di homepage dan halaman Programs. Modul ini ditambahkan pada v1.1 untuk mendokumentasikan tabel yang sudah dibuat di migration CMS foundation (issue #10).
+
+Data (tabel `programs`):
+
+```text
+name
+slug
+short_description
+description
+image
+status
+display_order
+created_at
+updated_at
+```
+
+Status mengikuti status konten:
+
+```text
+DRAFT
+PUBLISHED
+ARCHIVED
+```
+
+Admin dapat:
+
+- create;
+- edit;
+- publish;
+- archive;
+- mengatur urutan tampil.
+
+Public pages:
+
+```text
+/programs
+/programs/{slug}
+```
+
+### Business Rules
+
+- slug harus unique;
+- hanya program `PUBLISHED` yang tampil di website publik;
+- publish dilakukan lewat fungsi database yang memeriksa sesi admin.
+
+> **Catatan v1.1:** Spesifikasi halaman publik meminta informasi tambahan (kategori, ikon, relasi ke departemen) yang belum ada di tabel. Relasi ke departemen diputuskan di [D28](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima); kategori dan ikon tidak ditambah.
+
+### Program Resmi (Achievers Guidebook 2026)
+
+Daftar ini menggantikan contoh program sebelumnya. Kolom pengelola diisi bila relasi program–departemen diputuskan (U05).
+
+| Program | Pengelola | Deskripsi |
+| --- | --- | --- |
+| UVICS Activity Content | Public Relations | Video reels pengenalan program atau event UVICS yang sedang berjalan. |
+| Educational Content | Public Relations | Konten edukasi seputar karier dan perkuliahan. |
+| Fun Trends Content | Public Relations | Konten kreatif keseruan internal anggota dalam bentuk reels atau story. |
+| Interact with Followers | Public Relations | Konten interaksi di Instagram Story dan live report kegiatan. |
+| Content Summary | Public Relations | Rangkuman pembelajaran dari setiap event, mis. KABEL dan webinar. |
+| Template | Editor | Template Instagram dan program lain, termasuk untuk hari peringatan. |
+| Editing & Documentation | Editor | Menyunting konten atau dokumen organisasi dan mendokumentasikan kegiatan. |
+| Mentor Community | Competition Handler | Pendampingan tim lomba dan solusi atas kendala selama persiapan. |
+| Competition Finder | Competition Handler | Mencarikan lomba yang sesuai permintaan tim yang sudah terbentuk. |
+| Website Building | Web Development | Pembuatan website resmi organisasi. |
+| DevHub | Web Development | Belajar dan diskusi web development serta proyek departemen. |
+| KABEL (Kamar Belajar) | Internal Development* | Belajar bersama lewat sharing expert sesuai topik, juga memakai platform MySkill. |
+| Bonding | Internal Development* | Kegiatan untuk memperkuat kebersamaan antaranggota. |
+| Champion of Change (CoC) | Internal Development* | Apresiasi bagi anggota yang aktif berkontribusi di acara dan kegiatan development. |
+| UVICS Impact | Officer* | Kampanye edukasi masyarakat tentang isu tertentu, diadakan tiga bulan sekali. |
+| UVICS Vibes | Officer* | Webinar atau seminar tentang teknologi dan pengembangan diri. |
+| Perlombaan | Officer* | Merancang dan menyelenggarakan kompetisi secara profesional. |
+
+\* Status Internal Development dan Officer menunggu [T07](DECISIONS.md#d-isu-terbuka).
+
+---
+
 # 22. Member Registration
 
 ## 22.1 Registration Availability
@@ -702,6 +868,8 @@ Admin harus dapat:
 - menentukan announcement text.
 
 Public registration hanya dapat digunakan ketika registration aktif.
+
+> **Catatan v1.1:** Status "pendaftaran dibuka" saat ini punya dua sumber (periode di bagian ini dan flag `registration_open` di §36), dan aturan unik per periode (§22.3) belum punya entitas periode. Untuk MVP sumbernya hanya `registration_open` ([D27](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). Route halaman pendaftaran adalah `/join` ([D26](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 
 ## 22.2 Registration Form
 
@@ -1001,16 +1169,20 @@ display_order
 active
 ```
 
-Examples:
+Posisi resmi (Achievers Guidebook 2026), urut dari atas:
 
 ```text
-President
-Vice President
-Secretary
-Treasurer
-Coordinator
-Member
+Advisor
+President (Ketua)
+Treasurer (Bendahara)
+Secretary (Sekretaris)
+Steering Helper
+Koordinator
+PIC (Person In Charge)
+Anggota
 ```
+
+Tidak ada Vice President. Pengelompokan level (U08) mengikuti urutan ini.
 
 Position bersifat configurable melalui admin dashboard.
 
@@ -1054,6 +1226,8 @@ GitHub optional
 ```
 
 Field internal seperti phone number, personal email, NIM, dan admin notes tidak boleh ditampilkan.
+
+> **Catatan v1.1:** Akses publik langsung ke data member ditutup ([D02](DECISIONS.md#a-keputusan-teknis-d01d05-kontrak-3133)); data member hanya tampil lewat proyeksi field. Halaman `/members` dan `/alumni` tidak masuk MVP ([D32](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)), dan default `public_profile` menjadi `false` ([D31](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 
 ---
 
@@ -1320,6 +1494,7 @@ High-level entities:
 admins
 
 pages
+programs
 posts
 events
 competitions
@@ -1373,12 +1548,13 @@ members
 ```text
 id
 name
-email
-password
+is_active
 last_login_at
 created_at
 updated_at
 ```
+
+Email dan password tidak disimpan di tabel aplikasi; keduanya dikelola Supabase Auth. `admins.id` sama dengan ID user Auth.
 
 ## 45.2 registrations
 
@@ -1619,21 +1795,21 @@ Tidak boleh tampil pada public website tanpa requirement khusus:
 
 Minimum security requirements:
 
-- secure password hashing;
-- authentication middleware;
-- CSRF protection;
-- input validation;
-- output escaping;
-- secure file upload;
-- MIME validation;
-- file size restrictions;
+- password dikelola Supabase Auth (tidak ada kolom password di tabel aplikasi);
+- pemeriksaan admin di setiap Server Action, Route Handler, dan query privat, bukan hanya di layout atau `proxy.ts`;
+- penolakan mutasi lintas origin (Origin harus sama persis dengan `APP_ORIGIN`) dan cookie `SameSite=Lax` sebagai pengganti token CSRF;
+- validasi input di server dengan Zod;
+- output escaping (bawaan React; konten rich text dirender dengan sanitasi);
+- upload aman lewat signature server dan verifikasi hasil upload;
+- validasi tipe dan ukuran file per kategori media;
 - rate limiting login;
 - rate limiting registration;
-- session regeneration after login;
-- session expiration;
-- secure cookies in production;
-- protection against SQL injection through ORM/prepared statements;
-- authorization middleware for admin routes.
+- sesi baru dari Supabase Auth di setiap login, dengan masa maksimal satu jam absolut;
+- cookie `Secure` di production;
+- query lewat Supabase SDK/RPC yang terparameter, tanpa SQL dinamis dari input pengguna;
+- Row Level Security di semua tabel yang terekspos Data API.
+
+Detail teknis ada di [BACKEND_CONVENTIONS.md](BACKEND_CONVENTIONS.md) dan [ARCHITECTURE.md](ARCHITECTURE.md#5-keamanan).
 
 ---
 
@@ -1730,13 +1906,18 @@ Sistem harus menyediakan error states yang jelas.
 Examples:
 
 ```text
-404 Page Not Found
-403 Unauthorized
-419 Session Expired
-500 Internal Server Error
-Validation Errors
+401 Belum login atau sesi berakhir (UNAUTHENTICATED)
+403 Tidak berhak (FORBIDDEN)
+404 Halaman tidak ditemukan (NOT_FOUND)
+409 Konflik data, mis. slug sudah dipakai (CONFLICT)
+422 Validasi gagal (VALIDATION_ERROR)
+429 Terlalu banyak percobaan (RATE_LIMITED)
+500 Kesalahan server (INTERNAL_ERROR)
+503 Layanan sementara tidak tersedia (SERVICE_UNAVAILABLE)
 Upload Errors
 ```
+
+Kode error dan format respons mengikuti [BACKEND_CONVENTIONS.md](BACKEND_CONVENTIONS.md#validasi-dan-error).
 
 Admin form harus mempertahankan input apabila validation gagal sejauh memungkinkan.
 
@@ -1991,6 +2172,7 @@ Recommended routes:
 /admin/login
 /admin/dashboard
 /admin/pages
+/admin/programs
 /admin/news
 /admin/events
 /admin/competitions
@@ -2022,6 +2204,9 @@ Recommended:
 /about
 /organization
 /departments
+/departments/{slug}
+/programs
+/programs/{slug}
 /news
 /news/{slug}
 /events
@@ -2038,6 +2223,14 @@ Recommended:
 /contact
 /register
 ```
+
+> **Catatan v1.1:** Beberapa route berbeda dengan spesifikasi halaman publik dan kode:
+>
+> - pendaftaran `/register` vs `/join` ([D26](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
+> - berita `/news` vs `/blog`, serta route template `/pricing`, `/batch`, `/forgot-password` ([D30](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
+> - halaman Visi & Misi `/vision-mission` ([D19](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
+> - detail galeri `/gallery/{slug}` ([D34](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima));
+> - `/members` dan `/alumni` ([D32](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
 
 ---
 
@@ -2461,28 +2654,30 @@ Keputusan utama PRD ini:
 
 # 79. Open Questions
 
-Beberapa keputusan bisnis perlu dikonfirmasi sebelum implementation final.
+Beberapa keputusan bisnis perlu dikonfirmasi sebelum implementation final. Status per v1.1 (detail di [DECISIONS.md](DECISIONS.md)):
 
-1. Apakah halaman Members akan tampil publik?
-2. Apakah halaman Alumni akan tampil publik?
-3. Field apa saja yang harus tersedia pada registration?
-4. Apakah registration memiliki periode/batch penerimaan?
-5. Apakah admin perlu menyimpan hasil interview?
-6. Apakah satu member dapat berada pada lebih dari satu department dalam periode yang sama?
-7. Apakah satu member dapat memiliki lebih dari satu position?
-8. Apakah organization period menggunakan tahun akademik atau periode kepengurusan bebas?
-9. Apakah competition hanya informasi lomba atau juga tracking tim lomba?
-10. Apakah project perlu contributor/member relationship?
-11. Apakah achievement dapat berasal dari individu non-member?
-12. Apakah homepage sections harus configurable urutannya?
-13. Apakah diperlukan bilingual Indonesia/English?
-14. Apakah admin terdiri dari satu akun atau beberapa akun dengan hak yang sama?
-15. Apakah registration memerlukan upload CV/portfolio?
-16. Apakah alumni memiliki current occupation/company field?
-17. Apakah contact form perlu disimpan di database atau cukup external link/email?
-18. Apakah diperlukan newsletter?
-19. Apakah website memiliki brand/design system resmi?
-20. Apakah public member profile harus memiliki opt-in privacy?
+| No | Pertanyaan | Status | Rujukan |
+| --- | --- | --- | --- |
+| 1 | Apakah halaman Members akan tampil publik? | Usulan: tidak masuk MVP | U12, D02 |
+| 2 | Apakah halaman Alumni akan tampil publik? | Usulan: tidak masuk MVP | U12, D02 |
+| 3 | Field apa saja yang harus tersedia pada registration? | Sebagian diterima: field issue #8; field tambahan masih terbuka | D06, T05 |
+| 4 | Apakah registration memiliki periode/batch penerimaan? | Usulan: ya, tabel periode pendaftaran | U04 |
+| 5 | Apakah admin perlu menyimpan hasil interview? | Terbuka | T01 |
+| 6 | Apakah satu member dapat berada pada lebih dari satu department dalam periode yang sama? | Terbuka | T02 |
+| 7 | Apakah satu member dapat memiliki lebih dari satu position? | Terbuka | T02 |
+| 8 | Apakah organization period menggunakan tahun akademik atau periode kepengurusan bebas? | Diterima: nama bebas dengan tanggal mulai/selesai | D07 |
+| 9 | Apakah competition hanya informasi lomba atau juga tracking tim lomba? | Diterima: informasi lomba saja | D15 |
+| 10 | Apakah project perlu contributor/member relationship? | Diterima: ya, dengan dukungan non-member | D18 |
+| 11 | Apakah achievement dapat berasal dari individu non-member? | Diterima: ya | D18 |
+| 12 | Apakah homepage sections harus configurable urutannya? | Usulan: tidak, urutan tetap | U15 |
+| 13 | Apakah diperlukan bilingual Indonesia/English? | Usulan: Bahasa Indonesia untuk MVP | U16 |
+| 14 | Apakah admin terdiri dari satu akun atau beberapa akun dengan hak yang sama? | Diterima: beberapa akun, hak sama | D08 |
+| 15 | Apakah registration memerlukan upload CV/portfolio? | Diterima: tanpa CV, hanya URL portofolio | D10 |
+| 16 | Apakah alumni memiliki current occupation/company field? | Terbuka | T03 |
+| 17 | Apakah contact form perlu disimpan di database atau cukup external link/email? | Usulan: tautan kontak resmi tanpa penyimpanan | U13 |
+| 18 | Apakah diperlukan newsletter? | Terbuka | T04 |
+| 19 | Apakah website memiliki brand/design system resmi? | Diterima: `design.md` | D11 |
+| 20 | Apakah public member profile harus memiliki opt-in privacy? | Usulan: opt-in (`public_profile` default false) | U11, D02 |
 
 Open questions harus diselesaikan sebelum fitur terkait masuk ke tahap development final.
 
@@ -2507,49 +2702,22 @@ Sebuah feature dianggap selesai jika:
 
 # 81. Recommended Documentation Structure
 
-Repository direkomendasikan memiliki struktur:
+Dokumentasi berada di folder `documents/` (kecuali aturan kode di `AGENTS.md` dan design system di `design.md` pada root repository):
 
-```text
-docs/
-│
-├── 01-product/
-│   ├── PRD.md
-│   ├── PRODUCT-SCOPE.md
-│   └── ROADMAP.md
-│
-├── 02-requirements/
-│   ├── PUBLIC-WEBSITE.md
-│   ├── CMS.md
-│   ├── MEMBERSHIP.md
-│   ├── ALUMNI.md
-│   ├── COMPETITION.md
-│   └── ACHIEVEMENT.md
-│
-├── 03-architecture/
-│   ├── SYSTEM-ARCHITECTURE.md
-│   ├── DATABASE.md
-│   ├── ERD.md
-│   ├── AUTHENTICATION.md
-│   └── STORAGE.md
-│
-├── 04-workflows/
-│   ├── MEMBER-REGISTRATION.md
-│   ├── MEMBER-LIFECYCLE.md
-│   ├── ALUMNI-TRANSITION.md
-│   └── CONTENT-PUBLISHING.md
-│
-├── 05-ui-ux/
-│   ├── INFORMATION-ARCHITECTURE.md
-│   ├── ADMIN-NAVIGATION.md
-│   └── DESIGN-SYSTEM.md
-│
-└── 06-quality/
-    ├── ACCEPTANCE-CRITERIA.md
-    ├── TESTING.md
-    └── SECURITY.md
-```
+| Dokumen | Isi |
+| --- | --- |
+| `documents/PRD.md` | Kebutuhan produk (dokumen ini) |
+| `documents/UVICS_Public_Website_Page_Specification.md` | Spesifikasi halaman website publik |
+| `documents/DECISIONS.md` | Catatan keputusan dan jawaban open questions |
+| `documents/TECH_STACK.md` | Pilihan teknologi dan batas arsitektur |
+| `documents/ARCHITECTURE.md` | Peta sistem, struktur kode, domain data, dan alur utama |
+| `documents/BACKEND_CONVENTIONS.md` | Kontrak backend: data, validasi, error, auth, audit, media |
+| `documents/BACKEND_OPERATIONS.md` | Runbook operator: environment, migration, pengujian hosted |
+| `documents/DEVELOPMENT_WORKFLOW.md` | Branch, issue, commit, PR, merge, rilis, Definition of Done |
+| `AGENTS.md` | Aturan penulisan kode dan struktur proyek |
+| `design.md` | Design system |
 
-PRD ini dapat menjadi dokumen utama, sementara requirement yang semakin detail dapat dipisahkan ke file khusus di kemudian hari.
+PRD ini tetap menjadi dokumen utama. Requirement yang semakin detail dapat dipisahkan ke file khusus bila sebuah modul sudah terlalu besar untuk PRD.
 
 ---
 

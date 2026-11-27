@@ -1,0 +1,45 @@
+import {
+  UVICS_PROGRAM_DEPARTMENTS,
+  UVICS_PROGRAMS,
+  UVICS_PROGRAMS_PAGE,
+  type ProgramItem,
+  type ProgramsPageContent,
+} from "@/data/mock/programs";
+import { applyLimit, findBySlug, type ListOptions } from "@/lib/services/shared";
+
+export type { ProgramItem, ProgramsPageContent };
+
+
+// Sumber data sementara: mock. Lihat competitionService.ts.
+
+/** Hanya field yang ada di tabel `programs`; kategori, frekuensi, dll. menunggu U05. */
+export type PublicProgram = Pick<ProgramItem, "id" | "slug" | "title" | "description" | "image">;
+
+export async function getPrograms(options: ListOptions = {}): Promise<PublicProgram[]> {
+  return applyLimit(UVICS_PROGRAMS, options.limit).map(({ id, slug, title, description, image }) => ({
+    id,
+    slug,
+    title,
+    description,
+    image,
+  }));
+}
+
+/** Program yang dikelola satu departemen, urut seperti `getPrograms()`; kosong bila tidak ada. */
+export async function getProgramsByDepartment(departmentSlug: string): Promise<PublicProgram[]> {
+  return (await getPrograms()).filter((program) => UVICS_PROGRAM_DEPARTMENTS[program.slug] === departmentSlug);
+}
+
+/** Slug departemen pengelola program, atau null bila programnya belum punya departemen (T07). */
+export async function getProgramDepartmentSlug(programSlug: string): Promise<string | null> {
+  return UVICS_PROGRAM_DEPARTMENTS[programSlug] ?? null;
+}
+
+export async function getProgramBySlug(slug: string): Promise<ProgramItem | null> {
+  return findBySlug(UVICS_PROGRAMS, slug);
+}
+
+export async function getProgramsPage(): Promise<ProgramsPageContent> {
+  return UVICS_PROGRAMS_PAGE;
+}
+

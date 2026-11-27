@@ -1,5 +1,5 @@
 import { z } from "zod";
-const publicImageSchema = z.object({
+export const publicImageSchema = z.object({
   cloud_name: z.string().regex(/^[a-z0-9_-]+$/),
   public_id: z.string().regex(/^uvics\/published\/[a-f0-9-]{36}$/),
   version: z.number().int().positive(),

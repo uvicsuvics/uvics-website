@@ -1,14 +1,28 @@
 import pg from "pg";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import assert from "node:assert/strict";
+import { compareSchema, readCatalog, readTypes } from "./schema-types.mjs";
 const directory = mkdtempSync(join(tmpdir(), "uvics-db-"));
+const defaultWinBin =
+  [
+    join(process.env.LOCALAPPDATA || "", "pgsql", "pgsql", "bin"),
+    join(process.env.LOCALAPPDATA || "", "pgsql", "bin"),
+    "C:/Program Files/PostgreSQL/18/bin",
+    "C:/Program Files/PostgreSQL/17/bin",
+  ].find((p) => {
+    try {
+      return existsSync(p);
+    } catch {
+      return false;
+    }
+  }) || "C:/Program Files/PostgreSQL/17/bin";
 const bin =
   process.env.PG_BIN ||
   (process.platform === "win32"
-    ? "C:/Program Files/PostgreSQL/17/bin"
+    ? defaultWinBin
     : "/usr/lib/postgresql/17/bin");
 const port = Number(process.env.TEST_PG_PORT || 55437);
 const external = process.env.TEST_DATABASE_URL;
@@ -75,41 +89,240 @@ try {
     .filter((x) => x.endsWith(".sql"))
     .sort())
     await client.query(readFileSync(join("supabase/migrations", file), "utf8"));
-  await client.query(readFileSync("tests/db/foundation.sql", "utf8"));
-  await client.query(readFileSync("tests/db/media.sql", "utf8"));
-  await client.query(readFileSync("tests/db/rate-limit.sql", "utf8"));
-  const namespace = "concurrency-test";
-  const pool = new pg.Pool({
-    ...connection,
-    max: 12,
+  const failures = [];
+  // Satu langkah gagal tidak menghentikan langkah lain; rollback memulihkan koneksi dari transaksi yang batal.
+  const step = async (name, run) => {
+    const start = performance.now();
+    try {
+      await run();
+      console.log(`PASS ${name} (${Math.round(performance.now() - start)} ms)`);
+    } catch (error) {
+      failures.push(name);
+      console.error(`FAIL ${name}: ${error.message}`);
+      await client.query("rollback").catch(() => { });
+    }
+  };
+  for (const file of [
+    "tests/db/foundation.sql",
+    "tests/db/media.sql",
+    "tests/db/rate-limit.sql",
+    "tests/db/organization.sql",
+    "tests/db/membership.sql",
+    "tests/db/registration-conversion.sql",
+    "tests/db/content.sql",
+    "tests/db/cms.sql",
+    "tests/db/security.sql", // sebelum seeder: asersi jumlah baris absolut
+    "tests/db/registration.sql",
+    "tests/db/seeder-organization.sql",
+  ])
+    await step(file, () => client.query(readFileSync(file, "utf8")));
+  await step("scripts/seed-cms.sql (2x) + tests/db/seeder-cms.sql", async () => {
+    const seedCms = readFileSync("scripts/seed-cms.sql", "utf8");
+    await client.query(seedCms);
+    await client.query(seedCms); // rerun harus idempotent
+    await client.query(readFileSync("tests/db/seeder-cms.sql", "utf8"));
   });
-  const start = performance.now();
-  const results = await Promise.all(
-    Array.from({ length: 20 }, () =>
-      pool.query("select public.consume_rate_limit($1,$2,$3) as result", [
-        namespace,
-        "login_email_ip",
-        "a".repeat(64),
-      ]),
-    ),
-  );
-  assert.equal(results.filter((r) => r.rows[0].result.allowed).length, 5);
-  const rows = await client.query(
-    "select count(*)::int as n from private.rate_limit_counters where namespace=$1",
-    [namespace],
-  );
-  assert.equal(rows.rows[0].n, 1);
-  console.log(
-    JSON.stringify({
-      database: "disposable",
-      session_rls_audit: "PASS",
-      concurrent_requests: 20,
-      allowed: 5,
-      counter_rows: 1,
-      elapsed_ms: Math.round(performance.now() - start),
-    }),
-  );
-  await pool.end();
+  let concurrency = {};
+  await step("rate limit concurrency", async () => {
+    const namespace = "concurrency-test";
+    const pool = new pg.Pool({ ...connection, max: 12 });
+    try {
+      const start = performance.now();
+      const results = await Promise.all(
+        Array.from({ length: 20 }, () =>
+          pool.query("select public.consume_rate_limit($1,$2,$3) as result", [namespace, "login_email_ip", "a".repeat(64)]),
+        ),
+      );
+      assert.equal(results.filter((r) => r.rows[0].result.allowed).length, 5);
+      const rows = await client.query("select count(*)::int as n from private.rate_limit_counters where namespace=$1", [namespace]);
+      assert.equal(rows.rows[0].n, 1);
+      concurrency = { concurrent_requests: 20, allowed: 5, counter_rows: 1, elapsed_ms: Math.round(performance.now() - start) };
+    } finally {
+      await pool.end();
+    }
+  });
+  let convConcurrency = {};
+  await step("registration conversion concurrency (idempotency guard)", async () => {
+    const pool = new pg.Pool({ ...connection, max: 10 });
+    try {
+      await client.query("begin");
+      const adminId = "00000000-0000-4000-8000-000000000001";
+      const sessionId = "00000000-0000-4000-8000-000000000011";
+      await client.query(
+        "insert into auth.users (id) values ($1) on conflict (id) do nothing",
+        [adminId],
+      );
+      await client.query(
+        "insert into public.admins (id, name, is_active) values ($1, 'Admin', true) on conflict (id) do update set is_active=true",
+        [adminId],
+      );
+      await client.query(
+        "insert into auth.sessions (id, user_id, created_at) values ($1, $2, statement_timestamp()) on conflict (id) do nothing",
+        [sessionId, adminId],
+      );
+
+      const dept = (
+        await client.query(
+          "insert into public.departments (name, slug) values ('Dept Conc', 'dept-conc') returning id",
+        )
+      ).rows[0].id;
+      const pos = (
+        await client.query(
+          "insert into public.positions (name, level) values ('Pos Conc', 'MEMBER') returning id",
+        )
+      ).rows[0].id;
+      const period = (
+        await client.query(
+          "insert into public.organization_periods (name, start_date, end_date, status) values ('2027/2028', '2027-08-01', '2028-07-31', 'UPCOMING') returning id",
+        )
+      ).rows[0].id;
+      const reg = (
+        await client.query(
+          "insert into public.registrations (full_name, nim, email, phone, faculty, study_program, batch, status) values ('Calon Conc', '10502181999', 'conc@student.unklab.ac.id', '+6281234567999', 'FIK', 'Informatika', 2025, 'ACCEPTED') returning id",
+        )
+      ).rows[0].id;
+      await client.query("commit");
+
+      const start = performance.now();
+      const jwtClaims = JSON.stringify({ sub: adminId, session_id: sessionId });
+      const results = await Promise.allSettled(
+        Array.from({ length: 10 }, async () => {
+          const c = await pool.connect();
+          try {
+            await c.query(`select set_config('request.jwt.claims', $1, false)`, [jwtClaims]);
+            return (
+              await c.query(
+                "select public.admin_convert_registration_to_member($1, $2, $3, $4::date, $5) as res",
+                [reg, period, pos, "2027-08-15", dept],
+              )
+            ).rows[0].res;
+          } finally {
+            await c.release();
+          }
+        }),
+      );
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+      assert.equal(fulfilled.length, 1, `Exactly 1 conversion should succeed; got ${fulfilled.length}`);
+      const codes = rejected.map((r) => r.reason.code);
+      assert.deepEqual(codes, Array(9).fill("P0001"), `9 conversions should fail with P0001; got ${codes}`);
+
+      const memberCount = (
+        await client.query("select count(*)::int as n from public.members where nim = '10502181999'")
+      ).rows[0].n;
+      assert.equal(memberCount, 1, "Exactly 1 member row must exist");
+
+      const histCount = (
+        await client.query(
+          "select count(*)::int as n from public.membership_histories where organization_period_id = $1",
+          [period],
+        )
+      ).rows[0].n;
+      assert.equal(histCount, 1, "Exactly 1 membership_history row must exist");
+
+      convConcurrency = {
+        conversion_concurrency: 10,
+        succeeded: 1,
+        blocked: 9,
+        elapsed_ms: Math.round(performance.now() - start),
+      };
+    } finally {
+      await pool.end();
+    }
+  });
+  let orgConcurrency = {};
+  await step("organization period activation concurrency (D07 single active guard)", async () => {
+    const pool = new pg.Pool({ ...connection, max: 6 });
+    try {
+      await client.query("begin");
+      const adminId = "00000000-0000-4000-8000-000000000001";
+      const sessionId = "00000000-0000-4000-8000-000000000011";
+      await client.query(
+        "insert into auth.users (id) values ($1) on conflict (id) do nothing",
+        [adminId],
+      );
+      await client.query(
+        "insert into public.admins (id, name, is_active) values ($1, 'Admin', true) on conflict (id) do update set is_active=true",
+        [adminId],
+      );
+      await client.query(
+        "insert into auth.sessions (id, user_id, created_at) values ($1, $2, statement_timestamp()) on conflict (id) do update set created_at=statement_timestamp()",
+        [sessionId, adminId],
+      );
+      const periodIds = [];
+      for (const [label, startDate, endDate] of [
+        ["2028/2029 Conc A", "2028-08-01", "2029-07-31"],
+        ["2029/2030 Conc B", "2029-08-01", "2030-07-31"],
+        ["2030/2031 Conc C", "2030-08-01", "2031-07-31"],
+        ["2031/2032 Conc D", "2031-08-01", "2032-07-31"],
+      ]) {
+        const { rows } = await client.query(
+          "insert into public.organization_periods (name, start_date, end_date, status) values ($1, $2, $3, 'UPCOMING') returning id",
+          [label, startDate, endDate],
+        );
+        periodIds.push(rows[0].id);
+      }
+      await client.query("commit");
+
+      const start = performance.now();
+      const jwtClaims = JSON.stringify({ sub: adminId, session_id: sessionId });
+      const results = await Promise.allSettled(
+        periodIds.map(async (pid) => {
+          const c = await pool.connect();
+          try {
+            await c.query("set role authenticated");
+            await c.query("select set_config('request.jwt.claims', $1, false)", [jwtClaims]);
+            return (
+              await c.query("select public.admin_activate_organization_period($1) as res", [pid])
+            ).rows[0].res;
+          } finally {
+            await c.query("select set_config('request.jwt.claims', '', false)").catch(() => {});
+            await c.query("reset role").catch(() => { });
+            await c.release();
+          }
+        }),
+      );
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+      assert.equal(fulfilled.length, 1, `Exactly 1 period activation should succeed; got ${fulfilled.length}`);
+      assert.equal(rejected.length, periodIds.length - 1, `All other period activations should fail; got ${rejected.length}`);
+      assert.deepEqual(
+        rejected.map((r) => r.reason.code),
+        Array(periodIds.length - 1).fill("P0001"),
+        `Competing activations must fail with P0001`,
+      );
+
+      const activeCount = (
+        await client.query("select count(*)::int as n from public.organization_periods where status = 'ACTIVE'")
+      ).rows[0].n;
+      assert.equal(activeCount, 1, "Exactly 1 ACTIVE organization period must exist");
+
+      const auditCount = (
+        await client.query(
+          "select count(*)::int as n from public.audit_logs where action = 'ORGANIZATION_PERIOD_ACTIVATED' and entity_id = any($1::uuid[])",
+          [periodIds],
+        )
+      ).rows[0].n;
+      assert.equal(auditCount, 1, "Exactly 1 ORGANIZATION_PERIOD_ACTIVATED audit log must be written");
+
+      orgConcurrency = {
+        period_activation_concurrency: periodIds.length,
+        period_activation_succeeded: fulfilled.length,
+        period_activation_blocked: rejected.length,
+        period_activation_elapsed_ms: Math.round(performance.now() - start),
+      };
+    } finally {
+      await pool.end();
+    }
+  });
+  await step("types/database.ts sesuai schema", async () => {
+    const diffs = compareSchema(await readCatalog(client), readTypes(readFileSync("types/database.ts", "utf8")));
+    if (diffs.length) throw Error(`${diffs.length} selisih\n${diffs.join("\n")}`);
+  });
+  console.log(JSON.stringify({ database: "disposable", session_rls_audit: failures.length ? "FAIL" : "PASS", failures, ...concurrency, ...convConcurrency, ...orgConcurrency }));
+  if (failures.length) process.exitCode = 1;
 } finally {
   if (client) await client.end();
   if (started) run("pg_ctl", ["-D", directory, "-m", "fast", "-w", "stop"]);

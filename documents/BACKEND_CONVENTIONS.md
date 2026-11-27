@@ -81,3 +81,151 @@ POST signature `{category:'poster',kind:'image'}`, lalu kirim file bersama selur
 Mutasi domain+audit dilakukan dalam **satu fungsi SQL**: periksa `private.has_active_admin_session()`, validasi state, UPDATE/INSERT, panggil `private.write_audit(auth.uid(),...)` dengan payload allowlist, return DTO. Cabut EXECUTE PUBLIC; audit bukan generic client RPC. Contoh runtime ada di `record_admin_login`/`complete_upload_intent`; rollback bersama dibuktikan `tests/db/foundation.sql`.
 
 `admins.password` pada contoh PRD dipetakan ke Supabase Auth, **bukan kolom aplikasi**. Migration fondasi milik #7, modul domain menambah migration sendiri. Frontend boleh mengganti UI minimum dengan kontrak route/auth yang sama; koordinasikan perubahan layout bersama #1/#6. Dokumen ini tidak menyatakan tim lain sudah mengintegrasikan/mereviewnya.
+
+## Kontrak integrasi Sprint 2 — issue #31
+
+Ownership: Jordan memegang security, RLS, grants, dan audit melalui migration additive. Andi memegang runtime membership/organization/registration (#29), Jofan memegang runtime CMS (#30). Kontrak ini tidak membangun CRUD domain.
+
+**Authorization.** Satu guard: `requireAdmin(client)` di `lib/auth/admin.ts`, dengan `serverClient()` per request, dan `requirePageAdmin()` hanya untuk navigasi page. Setiap Server Action/Route Handler privat memanggilnya; RPC/RLS memeriksa ulang `private.has_active_admin_session()`. Entry point privat saat ini: `app/admin/actions.ts` (login/logout), `app/api/admin/media/*`, `app/admin/(protected)/*`. Service client hanya untuk limiter pra-login (`lib/backend/rate-limit.ts`) dan media (`lib/media/service.ts`, `lib/media/publication.ts`) setelah `requireAdmin`; tidak ada fallback service-role untuk denial.
+
+**Mutation.** Urutan: `requireAdmin` → validasi Zod (`unknown`, field allowlist) → satu RPC SQL yang memeriksa sesi, state terkini (`for update`/update bersyarat), lalu mutation + audit → DTO aman. SDK write lalu SDK insert audit **bukan** transaksi. ID tidak ditemukan → `raise no_data_found` (P0002 → `NOT_FOUND`), bukan sukses. Invalidasi cache setelah RPC sukses. Contoh: `public.publish_page`/`publish_program`; rollback saat audit gagal dibuktikan `tests/db/security.sql`.
+
+**Audit writer** (EXECUTE dicabut dari semua role client):
+
+- RPC sesi pengguna: `private.write_audit(auth.uid(), action, entity_type, entity_id, old, new)`. Session diambil dari JWT; actor selain `auth.uid()` ditolak.
+- Service RPC (media): `private.write_audit(p_actor, p_session, ...)`. Writer memvalidasi ulang `admin_session_is_active`. Login tetap memakai `record_admin_login` yang idempotent per sesi.
+- Payload allowlist per action, tanpa raw row/PII/secret:
+
+| Action | entity | old/new |
+| --- | --- | --- |
+| `ADMIN_LOGIN` | admin | — |
+| `MEDIA_COMPLETED` | upload_intent | `category`, `kind` |
+| `MEDIA_PUBLISHED` | upload_intent | `reference_type`, `reference_id` |
+| `PAGE_PUBLISHED` / `PROGRAM_PUBLISHED` | page / program | `status` |
+| `REGISTRATION_REVIEWED` (#29) | registration | `status`; new juga `notes_changed` (isi catatan tidak diaudit) |
+| `APPLICANT_CONVERTED` (#29) | registration | new: `member_id`, `organization_period_id`, `department_id`, `position_id` |
+| `PAGE_CREATED` / `PROGRAM_CREATED` (#30) | page / program | new: `title`/`name`, `slug` |
+| `PAGE_UPDATED` / `PROGRAM_UPDATED` (#30) | page / program | `title`/`name`, `slug`; new juga `changed_fields` (nama kolom yang berubah, urut abjad, tanpa nilai) |
+| `PAGE_ARCHIVED` / `PROGRAM_ARCHIVED` (#30) | page / program | `status` |
+| `SETTING_UPDATED` (#30) | website_settings, `entity_id = null` | `key`; nilai hanya untuk flag publik boolean |
+| `ORGANIZATION_PERIOD_CREATED` (#75) | organization_period | new: `name`, `start_date`, `end_date`, `status` |
+| `ORGANIZATION_PERIOD_UPDATED` (#75) | organization_period | `name`, `start_date`, `end_date`; new juga `changed_fields` (urut abjad) |
+| `ORGANIZATION_PERIOD_ACTIVATED` / `ORGANIZATION_PERIOD_ENDED` (#75) | organization_period | `status` |
+| `ORGANIZATION_PERIOD_DELETED` (#75) | organization_period | old: `name`, `status` |
+| `DEPARTMENT_CREATED` (#75) | department | new: `name`, `slug`, `display_order`, `active` (isi `description` tidak diaudit) |
+| `DEPARTMENT_UPDATED` (#75) | department | `name`, `slug`, `display_order`, `active`; new juga `changed_fields` (urut abjad; isi `description` tidak diaudit) |
+| `DEPARTMENT_DELETED` (#75) | department | old: `name`, `slug`, `active` |
+| `POSITION_CREATED` (#75) | position | new: `name`, `level`, `display_order`, `active` (isi `description` tidak diaudit) |
+| `POSITION_UPDATED` (#75) | position | `name`, `level`, `display_order`, `active`; new juga `changed_fields` (urut abjad; isi `description` tidak diaudit) |
+| `POSITION_DELETED` (#75) | position | old: `name`, `level`, `active` |
+| `MEMBERSHIP_HISTORY_CREATED` (#75) | membership_history | new: `member_id`, `organization_period_id`, `department_id`, `position_id`, `start_date`, `end_date` (isi `notes` tidak diaudit) |
+| `MEMBERSHIP_HISTORY_ENDED` (#75) | membership_history | `end_date`; new juga `notes_changed` (isi `notes` tidak diaudit) |
+
+**Direct DML.** `authenticated` dan `service_role` hanya memiliki SELECT pada tabel domain: CMS (`pages`, `programs`, `website_settings`), organisasi/membership (`registrations`, `members`, `membership_histories`, `departments`, `positions`, `organization_periods`), dan content #36 (`competitions`, `achievements`, `achievement_members`, `achievement_certificates`, `projects`, `project_members`). `service_role` melewati RLS, sehingga DML langsung berarti mutation tanpa audit (D13). Admin membaca lewat policy SELECT `active_admin_read`; tidak ada policy write yang tersisa, sehingga grant baru tidak diam-diam membuka bypass. Tersedia: `publish_page`, `publish_program`, RPC runtime CMS #30, RPC review/konversi/soft-delete #29/#54, dan RPC mutasi admin organisasi #75 (lihat bagian Mutasi admin organisasi #75). Belum tersedia dan tetap tertutup sampai owner menambah RPC ter-audit: CRUD member/alumni penuh dan content (owner baru). Sampai saat itu, operator mengisi data lewat seeder/`psql` sebagai owner database, bukan service client. Supabase hosted memberi ALL pada objek baru di `public` ke `anon`, `authenticated`, dan `service_role` (default privileges), jadi migration mencabut dari `public, anon, authenticated, service_role` lalu grant eksplisit. `tests/db/bootstrap.sql` meniru default privileges ini; `tests/db/security.sql` menolak grant tulis apa pun di `public` (kecuali DML provisioning `service_role` pada `admins`) dan EXECUTE `anon` di luar `read_public_settings()`.
+
+**DTO dan privasi.** `lib/backend/dto.ts`:
+
+- `toPublicMember()` hanya mengeluarkan `name`, `photo` (`PublicImage` PUBLIC, selain itu `null`), `position`, dan `department`. Definisi ini tidak mengaktifkan direktori dan tidak menganggap `public_profile` sebagai consent; akses publik database member/alumni/registration tetap ditutup (D02).
+- Settings publik hanya lewat `rpc('read_public_settings')` + `toPublicSettings()`. Allowlist: branding (`organization_name`, `website_title`, `logo`, `favicon`, `footer_text`), kontak resmi organisasi (`email`, `phone`, `address`, `instagram_url`, `linkedin_url`, `github_url`, `youtube_url`), SEO (`default_meta_title`, `default_meta_description`), serta flag boolean `registration_open` dan `maintenance_mode`. Unknown key, `updated_by`, dan nilai malformed tidak keluar; validasi per key ditegakkan di reader SQL (aman untuk pemanggil Data API langsung) sebagai subset konservatif dari DTO: URL sosial tanpa port dengan host ASCII bertld huruf dan tanpa label `xn--` (punycode), email memakai regex Zod yang sama, teks wajib memuat karakter alfanumerik. Ubah keduanya bersamaan. `logo`/`favicon` hanya path statis same-origin (`/dir/file.png`) atau salinan Cloudinary `uvics/published/<uuid>`; aset pending/authenticated dan protokol lain ditolak. `phone` publik wajib tersimpan ternormalisasi `+digit`. Consumer menafsirkan `registration_open !== true` sebagai tertutup.
+- Proyeksi list registration admin (diselaraskan nama kolom kanonis): `id, full_name, nim, study_program, batch, preferred_department, status, submitted_at`. Jawaban, kontak, catatan, dan dokumen hanya pada operasi detail berizin.
+
+**Validasi** (`lib/backend/validation.ts`): `emailSchema`, `phoneSchema`, `httpUrlSchema` (HTTP/S tanpa credential), `datetimeSchema` (offset wajib → UTC `Z`), `paginationSchema`, `slugSchema`, `calendarDateSchema` (`YYYY-MM-DD`, rollover seperti 2026-02-30 ditolak). UUID memakai `z.uuid()`. Enum memakai `z.enum` dengan nilai kanonis domain. Telepon: spasi/hyphen dibuang, `08…` → `+628…`, selain itu wajib `+kodenegara`; panjang dihitung dari digit setelah normalisasi tanpa `+`, 8–15 digit (`PHONE_MIN_DIGITS`/`PHONE_MAX_DIGITS`), sama dengan constraint SQL `registrations.phone`/`members.phone` (D04). Kesetaraan batas diuji di `tests/db/security.sql`; ubah keduanya bersamaan.
+
+**Error.** Reuse `AppError`, `toFailure`, `httpFailure`, `databaseError`: `42501` → FORBIDDEN, `23001`/`23503`/`23505`/`P0001` → CONFLICT, `23514` → VALIDATION_ERROR, `P0002` → NOT_FOUND, lainnya → SERVICE_UNAVAILABLE tanpa detail SQL/provider.
+
+**Types.** Urutan: migration → `npm run test:db` → `npm run db:types` → `npm run typecheck`, dari schema yang sama. Jangan menulis types manual untuk RPC/tabel baru.
+
+**Matrix RLS/grants.** Status pada branch ini:
+
+| Tabel | Anon / non-admin | Active admin | Tulis |
+| --- | --- | --- | --- |
+| pages, programs | SELECT row `PUBLISHED` | SELECT semua | RPC create/update/publish/archive ter-audit (#30); DML langsung ditutup |
+| website_settings | Hanya `read_public_settings()` | SELECT raw | RPC `update_website_settings` ter-audit (#30) |
+| registrations, members | Tanpa grant anon; non-admin 0 baris (D02) | SELECT `active_admin_read` (`members`: `deleted_at is null`) | RPC ter-audit #28/#29/#54; CRUD member/alumni menyusul |
+| membership_histories | Tanpa grant anon; non-admin 0 baris (D02) | SELECT `active_admin_read` | RPC assign/end ter-audit (#75) dan konversi (#29); tanpa delete (D14) |
+| departments, positions, organization_periods | Tanpa grant anon (proyeksi publik menunggu #48); non-admin 0 baris | SELECT `active_admin_read` | RPC ter-audit (#75); delete guard aktif (D14) |
+
+Semua tabel memakai RLS; `service_role` hanya SELECT pada seluruh tabel domain di atas dan tabel content #36. Matrix diperiksa dari katalog PostgreSQL schema gabungan, dibuktikan `tests/db/security.sql`.
+
+## Kontrak konten #11
+
+Berlaku untuk `lib/backend/content.ts` (competition, achievement, project). Field DTO memakai snake_case sesuai kolom database.
+
+- **Tanggal:** `registration_deadline`, `competition_date`, `achievement_date`, `start_date`, dan `end_date` bertipe `date`, dikirim `YYYY-MM-DD` tanpa jam dan zona waktu.
+- **Level:** kode `content_level` = `INTERNAL`, `REGIONAL`, `NASIONAL`, `INTERNASIONAL` ([D20](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)). Label tampilan menjadi urusan frontend. Filter `level` di luar kode ini menghasilkan `VALIDATION_ERROR`.
+- **Media:** `poster` (competition) dan `cover_image` (achievement, project) berisi referensi media, bukan URL, maksimal 500 karakter. Bentuk final ditetapkan alur upload #28/#29. Sertifikat ada di tabel `achievement_certificates` yang hanya terbaca admin aktif ([D21](DECISIONS.md#b-keputusan-produk-dan-data-yang-diterima)).
+- **Anggota:** proyeksi publik `achievement_members`/`project_members` hanya `member_name` dan `role`. Anggota yang tertaut lewat `member_id` tampil dengan `member_name: null` sampai proyeksi D02 tersedia.
+- **Visibilitas:** query publik selalu memfilter `publication_status = 'PUBLISHED'` dan tidak mengirim field `publication_status`.
+- **Pencarian:** competition mencari `title` dan `organizer`, achievement mencari `title` dan `competition_name`, project mencari `title`. Karakter `, ( ) " ' \ * % _ :` dibuang dari kata kunci; hasil kosong berarti tanpa filter.
+- **Pagination:** page di luar total baris (PostgREST `PGRST103`) menghasilkan `NOT_FOUND` 404. Mapping ini ada di `databaseError()` sehingga berlaku untuk semua domain.
+
+Pemetaan DTO competition ke `Competition` di `types/competition.ts` (kontrak #24). Mapper `toCompetition` ditulis #26 saat sumber service berpindah dari mock ke backend; langkahnya ada di [konvensi frontend](frontend-convention.md) §11:
+
+| DTO backend | `Competition` frontend | Catatan |
+| --- | --- | --- |
+| `id` (UUID string) | `id` | Mock memakai `comp-1`; ganti ke UUID |
+| `title`, `slug`, `organizer`, `description` | sama | |
+| `category` (nullable) | `category` (`string \| null`) | Tetap nullable; UI menangani `null` |
+| `level` (`NASIONAL`, ...; nullable) | `level` (`ContentLevel \| null`, kode `content_level`) | Kode dibawa apa adanya; label dari `lib/format/labels.ts` (`CONTENT_LEVEL_LABELS`) |
+| `registration_deadline` (`YYYY-MM-DD`, nullable) | `registrationDeadline` (`string \| null`, `YYYY-MM-DD`) | Tanpa jam; aturan zona waktu WITA menunggu [T06](DECISIONS.md#d-isu-terbuka) |
+| `competition_date` (`YYYY-MM-DD`, nullable) | `competitionDate` (`string \| null`, `YYYY-MM-DD`) | Sama seperti di atas |
+| `registration_url`, `guidebook_url` | `registrationUrl`, `guidebookUrl` | Nullable |
+| `poster` (referensi media) | `poster` (`string \| null`, URL atau path siap `next/image`) | Diubah menjadi URL oleh `toCompetition` lewat alur media publik |
+| `team_size`, `eligibility` | `teamSize`, `eligibility` | Nullable |
+| `status` | `status` | Nilai sama (`UPCOMING` ... `FINISHED`); label dari `COMPETITION_STATUS_LABELS` |
+| `featured` | `featured` | Parameter query backend berupa string GET (`z.stringbool()`); service mengubah boolean DTO dengan `String(query.featured)` |
+| `created_at`, `updated_at` | tidak ada di DTO | UI tidak memakainya |
+| Filter kosong (`status=`, `level=`) | Filter "Semua" | Hilangkan parameter; `ALL` ditolak |
+
+## Registration publik #28
+
+Pendaftaran `/join` tidak membuat akun. Alur: Server Action `submitRegistrationAction` → `assertOrigin` (satu-satunya pengecekan origin aplikasi untuk `/join`; `proxy.ts` hanya mencakup `/admin` dan `/api/admin`) → `trustedIp` → `submitRegistration` di `lib/backend/registration.ts`: Zod `registrationSubmissionSchema` (strict, pesan Indonesia lewat `registrationErrorMap`) → `limitRegistration(email, ip)` → RPC `submit_registration`. Zod dijalankan sebelum limiter karena bucket email membutuhkan email ternormalisasi; input tidak valid tidak menyentuh database.
+
+| Status RPC | Hasil |
+| --- | --- |
+| `SUBMITTED` | `{ ok: true, data: null }` tanpa ID |
+| `CLOSED` (`registration_open` bukan JSON `true`) | `FORBIDDEN`; form menampilkan state tertutup |
+| `DUPLICATE` (registration aktif atau NIM sudah member) | `CONFLICT`, `field_errors.nim` = pesan duplikat; respons sama untuk kedua kasus (D02) |
+| `INVALID_DEPARTMENT` | `VALIDATION_ERROR`, `field_errors.preferred_department_id` |
+| error RPC/bentuk tak dikenal | `SERVICE_UNAVAILABLE` tanpa detail |
+
+Kuota `consume_rate_limit`: `registration_email_ip` 5/jam dan `registration_ip` 60/jam (NAT kampus); limiter gagal → 503. `submit_registration` hanya dapat dieksekusi `service_role` — pengecualian service client ketiga setelah limiter dan media; tidak ada grant DML langsung untuk role mana pun. Registration aktif per NIM ditegakkan index parsial `registrations_one_active_per_nim` (U19); `consent_at` diisi waktu database (U20). Membuka/menutup pendaftaran: toggle settings milik #30/#27; sebelum itu SQL operator di runbook.
+
+## Kontrak review registrasi dan konversi anggota #29
+
+Berlaku untuk `lib/backend/registration-review.ts` dan migration `20261029174600_registration_review_conversion.sql`. Server Action admin tetap memanggil `requireAdmin` lebih dulu.
+
+- **Listing:** `listAdminRegistrations` memakai proyeksi listing #31 (`id, full_name, nim, study_program, batch, preferred_department_id, status, submitted_at`), filter `status`, search nama/NIM (`normalizeSearch`, minimal 2 karakter), order `created_at DESC, id DESC`, dan paginasi standar. Kontak, jawaban, `admin_notes`, dan `consent_at` hanya ada di `getAdminRegistrationById`.
+- **Review:** `public.admin_review_registration(p_registration_id uuid, p_status text, p_admin_notes text default null)`. Transisi mengikuti issue #29: `SUBMITTED → UNDER_REVIEW`, `UNDER_REVIEW → ACCEPTED | REJECTED`. Status yang sama hanya memperbarui catatan; tanpa perubahan, tidak ada audit. `REJECTED` dan registration terkonversi bersifat final, sehingga accept/reject harus melewati `UNDER_REVIEW`. Masuk `ACCEPTED` mengisi `accepted_at` dan mengosongkan `rejected_at`, begitu pula sebaliknya. `p_admin_notes` null mempertahankan catatan, string kosong menghapusnya, maksimal 2000 karakter.
+- **Konversi:** `public.admin_convert_registration_to_member(p_registration_id uuid, p_organization_period_id uuid, p_position_id uuid, p_start_date date, p_department_id uuid default null)`. Registration wajib `ACCEPTED` dan belum dikonversi (D12), periode bukan `ENDED` dan `p_start_date` di dalam rentang periode, posisi dan departemen aktif, serta NIM dan email belum dipakai member. Sesuai D24 + D29 (`20261127100000_position_levels_and_public_profile.sql`), `p_department_id` null hanya diizinkan untuk posisi berlevel `CORE` atau `ADVISOR`; posisi selain itu tanpa departemen ditolak dengan `23514` (`VALIDATION_ERROR`, `field_errors.department_id` pada wrapper `convertRegistrationToMember`). RPC membuat member `ACTIVE` dengan default `public_profile = false` (D31; tetap bukan bukti persetujuan per D02) dan `membership_histories`, mengisi `converted_member_id`, lalu menulis audit dalam satu transaksi (D13).
+- **Level posisi (D29):** `positions.level` dibatasi check constraint ke `ADVISOR`, `CORE`, `STEERING_HELPER`, `COORDINATOR`, `PIC`, `MEMBER` (`23514` → `VALIDATION_ERROR`) dan divalidasi oleh `positionLevelSchema` (`POSITION_LEVELS`) di `lib/backend/organization.ts`.
+- **Error:** guard bisnis → `P0001` (`CONFLICT`); check constraint/departemen posisi non-inti → `23514` (`VALIDATION_ERROR`); registration, periode, posisi, atau departemen tidak ditemukan → `P0002` (`NOT_FOUND`); sesi bukan admin → `42501` (`FORBIDDEN`).
+
+## Runtime CMS #30
+
+Berlaku untuk `lib/backend/pages.ts`, `lib/backend/programs.ts`, `lib/backend/settings.ts`, dan migration `20261108100000_cms_runtime_mutations.sql`. Setiap fungsi admin memanggil `requireAdmin` lebih dulu, lalu RPC memeriksa ulang `private.has_active_admin_session()`.
+
+- **Fungsi TS:** pages `listAdminPages`, `getAdminPage`, `createPage`, `updatePage`, `publishPage`, `archivePage`, serta publik `listPublicPages` dan `getPublicPageBySlug`. Programs memakai padanan yang sama (`listAdminPrograms` sampai `archiveProgram`, `listPublicPrograms`, `getPublicProgramBySlug`). Settings: `listAdminSettings`, `updateWebsiteSettings`, dan publik `getPublicSettings`.
+- **RPC:** `create_page(jsonb)`, `update_page(uuid, jsonb)`, `archive_page(uuid)`, `create_program(jsonb)`, `update_program(uuid, jsonb)`, `archive_program(uuid)`, dan `update_website_settings(jsonb)`, ditambah `publish_page`/`publish_program` yang sudah ada. EXECUTE hanya untuk `authenticated`, dicabut dari `public`, `anon`, dan `service_role`.
+- **Status:** create selalu `DRAFT`. Status hanya berubah lewat aksi terbit/arsip; update mengabaikan `status`, jadi tidak ada transisi kembali ke `DRAFT`. Terbit ulang dari `ARCHIVED` diizinkan dan mempertahankan `published_at` lama. Terbit dan arsip idempoten.
+- **Update:** hanya key yang dikirim yang berubah. Tanpa perubahan nilai, baris tidak di-update (`updated_at` tetap) dan tidak ada audit.
+- **Listing admin (D43):** maksimal 100 baris tanpa pagination. Pages `created_at DESC, id DESC`; programs `display_order ASC, created_at DESC, id DESC`.
+- **D44:** `programs.image`, `logo`, dan `favicon` tidak diedit dari admin sampai ada jalur publikasi media CMS. Zod menolak key tersebut, dan `create_program`/`update_program` mengabaikan `image` walaupun RPC dipanggil langsung. Isi halaman disimpan sebagai teks polos.
+- **Settings:** `adminSettingsInputSchema` adalah allowlist `websiteSettingsSchema` tanpa `logo`/`favicon`, dengan telepon `08…` dinormalisasi ke `+62…` (D04). Key yang tidak dikirim tidak disentuh. `null` mengosongkan key teks dan disimpan sebagai JSON `null`, sehingga tidak tampil di reader publik; `organization_name`, `website_title`, `registration_open`, dan `maintenance_mode` tidak boleh `null`. Nilai non-null divalidasi SQL dengan `private.public_setting_is_valid(key, value)`, predikat yang juga dipakai `read_public_settings()`, sehingga nilai yang tersimpan selalu tampil di publik.
+- **Error:** slug duplikat (`23505`) di create/update → `CONFLICT` dengan `field_errors.slug`. Key settings tak dikenal, nilai yang gagal predikat reader, atau `null` untuk key wajib → `23514` (`VALIDATION_ERROR`). ID tidak ditemukan → `P0002` (`NOT_FOUND`). Sesi bukan admin → `42501` (`FORBIDDEN`).
+
+## Mutasi admin organisasi #75
+
+Berlaku untuk `lib/backend/organization.ts` dan migration `20261127120000_organization_admin_mutations.sql` (bergantung pada #74). Setiap fungsi TS memanggil `requireAdmin(client)` lebih dulu, memvalidasi input dengan Zod strict, memanggil satu RPC ter-audit (D13), dan mengembalikan `OperationResult<T>` (`{ ok: true, data }` atau `{ ok: false, error }` lewat `databaseError` + `toFailure`).
+
+- **Fungsi TS:**
+  - Periode: `createOrganizationPeriod`, `updateOrganizationPeriod`, `activateOrganizationPeriod`, `endOrganizationPeriod`, `deleteOrganizationPeriod`.
+  - Departemen: `createDepartment`, `updateDepartment`, `setDepartmentActive`, `deleteDepartment`.
+  - Posisi: `createPosition`, `updatePosition`, `setPositionActive`, `deletePosition`.
+  - Histori keanggotaan: `assignMembershipHistory`, `endMembershipHistory`.
+- **RPC:** `admin_create_organization_period(jsonb)`, `admin_update_organization_period(uuid, jsonb)`, `admin_activate_organization_period(uuid)`, `admin_end_organization_period(uuid)`, `admin_delete_organization_period(uuid)`, `admin_create_department(jsonb)`, `admin_update_department(uuid, jsonb)`, `admin_delete_department(uuid)`, `admin_create_position(jsonb)`, `admin_update_position(uuid, jsonb)`, `admin_delete_position(uuid)`, `admin_assign_membership_history(jsonb)`, dan `admin_end_membership_history(uuid, date, text)`. EXECUTE hanya untuk `authenticated`, dicabut dari `public`, `anon`, dan `service_role`; seluruh helper `private.require_json_object` / `private.parse_json_*` dicabut dari semua role client.
+- **Periode organisasi (D07):** create selalu `UPCOMING`; `update` hanya mengubah `name`, `start_date`, `end_date` (tanpa menyentuh `status`) dan menolak penyempitan rentang yang mengeluarkan histori eksisting (`CONFLICT`). `activate` mengizinkan `UPCOMING → ACTIVE` (idempoten bila sudah `ACTIVE`; menolak `ENDED` atau bila periode lain sedang `ACTIVE` dengan `CONFLICT`, termasuk secara konkuren). `end` mengizinkan `ACTIVE → ENDED` (idempoten bila sudah `ENDED`; menolak `UPCOMING` dengan `CONFLICT`) tanpa menghapus histori.
+- **Departemen & posisi (D24, D29):** `update` hanya mengubah field yang dikirim; no-op tidak menulis `UPDATE` maupun audit. `setDepartmentActive` / `setPositionActive` memakai `admin_update_department` / `admin_update_position` dengan `{ active }`. Mengubah level posisi dari `CORE`/`ADVISOR` menjadi non-inti ditolak (`CONFLICT`) bila posisi tersebut masih dipakai histori tanpa departemen.
+- **Histori keanggotaan (D14, D24):** hanya member aktif (belum di-soft-delete), periode belum `ENDED`, serta posisi dan departemen aktif yang dapat ditempatkan. Posisi selain `CORE`/`ADVISOR` tanpa departemen ditolak (`23514` → `VALIDATION_ERROR`, `field_errors.department_id`). `end_date` sebelum `start_date` ditolak (`23514` → `VALIDATION_ERROR`, `field_errors.end_date`); tanggal di luar rentang periode ditolak (`CONFLICT`). `endMembershipHistory` mempertahankan catatan lama bila `notes` tidak dikirim (`null` di SQL), menghapus catatan bila `null` atau `""`/spasi, idempoten bila `end_date` dan catatan sama, menolak penimpaan `end_date` atau catatan pada penempatan yang sudah berakhir (`CONFLICT`), dan tidak memiliki RPC hapus.
+- **Delete guard (D14, PRD §40):** periode aktif atau direferensikan `membership_histories`, departemen yang direferensikan `membership_histories` atau `registrations.preferred_department_id`, serta posisi yang direferensikan `membership_histories` ditolak (`CONFLICT`); nonaktifkan sebagai gantinya.
+- **Error:** slug departemen duplikat (`23505`) → `CONFLICT` dengan `field_errors.slug`; pelanggaran tanggal/level/payload (`23514`) → `VALIDATION_ERROR`; pelanggaran guard bisnis/delete (`P0001`/`23503`/`23001`) → `CONFLICT`; ID tidak ditemukan (`P0002`) → `NOT_FOUND`; sesi bukan admin (`42501`) → `FORBIDDEN`.
