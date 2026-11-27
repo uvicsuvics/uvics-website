@@ -80,6 +80,7 @@ describe("untrusted boundaries", () => {
   });
   it("maps constraint violations to client errors and keeps unknown codes as outage", () => {
     for (const [code, expected] of [
+      ["23001", "CONFLICT"],
       ["23503", "CONFLICT"],
       ["23514", "VALIDATION_ERROR"],
       ["XX000", "SERVICE_UNAVAILABLE"],

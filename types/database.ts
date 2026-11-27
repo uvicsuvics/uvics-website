@@ -799,6 +799,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      admin_activate_organization_period: {
+        Args: { p_id: string };
+        Returns: Json;
+      };
+      admin_assign_membership_history: {
+        Args: { p_values: Json };
+        Returns: Json;
+      };
       admin_convert_registration_to_member: {
         Args: {
           p_department_id?: string;
@@ -807,6 +815,30 @@ export type Database = {
           p_registration_id: string;
           p_start_date: string;
         };
+        Returns: Json;
+      };
+      admin_create_department: { Args: { p_values: Json }; Returns: Json };
+      admin_create_organization_period: {
+        Args: { p_values: Json };
+        Returns: Json;
+      };
+      admin_create_position: { Args: { p_values: Json }; Returns: Json };
+      admin_delete_department: { Args: { p_id: string }; Returns: Json };
+      admin_delete_organization_period: {
+        Args: { p_id: string };
+        Returns: Json;
+      };
+      admin_delete_position: { Args: { p_id: string }; Returns: Json };
+      admin_end_membership_history: {
+        Args: {
+          p_end_date: string;
+          p_id: string;
+          p_notes?: string;
+        };
+        Returns: Json;
+      };
+      admin_end_organization_period: {
+        Args: { p_id: string };
         Returns: Json;
       };
       admin_review_registration: {
@@ -821,6 +853,18 @@ export type Database = {
         Args: {
           p_member_id: string;
         };
+        Returns: Json;
+      };
+      admin_update_department: {
+        Args: { p_changes: Json; p_id: string };
+        Returns: Json;
+      };
+      admin_update_organization_period: {
+        Args: { p_changes: Json; p_id: string };
+        Returns: Json;
+      };
+      admin_update_position: {
+        Args: { p_changes: Json; p_id: string };
         Returns: Json;
       };
       archive_page: { Args: { p_id: string }; Returns: Json };

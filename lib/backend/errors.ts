@@ -79,6 +79,7 @@ export function httpFailure(error: unknown) {
 export function databaseError(error: { code?: string } | null): never {
   if (error?.code === "42501") throw new AppError("FORBIDDEN");
   if (
+    error?.code === "23001" ||
     error?.code === "23503" ||
     error?.code === "23505" ||
     error?.code === "P0001"

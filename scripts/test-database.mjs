@@ -231,11 +231,69 @@ try {
       await pool.end();
     }
   });
+  let orgConcurrency = {};
+  await step("organization period activation concurrency (D07 single active guard)", async () => {
+    const pool = new pg.Pool({ ...connection, max: 4 });
+    try {
+      await client.query("begin");
+      const adminId = "00000000-0000-4000-8000-000000000001";
+      const sessionId = "00000000-0000-4000-8000-000000000011";
+      const p1 = (
+        await client.query(
+          "insert into public.organization_periods (name, start_date, end_date, status) values ('2028/2029 Conc A', '2028-08-01', '2029-07-31', 'UPCOMING') returning id",
+        )
+      ).rows[0].id;
+      const p2 = (
+        await client.query(
+          "insert into public.organization_periods (name, start_date, end_date, status) values ('2029/2030 Conc B', '2029-08-01', '2030-07-31', 'UPCOMING') returning id",
+        )
+      ).rows[0].id;
+      await client.query("commit");
+
+      const start = performance.now();
+      const jwtClaims = JSON.stringify({ sub: adminId, session_id: sessionId });
+      const results = await Promise.allSettled(
+        [p1, p2].map(async (pid) => {
+          const c = await pool.connect();
+          try {
+            await c.query("set role authenticated");
+            await c.query("select set_config('request.jwt.claims', $1, false)", [jwtClaims]);
+            return (
+              await c.query("select public.admin_activate_organization_period($1) as res", [pid])
+            ).rows[0].res;
+          } finally {
+            await c.query("reset role").catch(() => {});
+            await c.release();
+          }
+        }),
+      );
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+      assert.equal(fulfilled.length, 1, `Exactly 1 period activation should succeed; got ${fulfilled.length}`);
+      assert.equal(rejected.length, 1, `Exactly 1 period activation should fail; got ${rejected.length}`);
+      assert.equal(rejected[0].reason.code, "P0001", `Second activation must fail with P0001; got ${rejected[0].reason.code}`);
+
+      const activeCount = (
+        await client.query("select count(*)::int as n from public.organization_periods where status = 'ACTIVE'")
+      ).rows[0].n;
+      assert.equal(activeCount, 1, "Exactly 1 ACTIVE organization period must exist");
+
+      orgConcurrency = {
+        period_activation_concurrency: 2,
+        period_activation_succeeded: 1,
+        period_activation_blocked: 1,
+        period_activation_elapsed_ms: Math.round(performance.now() - start),
+      };
+    } finally {
+      await pool.end();
+    }
+  });
   await step("types/database.ts sesuai schema", async () => {
     const diffs = compareSchema(await readCatalog(client), readTypes(readFileSync("types/database.ts", "utf8")));
     if (diffs.length) throw Error(`${diffs.length} selisih\n${diffs.join("\n")}`);
   });
-  console.log(JSON.stringify({ database: "disposable", session_rls_audit: failures.length ? "FAIL" : "PASS", failures, ...concurrency, ...convConcurrency }));
+  console.log(JSON.stringify({ database: "disposable", session_rls_audit: failures.length ? "FAIL" : "PASS", failures, ...concurrency, ...convConcurrency, ...orgConcurrency }));
   if (failures.length) process.exitCode = 1;
 } finally {
   if (client) await client.end();
