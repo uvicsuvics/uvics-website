@@ -195,6 +195,16 @@ describe("membership validations (Issue #54)", () => {
       expect(memberSchema.safeParse(deletedMember).success).toBe(true);
     });
 
+    it("defaults public_profile to false (opt-in, D31) while preserving explicit values", () => {
+      expect(memberSchema.parse(baseMember).public_profile).toBe(false);
+      expect(
+        memberSchema.parse({ ...baseMember, public_profile: true }).public_profile,
+      ).toBe(true);
+      expect(
+        memberSchema.parse({ ...baseMember, public_profile: false }).public_profile,
+      ).toBe(false);
+    });
+
     it("rejects invalid social URLs", () => {
       expect(memberSchema.safeParse({ ...baseMember, linkedin_url: "javascript:alert(1)" }).success).toBe(false);
       expect(memberSchema.safeParse({ ...baseMember, github_url: "not-a-url" }).success).toBe(false);

@@ -15,11 +15,22 @@ export const departmentSchema = z.object({
   updated_at: timestampSchema,
 });
 
+export const POSITION_LEVELS = [
+  "ADVISOR",
+  "CORE",
+  "STEERING_HELPER",
+  "COORDINATOR",
+  "PIC",
+  "MEMBER",
+] as const;
+
+export const positionLevelSchema = z.enum(POSITION_LEVELS);
+
 export const positionSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(120),
   description: z.string().nullable().optional(),
-  level: z.string().min(1).max(80),
+  level: positionLevelSchema,
   display_order: z.number().int().default(0),
   active: z.boolean().default(true),
   created_at: timestampSchema,
@@ -42,5 +53,6 @@ export const organizationPeriodSchema = z
   });
 
 export type Department = z.infer<typeof departmentSchema>;
+export type PositionLevel = z.infer<typeof positionLevelSchema>;
 export type Position = z.infer<typeof positionSchema>;
 export type OrganizationPeriod = z.infer<typeof organizationPeriodSchema>;

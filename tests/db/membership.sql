@@ -16,7 +16,7 @@ declare
   r2 uuid;
 begin
   insert into public.departments (name, slug) values ('UI/UX', 'ui-ux2') returning id into d;
-  insert into public.positions (name, level) values ('Member', 'Staff') returning id into p;
+  insert into public.positions (name, level) values ('Member', 'MEMBER') returning id into p;
   insert into public.organization_periods (name, start_date, end_date, status) values ('2025/2026', '2025-08-01', '2026-07-31', 'UPCOMING') returning id into o;
   
   -- Test registration insert
@@ -137,6 +137,25 @@ begin
 
   -- Issue #8: satu registration hanya dikonversi sekali, dan hanya bila ACCEPTED
   insert into public.members (full_name) values ('Second Member') returning id into m2;
+
+  -- D31: default public_profile pada members harus false (opt-in)
+  if (
+    select column_default from information_schema.columns
+    where table_schema = 'public' and table_name = 'members' and column_name = 'public_profile'
+  ) is distinct from 'false' then
+    raise exception 'members.public_profile column default must be false (D31)';
+  end if;
+  if (select public_profile from public.members where id = m) is distinct from false
+    or (select public_profile from public.members where id = m2) is distinct from false then
+    raise exception 'new members must default public_profile to false (D31)';
+  end if;
+
+  -- Opt-in eksplisit public_profile = true tetap dapat disimpan
+  insert into public.members (full_name, nim, email, public_profile)
+  values ('Opt-in Member', '105021810099', 'optin@student.unklab.ac.id', true);
+  if (select public_profile from public.members where nim = '105021810099') is distinct from true then
+    raise exception 'explicit opt-in public_profile = true must be preserved';
+  end if;
   begin
     update public.registrations set converted_member_id = m2 where id = r;
     raise exception 'registration must not be converted twice';
@@ -165,10 +184,16 @@ declare
   target_member uuid;
   del_res jsonb;
 begin
-  -- 1. Admin can read active members (deleted_at is null)
+  -- 1. Admin can read active members (deleted_at is null) and see opt-in public_profile default
   select id into target_member from public.members where nim = '105021810012';
   if target_member is null then
     raise exception 'active admin must be able to read active members';
+  end if;
+  if (select public_profile from public.members where id = target_member) is distinct from false then
+    raise exception 'active admin must see default public_profile = false';
+  end if;
+  if (select public_profile from public.members where nim = '105021810099') is distinct from true then
+    raise exception 'active admin must see explicit opt-in public_profile = true';
   end if;
 
   -- 2. Direct DML on members is blocked (D13)

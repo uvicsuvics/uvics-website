@@ -17,7 +17,7 @@ import type { Database } from "@/types/database";
 
 function fakeClient(result: {
   data: unknown;
-  error: { code?: string } | null;
+  error: { code?: string; message?: string } | null;
   count: number | null;
 }) {
   const calls: [string, unknown[]][] = [];
@@ -120,7 +120,7 @@ describe("registration schemas validation", () => {
     ).toBe(false);
   });
 
-  it("validates convert input schema with nullable department for core leaders (Scope 5, U01)", () => {
+  it("validates convert input schema with nullable department for core/advisor positions (Scope 5, D24)", () => {
     const base = {
       registration_id: "00000000-0000-4000-8000-000000000001",
       organization_period_id: "00000000-0000-4000-8000-000000000002",
@@ -130,7 +130,7 @@ describe("registration schemas validation", () => {
     };
     expect(convertRegistrationInputSchema.safeParse(base).success).toBe(true);
 
-    // department_id null diterima (pengurus inti tanpa departemen - U01)
+    // department_id null diterima (pengurus inti/advisor tanpa departemen - D24)
     expect(
       convertRegistrationInputSchema.safeParse({
         ...base,
@@ -361,10 +361,53 @@ describe("admin registration mutations", () => {
         },
       ],
     ]);
-    // Departemen null tidak dikirim; RPC memakai default null (U01)
+    // Departemen null tidak dikirim; RPC memakai default null (D24)
     const [, [, args]] = calls.find(([method]) => method === "rpc")!;
     expect(args).not.toHaveProperty("p_department_id", null);
     expect(result).toEqual(conversionResult);
+  });
+
+  it("maps non-core missing department check violation (23514) to VALIDATION_ERROR with department_id fieldError (D24)", async () => {
+    const { client: missingDeptClient } = fakeClient({
+      data: null,
+      error: {
+        code: "23514",
+        message: "Posisi level MEMBER wajib memiliki departemen",
+      },
+      count: null,
+    });
+
+    await expect(
+      convertRegistrationToMember(missingDeptClient, {
+        registration_id: regId,
+        organization_period_id: regId,
+        department_id: null,
+        position_id: regId,
+        start_date: "2026-08-15",
+      }),
+    ).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      details: {
+        fieldErrors: {
+          department_id: ["Posisi non-inti wajib memiliki departemen."],
+        },
+      },
+    });
+
+    const { client: genericCheckClient } = fakeClient({
+      data: null,
+      error: { code: "23514" },
+      count: null,
+    });
+    await expect(
+      convertRegistrationToMember(genericCheckClient, {
+        registration_id: regId,
+        organization_period_id: regId,
+        department_id: null,
+        position_id: regId,
+        start_date: "2026-08-15",
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
   });
 
   it("maps RPC errors (P0001 -> CONFLICT, P0002 -> NOT_FOUND, 42501 -> FORBIDDEN)", async () => {

@@ -14,7 +14,7 @@ declare
   h uuid;
 begin
   insert into public.departments (name, slug) values ('UI/UX', 'ui-ux') returning id into d;
-  insert into public.positions (name, level) values ('Member', 'Staff') returning id into p;
+  insert into public.positions (name, level) values ('Member', 'MEMBER') returning id into p;
   insert into public.organization_periods (name, start_date, end_date, status) values ('2024/2025', '2024-08-01', '2025-07-31', 'ACTIVE') returning id into o;
   insert into public.members (full_name) values ('Test Member') returning id into m;
   
@@ -148,12 +148,45 @@ begin
   exception when check_violation then
     null; -- Expected
   end;
+
+  -- ==============================================================
+  -- TEST F: Position level check constraint (D29)
+  -- ==============================================================
+  -- All 6 canonical D29 levels accepted
+  insert into public.positions (name, level) values
+    ('Pos Advisor', 'ADVISOR'),
+    ('Pos Core', 'CORE'),
+    ('Pos Steering Helper', 'STEERING_HELPER'),
+    ('Pos Coordinator', 'COORDINATOR'),
+    ('Pos PIC', 'PIC'),
+    ('Pos Member', 'MEMBER');
+
+  -- Non-canonical levels rejected with check_violation (23514)
+  declare
+    bad_level text;
+  begin
+    foreach bad_level in array array['Executive', 'Management', 'Staff', 'core', 'VICE_PRESIDENT', '', 'UNKNOWN'] loop
+      begin
+        insert into public.positions (name, level) values ('Bad Pos', bad_level);
+        raise exception 'invalid position level "%" should have been rejected', bad_level;
+      exception when check_violation then
+        null; -- Expected (23514)
+      end;
+    end loop;
+
+    begin
+      update public.positions set level = 'Staff' where id = p;
+      raise exception 'updating position to non-canonical level should have been rejected';
+    exception when check_violation then
+      null; -- Expected (23514)
+    end;
+  end;
 end$$;
 
 -- ==============================================================
 -- TEST E: RLS / Access tests
 -- ==============================================================
--- 1. Active admin should be able to read private rows
+-- 1. Active admin should be able to read private rows, but direct DML is blocked (D13)
 select set_config('request.jwt.claims', jsonb_build_object('sub', '00000000-0000-4000-8000-000000000001'::uuid, 'session_id', '00000000-0000-4000-8000-000000000011'::uuid)::text, true);
 set local role authenticated;
 do $$
@@ -161,8 +194,8 @@ begin
   if (select count(*) from public.departments) = 0 then
     raise exception 'active admin should be able to read departments';
   end if;
-  if (select count(*) from public.positions) = 0 then
-    raise exception 'active admin should be able to read positions';
+  if (select count(*) from public.positions where level in ('ADVISOR', 'CORE', 'STEERING_HELPER', 'COORDINATOR', 'PIC', 'MEMBER')) < 6 then
+    raise exception 'active admin should be able to read canonical positions';
   end if;
   if (select count(*) from public.organization_periods) = 0 then
     raise exception 'active admin should be able to read organization_periods';
@@ -173,10 +206,29 @@ begin
   if (select count(*) from public.membership_histories) = 0 then
     raise exception 'active admin should be able to read membership_histories';
   end if;
+
+  begin
+    insert into public.positions (name, level) values ('Direct Pos', 'MEMBER');
+    raise exception 'active admin direct insert on positions must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    update public.positions set level = 'CORE' where name = 'Member';
+    raise exception 'active admin direct update on positions must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    delete from public.positions where name = 'Pos Member';
+    raise exception 'active admin direct delete on positions must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
 end$$;
 reset role;
 
--- 2. Authenticated non-admin should receive 0 rows
+-- 2. Authenticated non-admin should receive 0 rows and no direct DML
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000002"}', true);
 set local role authenticated;
 do $$
@@ -196,6 +248,19 @@ begin
   if exists(select from public.membership_histories) then
     raise exception 'non-admin should not be able to read membership_histories';
   end if;
+
+  begin
+    insert into public.positions (name, level) values ('NonAdmin Pos', 'MEMBER');
+    raise exception 'non-admin direct insert on positions must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    update public.positions set level = 'CORE';
+    raise exception 'non-admin direct update on positions must be blocked';
+  exception when insufficient_privilege then
+    null;
+  end;
 end$$;
 reset role;
 
@@ -215,6 +280,13 @@ begin
     raise exception 'anon should not have access to positions';
   exception when insufficient_privilege then
     null; -- Expected
+  end;
+
+  begin
+    insert into public.positions (name, level) values ('Anon Pos', 'MEMBER');
+    raise exception 'anon must not insert positions';
+  exception when insufficient_privilege then
+    null;
   end;
 
   begin

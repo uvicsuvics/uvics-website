@@ -38,7 +38,7 @@ export const memberSchema = z.object({
   linkedin_url: httpUrlSchema.optional().nullable(),
   github_url: httpUrlSchema.optional().nullable(),
   instagram_url: httpUrlSchema.optional().nullable(),
-  public_profile: z.boolean().default(true),
+  public_profile: z.boolean().default(false),
   created_at: timestampSchema,
   updated_at: timestampSchema,
   deleted_at: timestampSchema.optional().nullable(),

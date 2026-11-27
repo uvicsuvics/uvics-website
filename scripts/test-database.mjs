@@ -168,7 +168,7 @@ try {
       ).rows[0].id;
       const pos = (
         await client.query(
-          "insert into public.positions (name, level) values ('Pos Conc', 'Staff') returning id",
+          "insert into public.positions (name, level) values ('Pos Conc', 'MEMBER') returning id",
         )
       ).rows[0].id;
       const period = (

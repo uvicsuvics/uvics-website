@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  POSITION_LEVELS,
   departmentSchema,
   organizationPeriodSchema,
+  positionLevelSchema,
   positionSchema,
 } from "@/lib/backend/organization";
 import * as organizationModule from "@/lib/backend/organization";
@@ -10,8 +12,10 @@ describe("Organization domain schemas", () => {
   it("only exports organization entities and not membership entities", () => {
     expect(Object.keys(organizationModule).sort()).toEqual(
       [
+        "POSITION_LEVELS",
         "departmentSchema",
         "organizationPeriodSchema",
+        "positionLevelSchema",
         "positionSchema",
       ].sort(),
     );
@@ -82,7 +86,7 @@ describe("Organization domain schemas", () => {
       id: "00000000-0000-4000-8000-000000000201",
       name: "President",
       description: "Organization President",
-      level: "Executive",
+      level: "CORE",
       display_order: 1,
       active: true,
       created_at: "2026-09-22T10:00:00.123456+00:00",
@@ -92,6 +96,46 @@ describe("Organization domain schemas", () => {
     it("parses valid position", () => {
       const res = positionSchema.safeParse(validPosition);
       expect(res.success).toBe(true);
+    });
+
+    it("accepts all canonical D29 position levels in official hierarchy order", () => {
+      expect(POSITION_LEVELS).toEqual([
+        "ADVISOR",
+        "CORE",
+        "STEERING_HELPER",
+        "COORDINATOR",
+        "PIC",
+        "MEMBER",
+      ]);
+
+      for (const level of [
+        "ADVISOR",
+        "CORE",
+        "STEERING_HELPER",
+        "COORDINATOR",
+        "PIC",
+        "MEMBER",
+      ]) {
+        expect(positionLevelSchema.safeParse(level).success).toBe(true);
+        expect(positionSchema.safeParse({ ...validPosition, level }).success).toBe(true);
+      }
+    });
+
+    it("rejects non-canonical position levels (D29)", () => {
+      for (const level of [
+        "Executive",
+        "Management",
+        "Staff",
+        "Vice President",
+        "VICE_PRESIDENT",
+        "core",
+        "member",
+        "",
+        "ADMIN",
+      ]) {
+        expect(positionLevelSchema.safeParse(level).success).toBe(false);
+        expect(positionSchema.safeParse({ ...validPosition, level }).success).toBe(false);
+      }
     });
 
     it("accepts offset timestamps and Z timestamps", () => {

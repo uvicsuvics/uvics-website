@@ -28,15 +28,17 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- 2. Positions: natural key is name
+  -- 2. Positions: natural key is name (PRD §31, D29; tanpa Vice President)
   FOR seed_pos IN (
     VALUES
-      ('00000000-0000-4000-8000-000000000201'::uuid, 'President', 'Head of the organization', 'Executive', 1, true),
-      ('00000000-0000-4000-8000-000000000202'::uuid, 'Vice President', 'Assistant head of the organization', 'Executive', 2, true),
-      ('00000000-0000-4000-8000-000000000203'::uuid, 'Secretary', 'General secretary and administration', 'Executive', 3, true),
-      ('00000000-0000-4000-8000-000000000204'::uuid, 'Treasurer', 'Financial management and budgeting', 'Executive', 4, true),
-      ('00000000-0000-4000-8000-000000000205'::uuid, 'Coordinator', 'Department head and team coordinator', 'Management', 5, true),
-      ('00000000-0000-4000-8000-000000000206'::uuid, 'Member', 'Active organization member', 'Staff', 6, true)
+      ('00000000-0000-4000-8000-000000000207'::uuid, 'Advisor', 'Organization advisor and mentor', 'ADVISOR', 1, true),
+      ('00000000-0000-4000-8000-000000000201'::uuid, 'President', 'Head of the organization', 'CORE', 2, true),
+      ('00000000-0000-4000-8000-000000000204'::uuid, 'Treasurer', 'Financial management and budgeting', 'CORE', 3, true),
+      ('00000000-0000-4000-8000-000000000203'::uuid, 'Secretary', 'General secretary and administration', 'CORE', 4, true),
+      ('00000000-0000-4000-8000-000000000208'::uuid, 'Steering Helper', 'Supports coordinator with goals, roadmap, and division obstacles', 'STEERING_HELPER', 5, true),
+      ('00000000-0000-4000-8000-000000000205'::uuid, 'Coordinator', 'Department head and team coordinator', 'COORDINATOR', 6, true),
+      ('00000000-0000-4000-8000-000000000209'::uuid, 'PIC', 'Person In Charge assisting coordinator in team execution', 'PIC', 7, true),
+      ('00000000-0000-4000-8000-000000000206'::uuid, 'Member', 'Active organization member', 'MEMBER', 8, true)
   ) LOOP
     SELECT name INTO existing_name FROM public.positions WHERE id = seed_pos.column1;
     IF existing_name IS NOT NULL AND existing_name <> seed_pos.column2 THEN

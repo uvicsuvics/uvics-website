@@ -67,12 +67,12 @@ export const reviewRegistrationInputSchema = z.object({
  * Input schema untuk konversi registrasi → member (Scope 5)
  * Divalidasi sebelum memanggil admin_convert_registration_to_member RPC.
  * start_date menggunakan calendarDateSchema (YYYY-MM-DD).
- * department_id nullable: pengurus inti tanpa departemen (U01).
+ * department_id nullable: pengurus inti dan advisor tanpa departemen (D24).
  */
 export const convertRegistrationInputSchema = z.object({
   registration_id: z.string().uuid(),
   organization_period_id: z.string().uuid(),
-  /** Nullable: core team (President, Treasurer, Secretary) tanpa departemen (U01) */
+  /** Nullable: posisi CORE dan ADVISOR tanpa departemen (D24) */
   department_id: z.string().uuid().nullable(),
   position_id: z.string().uuid(),
   start_date: calendarDateSchema,
@@ -214,7 +214,7 @@ export async function rejectRegistration(
 }
 
 /**
- * Konversi pendaftar ACCEPTED menjadi Member ACTIVE via SQL RPC (D12, D13, U01).
+ * Konversi pendaftar ACCEPTED menjadi Member ACTIVE via SQL RPC (D12, D13, D24).
  */
 export async function convertRegistrationToMember(client: Client, raw: unknown) {
   const input = parseQuery(convertRegistrationInputSchema, raw);
@@ -230,7 +230,19 @@ export async function convertRegistrationToMember(client: Client, raw: unknown) 
     },
   );
 
-  if (error) databaseError(error);
+  if (error) {
+    if (
+      error.code === "23514" &&
+      error.message?.includes("wajib memiliki departemen")
+    ) {
+      throw new AppError("VALIDATION_ERROR", {
+        fieldErrors: {
+          department_id: ["Posisi non-inti wajib memiliki departemen."],
+        },
+      });
+    }
+    databaseError(error);
+  }
 
   return data as {
     member_id: string;

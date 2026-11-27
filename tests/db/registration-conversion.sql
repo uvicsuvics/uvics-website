@@ -1,13 +1,13 @@
--- Tes: Registration review & member conversion (Issue #29)
+-- Tes: Registration review & member conversion (Issue #29, #74)
 -- Acceptance criteria yang diuji:
 --   ✓ Status transition tervalidasi (SUBMITTED → UNDER_REVIEW → ACCEPTED | REJECTED)
 --   ✓ Admin notes tersedia, bisa dikosongkan, no-op tidak diaudit
 --   ✓ Hanya ACCEPTED yang dapat dikonversi (D12)
 --   ✓ Double conversion tidak mungkin terjadi (D12, scope 6)
---   ✓ Conversion membuat member ACTIVE + membership history
+--   ✓ Conversion membuat member ACTIVE (default public_profile = false, D31) + membership history
 --   ✓ Periode, posisi, departemen, start date, dan identitas tervalidasi
 --   ✓ Conversion + audit atomic (D13)
---   ✓ U01: department_id nullable (pengurus inti)
+--   ✓ D24 + D29: department_id nullable hanya untuk CORE/ADVISOR; posisi non-inti wajib departemen (23514)
 --   ✓ Grant/RLS per role: admin authenticated, non-admin, anon, service_role
 
 begin;
@@ -72,12 +72,20 @@ declare
   d_off uuid;
   p uuid;
   p_off uuid;
+  p_advisor uuid;
+  p_core uuid;
+  p_sh uuid;
+  p_coord uuid;
+  p_pic uuid;
+  p_noncore uuid;
   o uuid;
   o_end uuid;
   o_up uuid;
   r uuid;
   r2 uuid;
   r3 uuid;
+  r_adv uuid;
+  r_noncore uuid;
   r_hist_fail uuid;
   r_audit_fail uuid;
   rs uuid;
@@ -99,8 +107,13 @@ begin
   -- Siapkan data organisasi (pola dari tests/db/organization.sql)
   insert into public.departments (name, slug) values ('Web Dev', 'web-dev-conv') returning id into d;
   insert into public.departments (name, slug, active) values ('Dept Lama', 'dept-lama-conv', false) returning id into d_off;
-  insert into public.positions (name, level) values ('Member', 'Staff') returning id into p;
-  insert into public.positions (name, level, active) values ('Posisi Lama', 'Staff', false) returning id into p_off;
+  insert into public.positions (name, level) values ('Member', 'MEMBER') returning id into p;
+  insert into public.positions (name, level, active) values ('Posisi Lama', 'MEMBER', false) returning id into p_off;
+  insert into public.positions (name, level) values ('Advisor', 'ADVISOR') returning id into p_advisor;
+  insert into public.positions (name, level) values ('President', 'CORE') returning id into p_core;
+  insert into public.positions (name, level) values ('Steering Helper', 'STEERING_HELPER') returning id into p_sh;
+  insert into public.positions (name, level) values ('Coordinator', 'COORDINATOR') returning id into p_coord;
+  insert into public.positions (name, level) values ('PIC', 'PIC') returning id into p_pic;
   insert into public.organization_periods (name, start_date, end_date, status)
     values ('2025/2026', '2025-08-01', '2026-07-31', 'ACTIVE') returning id into o;
   insert into public.organization_periods (name, start_date, end_date, status)
@@ -153,9 +166,12 @@ begin
 
   v_member_id := (result->>'member_id')::uuid;
 
-  -- Verifikasi member berstatus ACTIVE
+  -- Verifikasi member berstatus ACTIVE dan default public_profile = false (D31)
   if (select status from public.members where id = v_member_id) <> 'ACTIVE' then
     raise exception 'TEST 3 GAGAL: member harus berstatus ACTIVE';
+  end if;
+  if (select public_profile from public.members where id = v_member_id) is distinct from false then
+    raise exception 'TEST 3 GAGAL: member baru harus default public_profile = false (D31)';
   end if;
 
   -- Verifikasi membership history terbuat dengan data benar
@@ -217,25 +233,91 @@ begin
   perform pg_temp.expect_error(format(convert_sql, r3, o, p, '2025-08-15', d), 'P0001', 'TEST 7 konversi REJECTED');
 
   -- ============================================================
-  -- TEST 8: U01 — Konversi tanpa departemen (pengurus inti)
+  -- TEST 8: D24 — Konversi tanpa departemen diizinkan untuk CORE dan ADVISOR
   -- ============================================================
   perform public.admin_review_registration(r2, 'UNDER_REVIEW');
   perform public.admin_review_registration(r2, 'ACCEPTED');
   select public.admin_convert_registration_to_member(
     p_registration_id => r2,
     p_organization_period_id => o,
-    p_position_id => p,
+    p_position_id => p_core,
     p_start_date => '2025-08-15'
   ) into result;
 
-  -- Verifikasi membership_history terbuat dengan department_id NULL
   if not exists (
     select 1 from public.membership_histories
     where member_id = (result->>'member_id')::uuid
       and department_id is null
   ) then
-    raise exception 'TEST 8 GAGAL: pengurus inti harus bisa tanpa departemen (U01)';
+    raise exception 'TEST 8 GAGAL: posisi CORE harus bisa tanpa departemen (D24)';
   end if;
+  if (select public_profile from public.members where id = (result->>'member_id')::uuid) is distinct from false then
+    raise exception 'TEST 8 GAGAL: member CORE baru harus default public_profile = false (D31)';
+  end if;
+
+  insert into public.registrations (
+    full_name, nim, email, phone, faculty, study_program, batch, status
+  ) values (
+    'Calon Advisor', '10502181004', 'advisor@student.unklab.ac.id',
+    '+6281234567893', 'FIK', 'Informatika', 2024, 'ACCEPTED'
+  ) returning id into r_adv;
+
+  select public.admin_convert_registration_to_member(
+    p_registration_id => r_adv,
+    p_organization_period_id => o,
+    p_position_id => p_advisor,
+    p_start_date => '2025-08-15'
+  ) into result;
+
+  if not exists (
+    select 1 from public.membership_histories
+    where member_id = (result->>'member_id')::uuid
+      and department_id is null
+  ) then
+    raise exception 'TEST 8 GAGAL: posisi ADVISOR harus bisa tanpa departemen (D24)';
+  end if;
+
+  -- ============================================================
+  -- TEST 8B: D24 — Posisi selain CORE dan ADVISOR tanpa departemen DITOLAK (23514)
+  -- ============================================================
+  insert into public.registrations (
+    full_name, nim, email, phone, faculty, study_program, batch, status
+  ) values (
+    'Calon Non Inti', '10502181005', 'noninti@student.unklab.ac.id',
+    '+6281234567894', 'FIK', 'Informatika', 2025, 'ACCEPTED'
+  ) returning id into r_noncore;
+
+  foreach p_noncore in array array[p_sh, p_coord, p_pic, p] loop
+    begin
+      perform public.admin_convert_registration_to_member(
+        p_registration_id => r_noncore,
+        p_organization_period_id => o,
+        p_position_id => p_noncore,
+        p_start_date => '2025-08-15',
+        p_department_id => null
+      );
+      raise exception 'TEST 8B GAGAL: posisi non-inti (%) tanpa departemen seharusnya ditolak', p_noncore;
+    exception when check_violation then
+      if sqlerrm not like '%wajib memiliki departemen%' then
+        raise exception 'TEST 8B GAGAL: pesan error tidak sesuai: %', sqlerrm;
+      end if;
+    end;
+  end loop;
+
+  if exists (select 1 from public.members where nim = '10502181005')
+    or (select converted_member_id from public.registrations where id = r_noncore) is not null
+    or exists (select 1 from public.audit_logs where entity_id = r_noncore and action = 'APPLICANT_CONVERTED') then
+    raise exception 'TEST 8B GAGAL: konversi gagal tidak boleh menulis member atau audit';
+  end if;
+
+  -- Posisi non-inti dengan departemen aktif harus berhasil
+  perform public.admin_convert_registration_to_member(
+    p_registration_id => r_noncore,
+    p_organization_period_id => o,
+    p_position_id => p_sh,
+    p_start_date => '2025-08-15',
+    p_department_id => d
+  );
 
   -- ============================================================
   -- TEST 9A: History preservation (D14)
@@ -405,7 +487,7 @@ begin
     values ('Calon Validasi Dua', '10502181202', 'val2@student.unklab.ac.id', '+6281234567812', 'FIK', 'Informatika', 2025, 'ACCEPTED')
     returning id into r_val2;
   perform public.admin_convert_registration_to_member(
-    p_registration_id => r_val2, p_organization_period_id => o, p_position_id => p,
+    p_registration_id => r_val2, p_organization_period_id => o, p_position_id => p_core,
     p_start_date => '2026-07-31');
 
   -- NIM atau email yang sudah dipakai member ditolak dengan P0001, bukan unique_violation
@@ -425,6 +507,7 @@ begin
   perform set_config('test.reg_auth', r_auth::text, true);
   perform set_config('test.period', o::text, true);
   perform set_config('test.position', p::text, true);
+  perform set_config('test.dept', d::text, true);
 end$$;
 
 -- ============================================================
@@ -439,7 +522,8 @@ begin
     p_registration_id => current_setting('test.reg_auth')::uuid,
     p_organization_period_id => current_setting('test.period')::uuid,
     p_position_id => current_setting('test.position')::uuid,
-    p_start_date => '2025-09-01');
+    p_start_date => '2025-09-01',
+    p_department_id => current_setting('test.dept')::uuid);
 end$$;
 reset role;
 do $$
@@ -537,6 +621,12 @@ begin
   begin
     perform public.admin_review_registration(gen_random_uuid(), 'UNDER_REVIEW');
     raise exception 'TEST 13 GAGAL: service_role tanpa sesi admin berhasil memanggil RPC review';
+  exception when insufficient_privilege then
+    null; -- Benar: ditolak grant atau cek sesi
+  end;
+  begin
+    perform public.admin_convert_registration_to_member(gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), '2025-08-15');
+    raise exception 'TEST 13 GAGAL: service_role tanpa sesi admin berhasil memanggil RPC convert';
   exception when insufficient_privilege then
     null; -- Benar: ditolak grant atau cek sesi
   end;

@@ -28,6 +28,24 @@ where status in ('SUBMITTED', 'UNDER_REVIEW') or (status = 'ACCEPTED' and conver
 group by nim having count(*) > 1;
 ```
 
+Preflight #74 sebelum `db:migrate` hosted, read-only. Pastikan tidak ada baris `public.positions` dengan `level` di luar daftar pemetaan migration `20261127100000` (harus nol baris), dan tinjau baris `public.members` lama yang masih bernilai `public_profile = true` untuk keputusan PM sebelum diterapkan ke hosted (migration #74 hanya mengubah default kolom menjadi `false`):
+
+```sql
+select id, name, level
+from public.positions
+where level not in ('ADVISOR', 'CORE', 'STEERING_HELPER', 'COORDINATOR', 'PIC', 'MEMBER')
+  and upper(regexp_replace(btrim(level), '[\s-]+', '_', 'g')) not in (
+    'ADVISOR', 'PEMBINA', 'CORE', 'CORE_TEAM', 'EXECUTIVE', 'INTI', 'PENGURUS_INTI',
+    'STEERING_HELPER', 'COORDINATOR', 'KOORDINATOR', 'MANAGEMENT',
+    'PIC', 'PERSON_IN_CHARGE', 'MEMBER', 'STAFF', 'ANGGOTA'
+  );
+
+select
+  count(*) filter (where public_profile = true) as legacy_public_true,
+  count(*) as total_members
+from public.members;
+```
+
 Membuka pendaftaran sebelum RPC settings #30 tersedia: admin belum dapat mengubah settings dari dashboard, jadi operator membuka atau menutupnya dengan SQL terkontrol setelah memverifikasi target project. Hanya dengan konfirmasi pengguna; nilai selain JSON `true` berarti tertutup.
 
 ```sql
