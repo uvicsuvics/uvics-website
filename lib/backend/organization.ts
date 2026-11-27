@@ -35,7 +35,7 @@ const DUPLICATE_SLUG_MESSAGE = "Slug sudah dipakai.";
 // ============================================================
 
 export const departmentSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string().min(1).max(120),
   slug: slugSchema.max(120),
   description: z.string().nullable().optional(),
@@ -57,7 +57,7 @@ export const POSITION_LEVELS = [
 export const positionLevelSchema = z.enum(POSITION_LEVELS);
 
 export const positionSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string().min(1).max(120),
   description: z.string().nullable().optional(),
   level: positionLevelSchema,
@@ -69,7 +69,7 @@ export const positionSchema = z.object({
 
 export const organizationPeriodSchema = z
   .object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     name: z.string().min(1).max(120),
     start_date: calendarDateSchema,
     end_date: calendarDateSchema,
