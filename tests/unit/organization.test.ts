@@ -366,6 +366,9 @@ describe("Organization domain schemas", () => {
       ).toBe(false);
       expect(updateOrganizationPeriodInputSchema.safeParse({}).success).toBe(false);
       expect(
+        updateOrganizationPeriodInputSchema.safeParse({ name: undefined }).success,
+      ).toBe(false);
+      expect(
         updateOrganizationPeriodInputSchema.safeParse({
           start_date: "2027-08-01",
           end_date: "2026-07-31",
@@ -380,7 +383,30 @@ describe("Organization domain schemas", () => {
           slug: "web-development",
         }).success,
       ).toBe(true);
+      expect(
+        createDepartmentInputSchema.safeParse({
+          name: "Long Slug",
+          slug: "a".repeat(120),
+          display_order: 2147483647,
+        }).success,
+      ).toBe(true);
+      expect(
+        createDepartmentInputSchema.safeParse({
+          name: "Too Long Slug",
+          slug: "a".repeat(121),
+        }).success,
+      ).toBe(false);
+      expect(
+        createDepartmentInputSchema.safeParse({
+          name: "Overflow Order",
+          slug: "overflow-order",
+          display_order: 2147483648,
+        }).success,
+      ).toBe(false);
       expect(updateDepartmentInputSchema.safeParse({}).success).toBe(false);
+      expect(
+        updateDepartmentInputSchema.safeParse({ name: undefined }).success,
+      ).toBe(false);
 
       expect(
         createPositionInputSchema.safeParse({
@@ -395,6 +421,9 @@ describe("Organization domain schemas", () => {
         }).success,
       ).toBe(false);
       expect(updatePositionInputSchema.safeParse({}).success).toBe(false);
+      expect(
+        updatePositionInputSchema.safeParse({ level: undefined }).success,
+      ).toBe(false);
 
       expect(
         assignMembershipHistoryInputSchema.safeParse({
@@ -839,6 +868,44 @@ describe("Organization admin mutations (#75)", () => {
       expect(malformed).toMatchObject({
         ok: false,
         error: { code: "SERVICE_UNAVAILABLE" },
+      });
+    });
+
+    it("strips undefined keys, preserves null clears, and redacts unexpected thrown errors", async () => {
+      const { client: uClient, rpc: uRpc } = fakeClient(
+        ok({ ...departmentRow, description: null }),
+      );
+      const cleared = await updateDepartment(uClient, DEPT_ID, {
+        name: undefined,
+        description: "   ",
+      });
+      expect(cleared.ok).toBe(true);
+      expect(uRpc).toHaveBeenCalledWith("admin_update_department", {
+        p_id: DEPT_ID,
+        p_changes: { description: null },
+      });
+
+      const { client: rejectClient, rpc: rejectRpc } = fakeClient();
+      const emptyUndefined = await updateDepartment(rejectClient, DEPT_ID, {
+        name: undefined,
+      });
+      expect(emptyUndefined).toMatchObject({
+        ok: false,
+        error: { code: "VALIDATION_ERROR" },
+      });
+      expect(rejectRpc).not.toHaveBeenCalled();
+
+      const throwingRpc = vi.fn(async () => {
+        throw new Error("raw postgres connection string leak");
+      });
+      const throwClient = { rpc: throwingRpc } as unknown as SupabaseClient<Database>;
+      const redacted = await deletePosition(throwClient, POS_ID);
+      expect(redacted).toEqual({
+        ok: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Terjadi kesalahan. Silakan coba kembali.",
+        },
       });
     });
   });

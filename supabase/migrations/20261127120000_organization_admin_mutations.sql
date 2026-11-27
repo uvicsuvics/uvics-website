@@ -42,7 +42,7 @@ begin
     raise exception 'Field % harus berupa teks', p_key using errcode = 'check_violation';
   end if;
 
-  v_text := btrim(p_obj->>p_key);
+  v_text := regexp_replace(p_obj->>p_key, '^[[:space:]]+|[[:space:]]+$', '', 'g');
   if p_required and char_length(v_text) = 0 then
     raise exception 'Field % tidak boleh kosong', p_key using errcode = 'check_violation';
   end if;
@@ -246,13 +246,13 @@ begin
     raise insufficient_privilege;
   end if;
 
-  perform private.require_json_object(p_changes);
-
   select * into previous from public.organization_periods
     where id = p_id for update;
   if not found then
     raise no_data_found;
   end if;
+
+  perform private.require_json_object(p_changes);
 
   r := previous;
   if p_changes ? 'name' then
@@ -519,13 +519,13 @@ begin
     raise insufficient_privilege;
   end if;
 
-  perform private.require_json_object(p_changes);
-
   select * into previous from public.departments
     where id = p_id for update;
   if not found then
     raise no_data_found;
   end if;
+
+  perform private.require_json_object(p_changes);
 
   r := previous;
   if p_changes ? 'name' then
@@ -663,6 +663,9 @@ begin
     raise exception 'Field level wajib berupa teks kanonis' using errcode = 'check_violation';
   end if;
   v_level := p_values->>'level';
+  if v_level not in ('ADVISOR', 'CORE', 'STEERING_HELPER', 'COORDINATOR', 'PIC', 'MEMBER') then
+    raise exception 'Level posisi tidak valid' using errcode = 'check_violation';
+  end if;
 
   v_display_order := private.parse_json_int(p_values, 'display_order', false, 0);
   v_active := private.parse_json_bool(p_values, 'active', false, true);
@@ -700,13 +703,13 @@ begin
     raise insufficient_privilege;
   end if;
 
-  perform private.require_json_object(p_changes);
-
   select * into previous from public.positions
     where id = p_id for update;
   if not found then
     raise no_data_found;
   end if;
+
+  perform private.require_json_object(p_changes);
 
   r := previous;
   if p_changes ? 'name' then
@@ -720,6 +723,9 @@ begin
       raise exception 'Field level wajib berupa teks kanonis' using errcode = 'check_violation';
     end if;
     r.level := p_changes->>'level';
+    if r.level not in ('ADVISOR', 'CORE', 'STEERING_HELPER', 'COORDINATOR', 'PIC', 'MEMBER') then
+      raise exception 'Level posisi tidak valid' using errcode = 'check_violation';
+    end if;
   end if;
   if p_changes ? 'display_order' then
     r.display_order := private.parse_json_int(p_changes, 'display_order', true, null);
@@ -861,9 +867,9 @@ begin
       using errcode = 'check_violation';
   end if;
 
-  -- Kunci referensi (for key share / for share) agar konsisten terhadap delete/update konkuren.
+  -- Kunci referensi (for share) agar konsisten terhadap delete/update konkuren termasuk kolom non-key.
   select * into v_member from public.members
-    where id = v_member_id for key share;
+    where id = v_member_id for share;
   if not found or v_member.deleted_at is not null then
     raise exception 'Member tidak ditemukan' using errcode = 'no_data_found';
   end if;
@@ -958,18 +964,12 @@ create function public.admin_end_membership_history(
 declare
   previous public.membership_histories;
   v_period public.organization_periods;
+  v_trimmed_notes text;
   v_new_notes text;
   r public.membership_histories;
 begin
   if not private.has_active_admin_session() then
     raise insufficient_privilege;
-  end if;
-
-  if p_end_date is null then
-    raise exception 'Field end_date wajib diisi' using errcode = 'check_violation';
-  end if;
-  if p_notes is not null and char_length(btrim(p_notes)) > 2000 then
-    raise exception 'Catatan penempatan maksimal 2000 karakter' using errcode = 'check_violation';
   end if;
 
   select * into previous from public.membership_histories
@@ -978,13 +978,24 @@ begin
     raise no_data_found;
   end if;
 
+  if p_end_date is null then
+    raise exception 'Field end_date wajib diisi' using errcode = 'check_violation';
+  end if;
+
+  if p_notes is not null then
+    v_trimmed_notes := regexp_replace(p_notes, '^[[:space:]]+|[[:space:]]+$', '', 'g');
+    if char_length(v_trimmed_notes) > 2000 then
+      raise exception 'Catatan penempatan maksimal 2000 karakter' using errcode = 'check_violation';
+    end if;
+  end if;
+
   select * into v_period from public.organization_periods
     where id = previous.organization_period_id for share;
 
-  -- null mempertahankan catatan lama, string kosong menghapusnya
+  -- null mempertahankan catatan lama, string kosong/spasi menghapusnya
   v_new_notes := case
     when p_notes is null then previous.notes
-    else nullif(btrim(p_notes), '')
+    else nullif(v_trimmed_notes, '')
   end;
 
   if previous.end_date is not null then
@@ -1041,7 +1052,7 @@ revoke all on function
   public.admin_delete_position(uuid),
   public.admin_assign_membership_history(jsonb),
   public.admin_end_membership_history(uuid, date, text)
-from public, anon, service_role;
+from public, anon, authenticated, service_role;
 
 grant execute on function
   public.admin_create_organization_period(jsonb),

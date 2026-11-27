@@ -8,7 +8,6 @@ import {
   toFailure,
   type OperationResult,
 } from "./errors";
-import type { MembershipHistory } from "./membership";
 import { calendarDateSchema, datetimeSchema, slugSchema } from "./validation";
 
 type Client = SupabaseClient<Database>;
@@ -167,7 +166,7 @@ export const updateOrganizationPeriodInputSchema = z
   })
   .partial()
   .strict()
-  .refine((data) => Object.keys(data).length > 0, {
+  .refine((data) => Object.values(data).some((v) => v !== undefined), {
     message: "Minimal satu field harus diisi untuk pembaruan.",
   })
   .refine(
@@ -198,7 +197,7 @@ export const updateDepartmentInputSchema = z
   })
   .partial()
   .strict()
-  .refine((data) => Object.keys(data).length > 0, {
+  .refine((data) => Object.values(data).some((v) => v !== undefined), {
     message: "Minimal satu field harus diisi untuk pembaruan.",
   });
 
@@ -222,7 +221,7 @@ export const updatePositionInputSchema = z
   })
   .partial()
   .strict()
-  .refine((data) => Object.keys(data).length > 0, {
+  .refine((data) => Object.values(data).some((v) => v !== undefined), {
     message: "Minimal satu field harus diisi untuk pembaruan.",
   });
 
@@ -262,8 +261,7 @@ export type OrganizationPeriod = z.infer<typeof organizationPeriodSchema>;
 export type AdminDepartmentDto = z.output<typeof adminDepartmentDto>;
 export type AdminPositionDto = z.output<typeof adminPositionDto>;
 export type AdminOrganizationPeriodDto = z.output<typeof adminOrganizationPeriodDto>;
-export type AdminMembershipHistoryDto = z.output<typeof adminMembershipHistoryDto> &
-  MembershipHistory;
+export type AdminMembershipHistoryDto = z.output<typeof adminMembershipHistoryDto>;
 export type DeleteOrganizationEntityResult = z.output<
   typeof deleteOrganizationEntityDto
 >;
@@ -303,6 +301,14 @@ function toFieldErrors(
       Array.isArray(entry[1]) && entry[1].length > 0,
   );
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function stripUndefined<T extends Record<string, unknown>>(
+  obj: T,
+): Record<string, Exclude<T[keyof T], undefined>> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== undefined),
+  ) as Record<string, Exclude<T[keyof T], undefined>>;
 }
 
 function parseInput<T extends z.ZodType>(schema: T, raw: unknown): z.output<T> {
@@ -389,7 +395,9 @@ export function updateOrganizationPeriod(
 ): Promise<OperationResult<AdminOrganizationPeriodDto>> {
   return runAdminMutation(client, async () => {
     assertUuid(id);
-    const parsed = parseInput(updateOrganizationPeriodInputSchema, input);
+    const parsed = stripUndefined(
+      parseInput(updateOrganizationPeriodInputSchema, input),
+    );
     const { data, error } = await client.rpc("admin_update_organization_period", {
       p_id: id,
       p_changes: parsed,
@@ -454,7 +462,9 @@ export function createDepartment(
   input: unknown,
 ): Promise<OperationResult<AdminDepartmentDto>> {
   return runAdminMutation(client, async () => {
-    const parsed = parseInput(createDepartmentInputSchema, input);
+    const parsed = stripUndefined(
+      parseInput(createDepartmentInputSchema, input),
+    );
     const { data, error } = await client.rpc("admin_create_department", {
       p_values: parsed,
     });
@@ -471,7 +481,9 @@ export function updateDepartment(
 ): Promise<OperationResult<AdminDepartmentDto>> {
   return runAdminMutation(client, async () => {
     assertUuid(id);
-    const parsed = parseInput(updateDepartmentInputSchema, input);
+    const parsed = stripUndefined(
+      parseInput(updateDepartmentInputSchema, input),
+    );
     const { data, error } = await client.rpc("admin_update_department", {
       p_id: id,
       p_changes: parsed,
@@ -515,7 +527,7 @@ export function createPosition(
   input: unknown,
 ): Promise<OperationResult<AdminPositionDto>> {
   return runAdminMutation(client, async () => {
-    const parsed = parseInput(createPositionInputSchema, input);
+    const parsed = stripUndefined(parseInput(createPositionInputSchema, input));
     const { data, error } = await client.rpc("admin_create_position", {
       p_values: parsed,
     });
@@ -532,7 +544,7 @@ export function updatePosition(
 ): Promise<OperationResult<AdminPositionDto>> {
   return runAdminMutation(client, async () => {
     assertUuid(id);
-    const parsed = parseInput(updatePositionInputSchema, input);
+    const parsed = stripUndefined(parseInput(updatePositionInputSchema, input));
     const { data, error } = await client.rpc("admin_update_position", {
       p_id: id,
       p_changes: parsed,
@@ -576,7 +588,9 @@ export function assignMembershipHistory(
   input: unknown,
 ): Promise<OperationResult<AdminMembershipHistoryDto>> {
   return runAdminMutation(client, async () => {
-    const parsed = parseInput(assignMembershipHistoryInputSchema, input);
+    const parsed = stripUndefined(
+      parseInput(assignMembershipHistoryInputSchema, input),
+    );
     const { data, error } = await client.rpc("admin_assign_membership_history", {
       p_values: parsed,
     });

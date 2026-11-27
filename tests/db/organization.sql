@@ -251,6 +251,9 @@ declare
   m_inactive uuid;
   m_deleted uuid;
   d_reg uuid;
+  p_noop uuid;
+  d_noop uuid;
+  pos_noop uuid;
 begin
   insert into public.members (full_name, status) values ('Inactive Member', 'INACTIVE') returning id into m_inactive;
   insert into public.members (full_name, deleted_at) values ('Deleted Member', statement_timestamp()) returning id into m_deleted;
@@ -260,9 +263,21 @@ begin
   ) values (
     'Applicant Dept Ref', '10502189001', 'app-dept@example.invalid', '+6281234567890', 'FIK', 'Informatika', 2026, d_reg
   );
+  insert into public.organization_periods (name, start_date, end_date, status, created_at, updated_at)
+    values ('2032/2033 Noop', '2032-08-01', '2033-07-31', 'UPCOMING', '2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')
+    returning id into p_noop;
+  insert into public.departments (name, slug, description, display_order, active, created_at, updated_at)
+    values ('Dept Noop', 'dept-noop', 'Tetap', 4, true, '2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')
+    returning id into d_noop;
+  insert into public.positions (name, description, level, display_order, active, created_at, updated_at)
+    values ('Pos Noop', 'Tetap', 'PIC', 4, true, '2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')
+    returning id into pos_noop;
   perform set_config('test.member_inactive', m_inactive::text, true);
   perform set_config('test.member_deleted', m_deleted::text, true);
   perform set_config('test.dept_reg_ref', d_reg::text, true);
+  perform set_config('test.period_noop', p_noop::text, true);
+  perform set_config('test.dept_noop', d_noop::text, true);
+  perform set_config('test.pos_noop', pos_noop::text, true);
 end$$;
 
 -- ==============================================================
@@ -280,6 +295,9 @@ declare
   v_member_inactive uuid := current_setting('test.member_inactive')::uuid;
   v_member_deleted uuid := current_setting('test.member_deleted')::uuid;
   v_history_ref uuid := current_setting('test.history_ref')::uuid;
+  v_period_noop uuid := current_setting('test.period_noop')::uuid;
+  v_dept_noop uuid := current_setting('test.dept_noop')::uuid;
+  v_pos_noop uuid := current_setting('test.pos_noop')::uuid;
 
   res jsonb;
   p_new uuid;
@@ -292,9 +310,8 @@ declare
   pos_off uuid;
   h_core uuid;
   h_coord uuid;
+  h_clear uuid;
   audit_rec public.audit_logs;
-  audit_cnt int;
-  prev_updated timestamptz;
 begin
   -- 1. Active admin can read tables
   if (select count(*) from public.departments) = 0 then
@@ -338,7 +355,7 @@ begin
     raise exception 'TEST H ORGANIZATION_PERIOD_CREATED audit mismatch';
   end if;
 
-  -- end_date < start_date dan tanggal invalid ditolak (23514)
+  -- end_date < start_date, tanggal invalid, dan whitespace-only (\t\n) ditolak (23514)
   perform pg_temp.expect_error(
     'select public.admin_create_organization_period(''{"name":"Bad","start_date":"2026-08-01","end_date":"2025-07-31"}''::jsonb)',
     '23514', 'TEST H create period end_date < start_date');
@@ -346,10 +363,13 @@ begin
     'select public.admin_create_organization_period(''{"name":"Bad","start_date":"2026-02-30","end_date":"2026-07-31"}''::jsonb)',
     '23514', 'TEST H create period invalid calendar date');
   perform pg_temp.expect_error(
+    'select public.admin_create_organization_period(''{"name":"\t\n","start_date":"2026-08-01","end_date":"2027-07-31"}''::jsonb)',
+    '23514', 'TEST H create period whitespace-only name');
+  perform pg_temp.expect_error(
     'select public.admin_create_organization_period(''[]''::jsonb)',
     '23514', 'TEST H create period non-object');
 
-  -- Update period + changed_fields audit + no-op tidak menulis audit
+  -- Update period + changed_fields audit + no-op sejati tidak menulis UPDATE/audit (updated_at tetap 2020-01-01Z)
   res := public.admin_update_organization_period(p_new, '{"name":"2025/2026 Revisi","end_date":"2026-08-15","status":"ACTIVE"}'::jsonb);
   if res->>'name' <> '2025/2026 Revisi' or res->>'end_date' <> '2026-08-15' or res->>'status' <> 'UPCOMING' then
     raise exception 'TEST H update period mismatch: %', res;
@@ -359,26 +379,36 @@ begin
     raise exception 'TEST H update period changed_fields mismatch: %', audit_rec.new_values;
   end if;
 
-  select updated_at into prev_updated from public.organization_periods where id = p_new;
-  select count(*) into audit_cnt from public.audit_logs where entity_id = p_new;
-  perform public.admin_update_organization_period(p_new, '{"name":"2025/2026 Revisi"}'::jsonb);
-  if (select count(*) from public.audit_logs where entity_id = p_new) <> audit_cnt
-    or (select updated_at from public.organization_periods where id = p_new) <> prev_updated then
+  perform public.admin_update_organization_period(v_period_noop, '{"name":"2032/2033 Noop","start_date":"2032-08-01","end_date":"2033-07-31"}'::jsonb);
+  if exists (select 1 from public.audit_logs where entity_id = v_period_noop)
+    or (select updated_at from public.organization_periods where id = v_period_noop) is distinct from '2020-01-01T00:00:00Z'::timestamptz then
     raise exception 'TEST H no-op update period wrote row or audit';
   end if;
 
-  -- Update period end_date < start_date -> 23514; missing ID -> P0002
+  -- Update period end_date < start_date -> 23514; missing ID -> P0002 (mendahului validasi patch)
   perform pg_temp.expect_error(
     format('select public.admin_update_organization_period(%L, ''{"end_date":"2025-07-01"}''::jsonb)', p_new),
     '23514', 'TEST H update period end_date < start_date');
   perform pg_temp.expect_error(
-    'select public.admin_update_organization_period(gen_random_uuid(), ''{"name":"Ghost"}''::jsonb)',
+    'select public.admin_update_organization_period(gen_random_uuid(), ''null''::jsonb)',
     'P0002', 'TEST H update missing period');
+  perform pg_temp.expect_error(
+    'select public.admin_activate_organization_period(gen_random_uuid())',
+    'P0002', 'TEST H activate missing period');
+  perform pg_temp.expect_error(
+    'select public.admin_end_organization_period(gen_random_uuid())',
+    'P0002', 'TEST H end missing period');
+  perform pg_temp.expect_error(
+    'select public.admin_delete_organization_period(gen_random_uuid())',
+    'P0002', 'TEST H delete missing period');
 
-  -- Mempersempit tanggal periode aktif sehingga histori keluar rentang ditolak (P0001)
+  -- Mempersempit tanggal periode aktif (start_date atau end_date) sehingga histori keluar rentang ditolak (P0001)
   perform pg_temp.expect_error(
     format('select public.admin_update_organization_period(%L, ''{"start_date":"2024-09-01"}''::jsonb)', v_period_active),
-    'P0001', 'TEST H narrow period excluding existing history');
+    'P0001', 'TEST H narrow period start_date excluding existing history');
+  perform pg_temp.expect_error(
+    format('select public.admin_update_organization_period(%L, ''{"end_date":"2024-08-10"}''::jsonb)', v_period_active),
+    'P0001', 'TEST H narrow period end_date excluding existing history');
 
   -- Mengaktifkan periode kedua saat ada periode ACTIVE ditolak dengan CONFLICT (P0001)
   perform pg_temp.expect_error(
@@ -459,18 +489,24 @@ begin
     raise exception 'TEST I DEPARTMENT_CREATED leaked description into audit';
   end if;
 
-  -- Duplicate slug -> 23505; invalid types -> 23514
+  -- Duplicate slug -> 23505; invalid types / whitespace-only / int32 overflow -> 23514
   perform pg_temp.expect_error(
     'select public.admin_create_department(''{"name":"Dup","slug":"web-development"}''::jsonb)',
     '23505', 'TEST I duplicate department slug');
   perform pg_temp.expect_error(
+    'select public.admin_create_department(''{"name":"\t\n","slug":"ws-dept"}''::jsonb)',
+    '23514', 'TEST I whitespace-only department name');
+  perform pg_temp.expect_error(
     'select public.admin_create_department(''{"name":"Bad","slug":"bad","display_order":1.5}''::jsonb)',
     '23514', 'TEST I fractional display_order');
+  perform pg_temp.expect_error(
+    'select public.admin_create_department(''{"name":"Bad","slug":"bad","display_order":2147483648}''::jsonb)',
+    '23514', 'TEST I int32 overflow display_order');
   perform pg_temp.expect_error(
     'select public.admin_create_department(''{"name":"Bad","slug":"bad","active":"true"}''::jsonb)',
     '23514', 'TEST I non-boolean active');
 
-  -- Update department (display_order, description, active) + no-op
+  -- Update department (display_order, description, active) + no-op sejati + missing ID
   res := public.admin_update_department(d_new, '{"display_order":7,"description":"Deskripsi baru rahasia","active":false}'::jsonb);
   if (res->>'display_order')::int <> 7 or (res->>'active')::boolean <> false then
     raise exception 'TEST I update department mismatch: %', res;
@@ -480,6 +516,19 @@ begin
     or audit_rec.new_values::text like '%Deskripsi baru%' then
     raise exception 'TEST I DEPARTMENT_UPDATED audit mismatch: %', audit_rec.new_values;
   end if;
+
+  perform public.admin_update_department(v_dept_noop, '{"name":"Dept Noop","slug":"dept-noop","description":"Tetap","display_order":4,"active":true}'::jsonb);
+  if exists (select 1 from public.audit_logs where entity_id = v_dept_noop)
+    or (select updated_at from public.departments where id = v_dept_noop) is distinct from '2020-01-01T00:00:00Z'::timestamptz then
+    raise exception 'TEST I no-op update department wrote row or audit';
+  end if;
+
+  perform pg_temp.expect_error(
+    'select public.admin_update_department(gen_random_uuid(), ''null''::jsonb)',
+    'P0002', 'TEST I update missing department');
+  perform pg_temp.expect_error(
+    'select public.admin_delete_department(gen_random_uuid())',
+    'P0002', 'TEST I delete missing department');
   -- Aktifkan kembali untuk penempatan nanti
   perform public.admin_update_department(d_new, '{"active":true}'::jsonb);
 
@@ -516,12 +565,15 @@ begin
     raise exception 'TEST J POSITION_CREATED audit mismatch: %', audit_rec.new_values;
   end if;
 
-  -- Level non-kanonis ditolak (23514)
+  -- Level non-kanonis dan whitespace-only name ditolak (23514)
   perform pg_temp.expect_error(
     'select public.admin_create_position(''{"name":"Bad","level":"Executive"}''::jsonb)',
     '23514', 'TEST J create position invalid level');
+  perform pg_temp.expect_error(
+    'select public.admin_create_position(''{"name":"\r\n","level":"CORE"}''::jsonb)',
+    '23514', 'TEST J create position whitespace-only name');
 
-  -- Update position (display_order, description, active)
+  -- Update position (display_order, description, active) + no-op sejati + missing ID
   res := public.admin_update_position(pos_coord, '{"display_order":5,"description":"Ubah deskripsi rahasia","active":true}'::jsonb);
   if (res->>'display_order')::int <> 5 then
     raise exception 'TEST J update position mismatch: %', res;
@@ -531,6 +583,19 @@ begin
     or audit_rec.new_values::text like '%Ubah deskripsi%' then
     raise exception 'TEST J POSITION_UPDATED audit mismatch: %', audit_rec.new_values;
   end if;
+
+  perform public.admin_update_position(v_pos_noop, '{"name":"Pos Noop","description":"Tetap","level":"PIC","display_order":4,"active":true}'::jsonb);
+  if exists (select 1 from public.audit_logs where entity_id = v_pos_noop)
+    or (select updated_at from public.positions where id = v_pos_noop) is distinct from '2020-01-01T00:00:00Z'::timestamptz then
+    raise exception 'TEST J no-op update position wrote row or audit';
+  end if;
+
+  perform pg_temp.expect_error(
+    'select public.admin_update_position(gen_random_uuid(), ''null''::jsonb)',
+    'P0002', 'TEST J update missing position');
+  perform pg_temp.expect_error(
+    'select public.admin_delete_position(gen_random_uuid())',
+    'P0002', 'TEST J delete missing position');
 
   -- Delete guard posisi yang direferensikan histori ditolak (P0001), tapi bisa dinonaktifkan
   perform pg_temp.expect_error(
@@ -568,6 +633,11 @@ begin
     'position_id', pos_advisor,
     'start_date', '2025-08-15'
   ));
+
+  -- D29 mendahului D24: level non-kanonis pada pos_core wajib 23514, bukan P0001
+  perform pg_temp.expect_error(
+    format('select public.admin_update_position(%L, ''{"level":"INVALID"}''::jsonb)', pos_core),
+    '23514', 'TEST K invalid level on CORE position with department-less history');
 
   -- D24 invariant guard: ubah pos_core menjadi MEMBER saat dipakai histori tanpa departemen ditolak (P0001)
   perform pg_temp.expect_error(
@@ -620,6 +690,43 @@ begin
     format('select public.admin_assign_membership_history(%L::jsonb)', jsonb_build_object(
       'member_id', v_member_active,
       'organization_period_id', p_new,
+      'department_id', d_new,
+      'position_id', pos_coord,
+      'start_date', '2025-09-01',
+      'end_date', '2026-09-01'
+    )),
+    'P0001', 'TEST K assign end_date outside period');
+  perform pg_temp.expect_error(
+    format('select public.admin_assign_membership_history(%L::jsonb)', jsonb_build_object(
+      'member_id', v_member_active,
+      'organization_period_id', gen_random_uuid(),
+      'department_id', d_new,
+      'position_id', pos_coord,
+      'start_date', '2025-09-01'
+    )),
+    'P0002', 'TEST K assign missing period');
+  perform pg_temp.expect_error(
+    format('select public.admin_assign_membership_history(%L::jsonb)', jsonb_build_object(
+      'member_id', v_member_active,
+      'organization_period_id', p_new,
+      'department_id', d_new,
+      'position_id', gen_random_uuid(),
+      'start_date', '2025-09-01'
+    )),
+    'P0002', 'TEST K assign missing position');
+  perform pg_temp.expect_error(
+    format('select public.admin_assign_membership_history(%L::jsonb)', jsonb_build_object(
+      'member_id', v_member_active,
+      'organization_period_id', p_new,
+      'department_id', gen_random_uuid(),
+      'position_id', pos_coord,
+      'start_date', '2025-09-01'
+    )),
+    'P0002', 'TEST K assign missing department');
+  perform pg_temp.expect_error(
+    format('select public.admin_assign_membership_history(%L::jsonb)', jsonb_build_object(
+      'member_id', v_member_active,
+      'organization_period_id', p_new,
       'department_id', v_dept_ref,
       'position_id', pos_coord,
       'start_date', '2025-09-01'
@@ -662,7 +769,13 @@ begin
     'start_date', '2025-09-01'
   ))->>'id')::uuid;
 
-  -- Akhiri penempatan: end_date < start_date ditolak (23514); di luar periode ditolak (P0001); missing ID -> P0002
+  -- Akhiri penempatan: end_date null / notes >2000 / end_date < start_date -> 23514; di luar periode -> P0001; missing ID -> P0002
+  perform pg_temp.expect_error(
+    format('select public.admin_end_membership_history(%L, null)', h_coord),
+    '23514', 'TEST K end placement null end_date');
+  perform pg_temp.expect_error(
+    format('select public.admin_end_membership_history(%L, ''2025-12-31''::date, repeat(''x'', 2001))', h_coord),
+    '23514', 'TEST K end placement notes >2000');
   perform pg_temp.expect_error(
     format('select public.admin_end_membership_history(%L, ''2025-08-31''::date)', h_coord),
     '23514', 'TEST K end placement before start_date');
@@ -670,8 +783,8 @@ begin
     format('select public.admin_end_membership_history(%L, ''2027-01-01''::date)', h_coord),
     'P0001', 'TEST K end placement after period end_date');
   perform pg_temp.expect_error(
-    'select public.admin_end_membership_history(gen_random_uuid(), ''2025-12-01''::date)',
-    'P0002', 'TEST K end missing placement');
+    'select public.admin_end_membership_history(gen_random_uuid(), null)',
+    'P0002', 'TEST K end missing placement precedes payload validation');
 
   -- Akhiri penempatan valid + catatan (isi catatan tidak bocor ke audit)
   res := public.admin_end_membership_history(h_coord, '2025-12-31'::date, 'Selesai tugas rahasia');
@@ -685,14 +798,36 @@ begin
     raise exception 'TEST K MEMBERSHIP_HISTORY_ENDED audit mismatch: %', audit_rec.new_values;
   end if;
 
-  -- Idempoten bila dipanggil ulang dengan tanggal sama & p_notes null; konflik bila tanggal beda
+  -- Idempoten bila dipanggil ulang dengan tanggal sama & p_notes null atau sama; konflik bila tanggal/catatan beda
   perform public.admin_end_membership_history(h_coord, '2025-12-31'::date, null);
+  perform public.admin_end_membership_history(h_coord, '2025-12-31'::date, 'Selesai tugas rahasia');
   if (select count(*) from public.audit_logs where action = 'MEMBERSHIP_HISTORY_ENDED' and entity_id = h_coord) <> 1 then
     raise exception 'TEST K idempotent end placement wrote duplicate audit';
   end if;
   perform pg_temp.expect_error(
     format('select public.admin_end_membership_history(%L, ''2026-01-15''::date)', h_coord),
-    'P0001', 'TEST K overwrite already ended placement');
+    'P0001', 'TEST K overwrite already ended placement date');
+  perform pg_temp.expect_error(
+    format('select public.admin_end_membership_history(%L, ''2025-12-31''::date, '''')', h_coord),
+    'P0001', 'TEST K overwrite already ended placement notes');
+
+  -- Menghapus catatan lama lewat whitespace (\t\n) saat mengakhiri penempatan
+  h_clear := (public.admin_assign_membership_history(jsonb_build_object(
+    'member_id', v_member_active,
+    'organization_period_id', p_new,
+    'department_id', d_new,
+    'position_id', pos_coord,
+    'start_date', '2025-09-15',
+    'notes', 'Catatan sementara'
+  ))->>'id')::uuid;
+  res := public.admin_end_membership_history(h_clear, '2025-12-31'::date, E'\t\n ');
+  if res->>'notes' is not null then
+    raise exception 'TEST K whitespace notes should clear to null: %', res;
+  end if;
+  select * into strict audit_rec from public.audit_logs where action = 'MEMBERSHIP_HISTORY_ENDED' and entity_id = h_clear;
+  if audit_rec.new_values <> '{"end_date":"2025-12-31","notes_changed":true}'::jsonb then
+    raise exception 'TEST K clear notes audit mismatch: %', audit_rec.new_values;
+  end if;
 
   -- Hapus posisi tanpa histori (pos_off) berhasil + audit
   res := public.admin_delete_position(pos_off);

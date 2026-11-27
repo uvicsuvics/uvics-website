@@ -99,7 +99,7 @@ try {
     } catch (error) {
       failures.push(name);
       console.error(`FAIL ${name}: ${error.message}`);
-      await client.query("rollback").catch(() => {});
+      await client.query("rollback").catch(() => { });
     }
   };
   for (const file of [
@@ -233,27 +233,42 @@ try {
   });
   let orgConcurrency = {};
   await step("organization period activation concurrency (D07 single active guard)", async () => {
-    const pool = new pg.Pool({ ...connection, max: 4 });
+    const pool = new pg.Pool({ ...connection, max: 6 });
     try {
       await client.query("begin");
       const adminId = "00000000-0000-4000-8000-000000000001";
       const sessionId = "00000000-0000-4000-8000-000000000011";
-      const p1 = (
-        await client.query(
-          "insert into public.organization_periods (name, start_date, end_date, status) values ('2028/2029 Conc A', '2028-08-01', '2029-07-31', 'UPCOMING') returning id",
-        )
-      ).rows[0].id;
-      const p2 = (
-        await client.query(
-          "insert into public.organization_periods (name, start_date, end_date, status) values ('2029/2030 Conc B', '2029-08-01', '2030-07-31', 'UPCOMING') returning id",
-        )
-      ).rows[0].id;
+      await client.query(
+        "insert into auth.users (id) values ($1) on conflict (id) do nothing",
+        [adminId],
+      );
+      await client.query(
+        "insert into public.admins (id, name, is_active) values ($1, 'Admin', true) on conflict (id) do update set is_active=true",
+        [adminId],
+      );
+      await client.query(
+        "insert into auth.sessions (id, user_id, created_at) values ($1, $2, statement_timestamp()) on conflict (id) do update set created_at=statement_timestamp()",
+        [sessionId, adminId],
+      );
+      const periodIds = [];
+      for (const [label, startDate, endDate] of [
+        ["2028/2029 Conc A", "2028-08-01", "2029-07-31"],
+        ["2029/2030 Conc B", "2029-08-01", "2030-07-31"],
+        ["2030/2031 Conc C", "2030-08-01", "2031-07-31"],
+        ["2031/2032 Conc D", "2031-08-01", "2032-07-31"],
+      ]) {
+        const { rows } = await client.query(
+          "insert into public.organization_periods (name, start_date, end_date, status) values ($1, $2, $3, 'UPCOMING') returning id",
+          [label, startDate, endDate],
+        );
+        periodIds.push(rows[0].id);
+      }
       await client.query("commit");
 
       const start = performance.now();
       const jwtClaims = JSON.stringify({ sub: adminId, session_id: sessionId });
       const results = await Promise.allSettled(
-        [p1, p2].map(async (pid) => {
+        periodIds.map(async (pid) => {
           const c = await pool.connect();
           try {
             await c.query("set role authenticated");
@@ -262,7 +277,8 @@ try {
               await c.query("select public.admin_activate_organization_period($1) as res", [pid])
             ).rows[0].res;
           } finally {
-            await c.query("reset role").catch(() => {});
+            await c.query("select set_config('request.jwt.claims', '', false)").catch(() => {});
+            await c.query("reset role").catch(() => { });
             await c.release();
           }
         }),
@@ -271,18 +287,30 @@ try {
       const fulfilled = results.filter((r) => r.status === "fulfilled");
       const rejected = results.filter((r) => r.status === "rejected");
       assert.equal(fulfilled.length, 1, `Exactly 1 period activation should succeed; got ${fulfilled.length}`);
-      assert.equal(rejected.length, 1, `Exactly 1 period activation should fail; got ${rejected.length}`);
-      assert.equal(rejected[0].reason.code, "P0001", `Second activation must fail with P0001; got ${rejected[0].reason.code}`);
+      assert.equal(rejected.length, periodIds.length - 1, `All other period activations should fail; got ${rejected.length}`);
+      assert.deepEqual(
+        rejected.map((r) => r.reason.code),
+        Array(periodIds.length - 1).fill("P0001"),
+        `Competing activations must fail with P0001`,
+      );
 
       const activeCount = (
         await client.query("select count(*)::int as n from public.organization_periods where status = 'ACTIVE'")
       ).rows[0].n;
       assert.equal(activeCount, 1, "Exactly 1 ACTIVE organization period must exist");
 
+      const auditCount = (
+        await client.query(
+          "select count(*)::int as n from public.audit_logs where action = 'ORGANIZATION_PERIOD_ACTIVATED' and entity_id = any($1::uuid[])",
+          [periodIds],
+        )
+      ).rows[0].n;
+      assert.equal(auditCount, 1, "Exactly 1 ORGANIZATION_PERIOD_ACTIVATED audit log must be written");
+
       orgConcurrency = {
-        period_activation_concurrency: 2,
-        period_activation_succeeded: 1,
-        period_activation_blocked: 1,
+        period_activation_concurrency: periodIds.length,
+        period_activation_succeeded: fulfilled.length,
+        period_activation_blocked: rejected.length,
         period_activation_elapsed_ms: Math.round(performance.now() - start),
       };
     } finally {
