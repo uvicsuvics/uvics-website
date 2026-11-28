@@ -59,6 +59,8 @@ export const publicProgramDto = z.object({
 export type PublicProgramDto = z.output<typeof publicProgramDto>;
 
 const PUBLIC_PROGRAM_FIELDS = "id, name, slug, short_description, description, image, display_order";
+const ADMIN_PROGRAM_FIELDS =
+  "id, name, slug, short_description, description, image, status, display_order, created_at, updated_at";
 
 export async function getPublicPrograms(client: SupabaseClient<Database>): Promise<PublicProgramDto[]> {
   const { items } = await listPublicPrograms(client, { page: 1, page_size: 100 });
@@ -124,7 +126,7 @@ export async function listAdminPrograms(client: SupabaseClient<Database>): Promi
 
   const { data, error } = await client
     .from("programs")
-    .select("*")
+    .select(ADMIN_PROGRAM_FIELDS)
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
@@ -148,7 +150,7 @@ export async function getAdminProgram(
 
   const { data, error } = await client
     .from("programs")
-    .select("*")
+    .select(ADMIN_PROGRAM_FIELDS)
     .eq("id", id)
     .maybeSingle();
 
