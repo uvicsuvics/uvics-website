@@ -22,8 +22,9 @@ do $$declare bad text;begin
  from pg_proc p
  where p.pronamespace='public'::regnamespace and has_function_privilege('anon',p.oid,'EXECUTE')
   and p.oid not in(
-   -- Allowlist anon: reader settings publik dengan allowlist key + validasi per key di SQL.
-   'public.read_public_settings()'::regprocedure);
+   -- Hanya reader publik dengan proyeksi eksplisit.
+   'public.read_public_settings()'::regprocedure,
+   'public.read_public_program_departments()'::regprocedure);
  if bad is not null then raise exception 'anon can execute non-public function: %',bad;end if;
 end$$;
 
